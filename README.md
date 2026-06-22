@@ -107,16 +107,53 @@ suppressions reads as a net promotion.
 Direction is inferred from query phrasing; the reranker rewards chains that
 *originate* at the queried event (forward) or *terminate* at it (backward).
 
+## When to use this
+
+This is a precision instrument, not a general-purpose RAG replacement. It is
+the right tool when:
+
+- **The question is causal** — "what ultimately caused X?", "why did Y happen?",
+  "how did A lead to B?" Standard RAG cannot answer these because the causal
+  chain spans multiple chunks with different vocabulary.
+- **The document has consequential structure** — incident reports, medical case
+  studies, engineering post-mortems, legal briefs, policy analyses, risk reports.
+- **You need the LLM to reason over a path**, not just retrieve similar sentences.
+
+**Strong fit by domain:**
+
+| Domain | Example question |
+|---|---|
+| Healthcare | "What sequence of events led to the adverse outcome?" |
+| DevOps / SRE | "What was the root cause of the outage?" |
+| Legal / compliance | "What chain of decisions led to the liability?" |
+| Finance / risk | "How did the rate change propagate through the portfolio?" |
+| Engineering | "What failure mode triggered the cascade?" |
+
+**Not the right tool for:**
+- General factoid Q&A ("what year was X founded?") — use standard hybrid RAG
+- Documents without explicit or implicit causal structure
+- High-volume ingestion without a real relation extractor (the rule-based
+  extractor is the ceiling on recall)
+
+For best results, run this **alongside** a standard retriever and route by query
+type: causal questions → this system, factoid questions → standard RAG.
+
 ## Honest limitations
 
 - **The extractor is the ceiling.** Causal edges come from a verb lexicon +
-  discourse connectives + the dependency parser. In production, replace the
-  extractor with a trained relation-extraction / OpenIE model.
-- **Implicit causation is now partially handled** via an adjacency + state-change
+  discourse connectives + the dependency parser. The rule-based fallback will
+  miss domain-specific causal language ("the catalyst degraded", "the margin
+  compressed"). In production, replace with a trained relation-extraction model
+  or an LLM-based OpenIE extractor.
+- **Implicit causation is partially handled** via an adjacency + state-change
   heuristic: consecutive sentences where the second contains a state-change verb
   (failed, collapsed, skidded, …) and no explicit connective get a weak
   `implicit_trigger` edge. This recovers cases like "the bridge was wet. Cars
   skidded." but misses purely inferential causation with no state-change signal.
+- **Coreference is not resolved.** Pronouns ("this", "it", "they") appear as
+  graph nodes instead of the event they refer to. A coreference resolver
+  (e.g. spaCy's neuralcoref or an LLM pass) would significantly clean up the
+  graph.
 - **The "dense" channel uses SentenceTransformers** (`all-MiniLM-L6-v2`) by
   default. Falls back to a hashed-trigram stand-in if the package is not
   installed. For best results use a domain-specific encoder or Voyage/OpenAI.
@@ -124,9 +161,6 @@ Direction is inferred from query phrasing; the reranker rewards chains that
   encoder: the query embedding is compared against the mean of the chain's node
   embeddings. The seam is `GraphRAG._rerank`; swap in a cross-encoder
   (Cohere/Voyage rerank) for even stronger results.
-- This is a precision instrument for *causal/consequential* questions. For
-  general factoid retrieval, keep a standard hybrid retriever alongside it and
-  route by query type.
 
 ## Production swap-in points
 
