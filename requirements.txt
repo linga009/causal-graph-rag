@@ -1,0 +1,7 @@
+numpy>=1.24
+# optional, for stronger causal extraction (passive voice, clausal subjects):
+# spacy>=3.7  (then: python -m spacy download en_core_web_sm)
+# optional LLM backends:
+# groq
+# openai
+# anthropic
