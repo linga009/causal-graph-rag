@@ -149,6 +149,6 @@ class CausalGraph:
             return ""
         parts = [path[0].cause]
         for e in path:
-            arrow = "→" if e.polarity > 0 else "⊣"
+            arrow = "->" if e.polarity > 0 else "-/->"
             parts.append(f"{arrow}({e.relation}) {e.effect}")
         return " ".join(parts)

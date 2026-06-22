@@ -20,10 +20,12 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Dict
 
+import numpy as np
+
 from vsa_core import Lexicon, Triple
 from causal_extractor import extract_edges
 from causal_graph import CausalGraph, GraphEdge
-from retrievers import BM25, HashingDense, rrf_fuse, tokenize
+from retrievers import BM25, HashingDense, make_dense, rrf_fuse, tokenize
 from parser import parse_triples
 from pipeline import MockLLM
 
@@ -64,7 +66,7 @@ class GraphRAG:
         self.lex = Lexicon(dim=dim, semantic_weight=semantic_weight)
         self.graph = CausalGraph(self.lex)
         self.bm25 = BM25()
-        self.dense = HashingDense()
+        self.dense = make_dense()
         self.llm = llm or MockLLM()
         self.max_depth = max_depth
         self._node_docs: Dict[str, str] = {}
@@ -122,6 +124,15 @@ class GraphRAG:
     # -- rerank chains ------------------------------------------------------- #
     def _rerank(self, question: str, chains: List[ChainResult]) -> None:
         q_terms = set(tokenize(question))
+
+        # Semantic similarity: encode query once and compare against the
+        # average of the per-node embeddings already stored in the dense index.
+        # Falls back to zero when HashingDense is active (no _model attribute).
+        q_emb = None
+        if hasattr(self.dense, '_model') and getattr(self.dense, 'vecs', None):
+            q_emb = self.dense._model.encode(
+                [question], convert_to_numpy=True, normalize_embeddings=True)[0]
+
         for c in chains:
             chain_terms = set()
             for e in c.chain:
@@ -138,6 +149,21 @@ class GraphRAG:
                     score += 2.0
                 if c.direction == "forward" and (head & q_terms):
                     score += 2.0
+            # Semantic similarity via dense encoder (3× weight so it is
+            # competitive with the lexical overlap score on short chains)
+            if q_emb is not None:
+                node_embs = [
+                    self.dense.vecs[n]
+                    for e in c.chain
+                    for n in (e.cause, e.effect)
+                    if n in self.dense.vecs
+                ]
+                if node_embs:
+                    chain_emb = np.mean(node_embs, axis=0)
+                    norm = np.linalg.norm(chain_emb)
+                    if norm:
+                        chain_emb /= norm
+                    score += float(q_emb @ chain_emb) * 3.0
             c.rerank_score = score
 
     # -- retrieve ------------------------------------------------------------ #

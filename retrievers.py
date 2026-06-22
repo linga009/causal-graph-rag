@@ -114,6 +114,46 @@ class HashingDense:
 
 
 # --------------------------------------------------------------------------- #
+#  Dense channel — real SentenceTransformers encoder (preferred).
+#  Falls back to HashingDense automatically if the package isn't installed.
+# --------------------------------------------------------------------------- #
+class SentenceTransformerDense:
+    """Cosine similarity over sentence-transformer embeddings.
+    Uses all-MiniLM-L6-v2 by default: 384-dim, ~80 MB, no API key required.
+    """
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        from sentence_transformers import SentenceTransformer  # pip install sentence-transformers
+        self._model = SentenceTransformer(model_name)
+        self.vecs: Dict[str, np.ndarray] = {}
+        self._nodes: List[str] = []
+        self._matrix: np.ndarray | None = None
+
+    def index(self, node_docs: Dict[str, str]) -> None:
+        self._nodes = list(node_docs.keys())
+        texts = [node_docs[n] for n in self._nodes]
+        embs = self._model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
+        self.vecs = {n: embs[i] for i, n in enumerate(self._nodes)}
+        self._matrix = embs  # shape (N, D)
+
+    def score(self, query: str) -> List[Tuple[float, str]]:
+        if not self._nodes:
+            return []
+        q = self._model.encode([query], convert_to_numpy=True, normalize_embeddings=True)[0]
+        sims = (self._matrix @ q).tolist()
+        out = [(float(s), n) for s, n in zip(sims, self._nodes) if s > 0]
+        out.sort(key=lambda x: -x[0])
+        return out
+
+
+def make_dense() -> "HashingDense | SentenceTransformerDense":
+    """Return a SentenceTransformerDense if available, else HashingDense."""
+    try:
+        return SentenceTransformerDense()
+    except Exception:
+        return HashingDense()
+
+
+# --------------------------------------------------------------------------- #
 #  Reciprocal Rank Fusion
 # --------------------------------------------------------------------------- #
 def rrf_fuse(ranked_lists: List[List[Tuple[float, str]]], k: int = 60,

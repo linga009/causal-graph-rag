@@ -44,7 +44,7 @@ class OpenAILLM:
 
 
 class AnthropicLLM:
-    def __init__(self, model: str = "claude-sonnet-4-6", api_key: str | None = None):
+    def __init__(self, model: str = "claude-opus-4-8", api_key: str | None = None):
         import anthropic  # pip install anthropic
         self.client = anthropic.Anthropic(api_key=api_key or os.environ["ANTHROPIC_API_KEY"])
         self.model = model

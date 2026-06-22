@@ -63,7 +63,7 @@ it but reuses its `MockLLM`.)
 ## Quick start
 
 ```bash
-pip install numpy
+pip install numpy sentence-transformers
 # optional, improves causal extraction (handles passive voice, clausal subjects):
 pip install spacy && python -m spacy download en_core_web_sm
 python demo_graph.py
@@ -110,26 +110,32 @@ Direction is inferred from query phrasing; the reranker rewards chains that
 ## Honest limitations
 
 - **The extractor is the ceiling.** Causal edges come from a verb lexicon +
-  discourse connectives + the dependency parser. Without spaCy installed, the
-  rule fallback gets chain *topology* right but picks coarser event anchors
-  (e.g. "overheated" rather than "reactor"). Install the spaCy model for clean
-  noun-phrase events. In production, replace the extractor with a trained
-  relation-extraction / OpenIE model.
-- **The "dense" channel is a hashed-trigram stand-in**, not a real sentence
-  encoder. Swap in SentenceTransformers / Voyage / OpenAI embeddings.
-- **The reranker is lexical-overlap**, a stand-in for a cross-encoder
-  (Cohere/Voyage rerank). The seam is `GraphRAG._rerank`.
-- **Implicit causation** ("the bridge was wet; cars skidded") is not captured —
-  only explicitly marked relations. This is a deliberate precision/recall
-  trade-off; loosen it by adding adjacency-with-temporal-order heuristics.
+  discourse connectives + the dependency parser. In production, replace the
+  extractor with a trained relation-extraction / OpenIE model.
+- **Implicit causation is now partially handled** via an adjacency + state-change
+  heuristic: consecutive sentences where the second contains a state-change verb
+  (failed, collapsed, skidded, …) and no explicit connective get a weak
+  `implicit_trigger` edge. This recovers cases like "the bridge was wet. Cars
+  skidded." but misses purely inferential causation with no state-change signal.
+- **The "dense" channel uses SentenceTransformers** (`all-MiniLM-L6-v2`) by
+  default. Falls back to a hashed-trigram stand-in if the package is not
+  installed. For best results use a domain-specific encoder or Voyage/OpenAI.
+- **The reranker blends lexical overlap with semantic similarity** from the dense
+  encoder: the query embedding is compared against the mean of the chain's node
+  embeddings. The seam is `GraphRAG._rerank`; swap in a cross-encoder
+  (Cohere/Voyage rerank) for even stronger results.
 - This is a precision instrument for *causal/consequential* questions. For
   general factoid retrieval, keep a standard hybrid retriever alongside it and
   route by query type.
 
 ## Production swap-in points
 
-- `causal_extractor.extract_edges` -> trained relation extractor / LLM OpenIE
-- `retrievers.HashingDense` -> real embedding model + ANN index (FAISS/Qdrant)
-- `GraphRAG._rerank` -> cross-encoder reranker
+- `causal_extractor.extract_edges` → trained relation extractor / LLM OpenIE
+- `causal_extractor.STATE_CHANGE_VERBS` → extend with domain-specific verbs to
+  improve implicit causation recall
+- `retrievers.SentenceTransformerDense` → swap model name for a domain-specific
+  encoder; or replace with an ANN-indexed encoder (FAISS/Qdrant)
+- `GraphRAG._rerank` → replace with a cross-encoder (Cohere/Voyage rerank) for
+  full semantic reranking; the current blended scorer is a strong baseline
 - store the graph in a real graph DB (Neo4j) and the VSA edge vectors as packed
   bits with a popcount index for sub-millisecond structural lookup

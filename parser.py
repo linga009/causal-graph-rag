@@ -135,7 +135,10 @@ def _fallback_triples(text: str) -> List[Triple]:
         right = [w for w in right_raw if w not in _STOP and w not in _AUX]
         if not left or not right:
             continue
-        left_head, right_head = left[-1], right[-1]
+        # Capture up to two content words so compound nouns are preserved
+        # ("coolant valve" instead of just "valve")
+        left_head = " ".join(left[-2:])
+        right_head = " ".join(right[-2:])
         if passive:
             agent, patient = right_head, left_head
         else:

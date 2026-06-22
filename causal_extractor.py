@@ -1,26 +1,22 @@
 """
 causal_extractor.py
 ===================
-Extract DIRECTED causal/consequential edges from text — the structure that
-chunking + embedding destroys.
+Extract DIRECTED causal/consequential edges from text.
+
+Two backends for intra-sentence extraction:
+  * spaCy  (preferred) — dependency-parse subject/object/passive properly,
+    handles compound nouns, passive voice ("Y was triggered by X"), and
+    xsubj relations. Requires: pip install spacy && python -m spacy download en_core_web_sm
+  * Rule   (fallback)  — the original SVO + CAUSAL_VERBS approach; works
+    offline with no extra packages.
 
 Two sources of edges:
-
   (A) INTRA-SENTENCE   "X causes Y", "Y is triggered by X", "X prevents Y"
-      Parsed via the SVO triple parser; the verb's class gives polarity.
+  (B) INTER-SENTENCE   Discourse connectives ("as a result", "consequently",
+                       "because", "due to") linking events across sentences.
 
-  (B) INTER-SENTENCE   "The reactor overheated. As a result, the valve failed.
-                        This triggered a shutdown."
-      Discourse connectives ("as a result", "consequently", "this triggered",
-      "therefore", "led to", "because of this") link the SUBJECT/event of one
-      sentence to the next, rebuilding the chain across chunk boundaries.
-
-Output: a list of CausalEdge(cause, relation, effect, polarity, source_sent).
-Polarity: +1 promotes/produces, -1 prevents/reduces. Direction is always
-cause -> effect.
-
-Dependency-light: uses the existing rule/spaCy parser from parser.py plus a
-connective lexicon. Swap in a trained relation-extraction model in production.
+Output: List[CausalEdge(cause, relation, effect, polarity, source_sent)].
+Polarity: +1 promotes/produces, -1 prevents/reduces.
 """
 
 from __future__ import annotations
@@ -33,8 +29,6 @@ from vsa_core import Triple
 
 
 # --- verb -> (canonical relation, polarity) -------------------------------- #
-# polarity +1 : cause brings effect about / increases it
-# polarity -1 : cause suppresses / reduces / prevents effect
 CAUSAL_VERBS = {
     "cause": ("cause", +1), "causes": ("cause", +1), "caused": ("cause", +1),
     "trigger": ("trigger", +1), "triggers": ("trigger", +1), "triggered": ("trigger", +1),
@@ -66,10 +60,50 @@ FORWARD_CONNECTIVES = [
     "as a result", "consequently", "therefore", "thus", "hence",
     "this triggered", "this caused", "this led to", "which led to",
     "because of this", "so that", "resulting in", "leading to", "and so",
+    # temporal sequencing — strong enough signal to treat as causal
+    "subsequently", "afterwards", "whereupon", "following this",
+    "after which", "shortly after", "at that point", "after this",
 ]
 # Connectives that mean "THIS clause is caused by what FOLLOWS".
 BACKWARD_CONNECTIVES = ["because", "due to", "owing to", "as a consequence of",
                         "caused by", "triggered by", "resulting from"]
+
+# State-change verbs: when sentence N+1 contains one of these and has no
+# explicit connective, consecutive-sentence adjacency is treated as implicit
+# causation from sentence N.
+STATE_CHANGE_VERBS = {
+    "failed", "fail", "fails", "failing",
+    "broke", "break", "breaks", "broken", "breaking",
+    "stopped", "stop", "stops", "stopping",
+    "collapsed", "collapse", "collapses", "collapsing",
+    "crashed", "crash", "crashes", "crashing",
+    "died", "die", "dies", "dying",
+    "halted", "halt", "halts", "halting",
+    "fell", "fall", "falls", "falling",
+    "rose", "rise", "rises", "rising",
+    "dropped", "drop", "drops", "dropping",
+    "surged", "surge", "surges", "surging",
+    "spiked", "spike", "spikes", "spiking",
+    "skidded", "skid", "skids", "skidding",
+    "exploded", "explode", "explodes", "exploding",
+    "ruptured", "rupture", "ruptures", "rupturing",
+    "leaked", "leak", "leaks", "leaking",
+    "overflowed", "overflow", "overflows",
+    "froze", "freeze", "freezes", "frozen",
+    "shut", "shuts", "shutting",
+    "started", "start", "starts", "starting",
+    "began", "begin", "begins",
+    "went", "goes",
+    "became", "become", "becomes", "becoming",
+    "turned", "turn", "turns",
+    "triggered", "trigger", "triggers",
+    "activated", "activate", "activates",
+    "initiated", "initiate", "initiates",
+    "occurred", "occur", "occurs",
+    "happened", "happen", "happens",
+    "emerged", "emerge", "emerges",
+    "appeared", "appear", "appears",
+}
 
 
 @dataclass
@@ -91,12 +125,144 @@ _NON_EVENTS = {
     "consequence", "the", "a", "an", "such", "which", "there", "here",
     "as", "so", "then", "thus", "hence", "therefore",
 }
-# Determiners/adjectives to skip when scanning for the head noun.
 _SKIP_HEAD = {"the", "a", "an", "this", "that", "these", "those", "its",
               "their", "his", "her", "our", "your", "my", "some", "any",
               "emergency", "coolant", "power", "main", "first", "second",
               "subsequent", "resulting", "following", "entire", "whole"}
 
+
+# --------------------------------------------------------------------------- #
+#  spaCy-based intra-sentence extraction
+# --------------------------------------------------------------------------- #
+
+_spacy_nlp = None  # lazy singleton
+
+
+def _get_nlp():
+    global _spacy_nlp
+    if _spacy_nlp is not None:
+        return _spacy_nlp
+    try:
+        import spacy
+        _spacy_nlp = spacy.load("en_core_web_sm")
+        return _spacy_nlp
+    except (ImportError, OSError):
+        return None
+
+
+def _compound_span(token) -> str:
+    """Return '<compound modifiers> <head>' as a lowercase string."""
+    parts = [c.text for c in token.lefts if c.dep_ == "compound"]
+    parts.append(token.text)
+    return " ".join(parts).lower().strip()
+
+
+_PRONOUNS = {"this", "that", "these", "those", "it", "they", "he", "she", "we", "i"}
+
+
+def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
+    """Extract causal edges using spaCy dependency parse.
+    Returns None if spaCy or the model is unavailable (triggers rule fallback).
+
+    Handles three patterns:
+      (1) Active:  nsubj -> VERB -> dobj/pobj
+      (2) Passive: nsubjpass <- VERB (by-agent -> pobj)
+      (3) Participial amod: "The outage disrupted operations"
+          where small model tags the verb as amod of the dobj with
+          an npadvmod for the subject-like argument.
+    """
+    nlp = _get_nlp()
+    if nlp is None:
+        return None
+
+    edges: List[CausalEdge] = []
+    doc = nlp(sent)
+
+    for token in doc:
+        lemma = token.lemma_.lower()
+        if lemma not in CAUSAL_VERBS:
+            continue
+        rel, pol = CAUSAL_VERBS[lemma]
+
+        # Pattern 3: participial amod — small model misparses active sentences
+        # e.g. "The power outage disrupted hospital operations."
+        #   ROOT=operations, disrupted=amod(operations), outage=npadvmod(disrupted)
+        # The nominal agent attaches to the verb token, not to the head noun.
+        if token.dep_ == "amod" and token.head.pos_ in ("NOUN", "PROPN"):
+            effect_txt = _compound_span(token.head)
+            for child in token.children:
+                if child.dep_ in ("npadvmod", "nsubj"):
+                    cause_txt = _compound_span(child)
+                    if cause_txt and effect_txt and cause_txt != effect_txt:
+                        edges.append(CausalEdge(cause_txt, rel, effect_txt, pol, sent))
+            continue  # don't also try patterns 1/2 for the same token
+
+        # Find syntactic subject — filter pronouns that coreference resolution
+        # would need to resolve (they add noise as standalone graph nodes)
+        subjects = [c for c in token.children
+                    if c.dep_ in ("nsubj", "nsubjpass")
+                    and c.lower_ not in _PRONOUNS]
+        # Objects: direct object OR prepositional object ("led to X")
+        objects = [c for c in token.children if c.dep_ in ("dobj", "attr")]
+        if not objects:
+            for prep in (c for c in token.children if c.dep_ == "prep"):
+                objects += [gc for gc in prep.children if gc.dep_ == "pobj"]
+
+        is_passive = any(c.dep_ == "nsubjpass" for c in token.children)
+
+        if is_passive:
+            # Pattern 2: "Y was triggered by X" -> cause=X, effect=Y
+            effect_tokens = subjects
+            cause_tokens = []
+            for c in token.children:
+                if c.dep_ == "agent":
+                    cause_tokens += [gc for gc in c.children if gc.dep_ == "pobj"]
+            if cause_tokens:
+                for eff in effect_tokens:
+                    for cau in cause_tokens:
+                        e_txt = _compound_span(eff)
+                        c_txt = _compound_span(cau)
+                        if e_txt and c_txt and e_txt != c_txt:
+                            edges.append(CausalEdge(c_txt, rel, e_txt, pol, sent))
+        else:
+            # Pattern 1: "X caused Y"
+            for subj in subjects:
+                for obj in objects:
+                    s_txt = _compound_span(subj)
+                    o_txt = _compound_span(obj)
+                    if s_txt and o_txt and s_txt != o_txt:
+                        edges.append(CausalEdge(s_txt, rel, o_txt, pol, sent))
+
+    return edges
+
+
+# --------------------------------------------------------------------------- #
+#  Rule-based intra-sentence extraction (original approach, always available)
+# --------------------------------------------------------------------------- #
+
+def _intra_rule(sent: str) -> List[CausalEdge]:
+    edges = []
+    for tr in parse_triples(sent):
+        verb = tr.action.lower()
+        if verb in CAUSAL_VERBS:
+            rel, pol = CAUSAL_VERBS[verb]
+            edges.append(CausalEdge(tr.agent, rel, tr.patient, pol, sent))
+    return edges
+
+
+def _intra_edges(sent: str) -> List[CausalEdge]:
+    """Try spaCy first; fall back to rule-based when spaCy finds nothing.
+    This catches small-model parser errors (e.g. passive participials tagged amod)
+    without losing the compound-noun benefit when spaCy parses correctly."""
+    result = _intra_spacy(sent)
+    if result:          # spaCy available AND found at least one edge
+        return result
+    return _intra_rule(sent)
+
+
+# --------------------------------------------------------------------------- #
+#  Inter-sentence chaining (connective-based, backend-agnostic)
+# --------------------------------------------------------------------------- #
 
 def _strip_connectives(sentence: str) -> str:
     low = sentence.lower().strip()
@@ -107,44 +273,74 @@ def _strip_connectives(sentence: str) -> str:
 
 
 def _event_head(sentence: str) -> Optional[str]:
-    """The event/entity a clause is about: the head noun of its subject.
-    Strips leading discourse connectives and skips pronouns/determiners so
-    'As a result, the coolant valve failed' -> 'valve', not 'result'."""
+    """The event/entity a clause is about: head noun of its subject."""
     cleaned = _strip_connectives(sentence)
 
-    # try the parser first, but reject non-event anchors
     trips = parse_triples(cleaned)
     if trips:
         cand = trips[0].agent or trips[0].patient
         if cand and cand not in _NON_EVENTS:
             return cand
 
-    # fallback: first content noun-ish token after skipping determiners/adjs
     words = [_clean(w) for w in cleaned.split()]
-    for w in words:
-        if w and len(w) > 2 and w not in _NON_EVENTS and w not in _SKIP_HEAD:
-            # stop at the verb — subject head is the last noun before it
-            if w in CAUSAL_VERBS:
-                break
-            head = w
-        else:
-            continue
-        # keep scanning: we want the noun closest to the verb (compound head)
-    # simpler: collect candidate nouns before the first verb, take the last
     candidates = []
     for w in words:
         if w in CAUSAL_VERBS or w in ("failed", "happened", "occurred", "was", "were"):
             break
         if w and len(w) > 2 and w not in _NON_EVENTS and w not in _SKIP_HEAD:
             candidates.append(w)
-    if candidates:
-        return candidates[-1]
-    return None
+    if not candidates:
+        return None
+    # Return up to two content words so compound nouns are preserved
+    # (e.g. "coolant valve" instead of just "valve")
+    return " ".join(candidates[-2:]) if len(candidates) >= 2 else candidates[-1]
 
 
 def _sentences(text: str) -> List[str]:
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
 
+
+# --------------------------------------------------------------------------- #
+#  Implicit causation: adjacency + state-change heuristic
+# --------------------------------------------------------------------------- #
+
+def _implicit_edges(sents: List[str], explicit_pairs: set) -> List[CausalEdge]:
+    """Create weak implicit_trigger edges for consecutive sentences where:
+      - sentence N+1 contains a state-change verb
+      - no explicit causal or backward connective is present in sentence N+1
+      - the (cause_head, effect_head) pair is not already captured explicitly
+
+    This catches "the bridge was wet. Cars skidded." — causation implied by
+    adjacency and the state-change nature of the second event.
+    """
+    edges: List[CausalEdge] = []
+    for i in range(1, len(sents)):
+        s_prev = sents[i - 1]
+        s_curr = sents[i]
+        low = s_curr.lower()
+
+        if any(c in low for c in FORWARD_CONNECTIVES + BACKWARD_CONNECTIVES):
+            continue
+
+        words = [w.rstrip(".,;:!?") for w in low.split()]
+        if not any(w in STATE_CHANGE_VERBS for w in words):
+            continue
+
+        prev_head = _event_head(s_prev)
+        curr_head = _event_head(s_curr)
+
+        if (prev_head and curr_head and prev_head != curr_head
+                and (prev_head, curr_head) not in explicit_pairs):
+            edges.append(CausalEdge(
+                prev_head, "implicit_trigger", curr_head, +1,
+                f"{s_prev} {s_curr}",
+            ))
+    return edges
+
+
+# --------------------------------------------------------------------------- #
+#  Main entry point
+# --------------------------------------------------------------------------- #
 
 def extract_edges(text: str) -> List[CausalEdge]:
     edges: List[CausalEdge] = []
@@ -154,11 +350,7 @@ def extract_edges(text: str) -> List[CausalEdge]:
         low = sent.lower()
 
         # (A) intra-sentence causal triples
-        for tr in parse_triples(sent):
-            verb = tr.action.lower()
-            if verb in CAUSAL_VERBS:
-                rel, pol = CAUSAL_VERBS[verb]
-                edges.append(CausalEdge(tr.agent, rel, tr.patient, pol, sent))
+        edges.extend(_intra_edges(sent))
 
         # (B) inter-sentence chaining via forward connectives
         fwd_hit = next((c for c in FORWARD_CONNECTIVES if c in low), None)
@@ -166,7 +358,6 @@ def extract_edges(text: str) -> List[CausalEdge]:
             prev_event = _event_head(sents[idx - 1])
             this_event = _event_head(sent)
             if prev_event and this_event and prev_event != this_event:
-                # polarity from any causal verb present, else default +1
                 pol = +1
                 rel = "leads_to"
                 for v, (r, p) in CAUSAL_VERBS.items():
@@ -176,8 +367,7 @@ def extract_edges(text: str) -> List[CausalEdge]:
                 edges.append(CausalEdge(prev_event, rel, this_event, pol,
                                         f"{sents[idx-1]} {sent}"))
 
-        # (B') backward connectives inside one sentence:
-        #      "Y happened because of X"  -> X causes Y
+        # (B') backward connectives inside one sentence: "Y happened because of X"
         bwd_hit = next((c for c in BACKWARD_CONNECTIVES if c in low), None)
         if bwd_hit:
             parts = re.split(re.escape(bwd_hit), low, maxsplit=1)
@@ -188,7 +378,11 @@ def extract_edges(text: str) -> List[CausalEdge]:
                     edges.append(CausalEdge(cause_head, "lead_to", effect_head,
                                             +1, sent))
 
-    # de-duplicate identical edges, keep first provenance
+    # Implicit causation pass: adjacency + state-change heuristic
+    explicit_pairs = {(e.cause, e.effect) for e in edges}
+    edges.extend(_implicit_edges(sents, explicit_pairs))
+
+    # de-duplicate identical edges
     seen = set()
     uniq = []
     for e in edges:
