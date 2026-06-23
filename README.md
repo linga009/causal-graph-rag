@@ -303,6 +303,18 @@ The Neo4j backend implements the same interface as in-memory CausalGraph, so it'
 
 ---
 
+## Domain-Specific Guidance
+
+Evaluated on healthcare, finance, and manufacturing narratives. See [DOMAINS.md](DOMAINS.md) for:
+- Domain-specific performance metrics
+- When the system excels (manufacturing root cause) vs struggles (finance contagion)
+- Recommended configurations per domain
+- Guidance on lexicon augmentation and fine-tuning
+
+**Quick summary:** Perfect faithfulness (1.00) and high precision (0.97) across all domains. Recall varies: 0.78 (healthcare) → 0.29 (manufacturing) → 0.20 (finance). LLM full extraction improves recall 2–3×.
+
+---
+
 ## Advanced: Relation Extractors
 
 ### Coreference Resolution (built-in)
