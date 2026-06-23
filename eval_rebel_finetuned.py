@@ -82,13 +82,12 @@ def evaluate_extractors(domain: str):
                 print(f"  SKIPPED: Fine-tuned model not found at {model_path}")
                 continue
             try:
-                from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-                tokenizer = AutoTokenizer.from_pretrained(model_path)
-                model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
-                # Would use this model for extraction, but requires custom logic
-                print("  (Fine-tuned extraction requires custom pipeline - skipped for now)")
-                continue
+                from causal_extractor import extract_edges_hybrid
+                rebel_ft = REBELRelationExtractor(device="cpu", model_name=model_path)
+                edges = extract_edges_hybrid(corpus, rebel_ft, mode="full")
+                n_edges = len(edges)
+                for e in edges:
+                    rag.graph.add_edge(e)
             except ImportError:
                 print("  SKIPPED: transformers not installed")
                 continue

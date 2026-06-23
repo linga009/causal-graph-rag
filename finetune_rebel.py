@@ -224,8 +224,8 @@ def finetune_rebel(domain: str, output_dir: str, epochs: int = 3) -> None:
     train_file = f"rebel_{domain}_train.txt"
     create_training_data(domain, train_file)
 
-    # Load examples
-    examples = ALL_EXAMPLES[domain]
+    # Load examples — convert dataclasses to dicts for HF Dataset
+    examples = [{"text": e.text, "relations": e.relations} for e in ALL_EXAMPLES[domain]]
 
     # Tokenize
     model_name = "Babelscape/rebel-large"
@@ -233,9 +233,9 @@ def finetune_rebel(domain: str, output_dir: str, epochs: int = 3) -> None:
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
     def preprocess(example):
-        relations_str = " | ".join(example.relations)
+        relations_str = " | ".join(example["relations"])
         inputs = tokenizer(
-            example.text, max_length=512, truncation=True, padding="max_length"
+            example["text"], max_length=512, truncation=True, padding="max_length"
         )
         labels = tokenizer(
             relations_str, max_length=128, truncation=True, padding="max_length"
@@ -262,7 +262,7 @@ def finetune_rebel(domain: str, output_dir: str, epochs: int = 3) -> None:
         model=model,
         args=training_args,
         train_dataset=dataset,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
     )
 
     print("Starting training...")

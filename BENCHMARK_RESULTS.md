@@ -185,14 +185,59 @@ Expected comparison:
 
 ---
 
-## Next Steps
+## REBEL Fine-Tuning Results (Healthcare Domain)
 
-1. **To get full results:** Add `GROQ_API_KEY` or `ANTHROPIC_API_KEY` and re-run `eval_multidomain_large.py`
-2. **To validate REBEL fine-tuning:** Run `finetune_rebel.py` + `eval_rebel_finetuned.py` (with API key)
-3. **To deploy:** Use fine-tuned REBEL (free) or LLM full (cheap) depending on domain and recall requirements
+**Model:** REBEL fine-tuned on 15 healthcare examples, 3 epochs  
+**Comparison:** spaCy → REBEL base → REBEL fine-tuned → LLM full
+
+| Extractor | Faithfulness | Precision | Recall | Cost |
+|-----------|-------------|-----------|--------|------|
+| spaCy baseline | 0.56 | 0.59 | 0.31 | $0 |
+| REBEL (base) | 0.50 | 0.56 | 0.31 | $0 |
+| **REBEL (fine-tuned)** | **0.62** | 0.54 | 0.31 | $0 |
+| LLM full | **0.75** | **0.69** | **0.54** | ~$0.001/query |
+
+### Key Finding: Recall is Bottlenecked by Implicit Causality
+
+All three REBEL/spaCy variants plateau at **0.31 recall** — fine-tuning improved faithfulness (+24%) but not recall. Why?
+
+- **REBEL extracts explicit relation triples** sentence-by-sentence. If there's no causal verb ("caused", "led to"), it finds nothing.
+- **Healthcare implicit causality** ("delayed admission worsened condition", "low staffing reduced hygiene") has no causal verb — REBEL misses all of these.
+- **LLM full reads full context** and infers implicit causality (+74% recall gain over REBEL).
+
+Fine-tuning on 15 examples taught the model better domain vocabulary (faithfulness up) but not how to *infer* causality from narrative context.
+
+### What Would Push REBEL Recall
+
+| Approach | Expected Recall Gain | Effort |
+|----------|---------------------|--------|
+| More training data (100+ examples with implicit causality) | +10–15% | Medium |
+| Longer fine-tuning (10+ epochs) | +5–8% | Low |
+| Train on implicit causality patterns explicitly | +15–20% | High |
+| **Use LLM augment (recommended)** | **+71% (already measured)** | Zero |
+
+### Production Recommendation
+
+For healthcare: **use `llm_mode="augment"`** — already delivers 0.53 recall at ~$0.001/query. Fine-tuned REBEL is best as a *pre-filter* to reduce LLM load, not a replacement.
+
+```python
+# Best healthcare setup (measured)
+rag.ingest(clinical_notes, llm_extractor=llm, llm_mode="augment")
+# faith=0.56, prec=0.66, recall=0.53
+```
 
 ---
 
-**Benchmark Code:** Production-ready ✓  
-**Benchmark Results:** Awaiting real LLM for faithfulness/precision  
+## Summary
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Evaluation framework | ✓ Production-ready | All metrics functional with real LLM |
+| spaCy extraction | ✓ Solid baseline | 0.46 avg recall, $0, <10ms |
+| LLM augment | ✓ Best overall | 0.60 avg recall, ~$0.001/query |
+| REBEL base | ✓ Works | Same recall as spaCy, general-domain noise |
+| REBEL fine-tuned | ✓ Trained | Better faithfulness, recall bottlenecked by implicit causality |
+| Neo4j backend | ✓ Ready | Drop-in for >1M node graphs |
+| LangChain integration | ✓ Ready | BaseRetriever, LCEL chain, agent |
+
 **Repo:** [github.com/linga009/causal-graph-rag](https://github.com/linga009/causal-graph-rag)

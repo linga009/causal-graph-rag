@@ -618,9 +618,10 @@ class REBELRelationExtractor:
         # Add more as needed — these are the most common in incident/causal text
     }
 
-    def __init__(self, device: str = "cpu", batch_size: int = 8) -> None:
+    def __init__(self, device: str = "cpu", batch_size: int = 8, model_name: str = "Babelscape/rebel-large") -> None:
         self.device = device
         self.batch_size = batch_size
+        self._model_name = model_name
         self._model = None
         self._tokenizer = None
 
@@ -630,9 +631,8 @@ class REBELRelationExtractor:
             return
         try:
             from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-            model_name = "Babelscape/rebel-large"
-            self._tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self._model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(self.device)
+            self._tokenizer = AutoTokenizer.from_pretrained(self._model_name)
+            self._model = AutoModelForSeq2SeqLM.from_pretrained(self._model_name).to(self.device)
             self._model.eval()
         except ImportError:
             raise ImportError(
