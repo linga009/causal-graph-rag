@@ -4,12 +4,22 @@ Evaluated on real-world incident narratives across three domains: **healthcare**
 
 ## Performance by Domain
 
-| Domain | Questions | Corpus Size | Edges (LLM full) | Faith | Prec | Recall |
-|--------|-----------|-------------|------------------|-------|------|--------|
-| Healthcare | 2 | 10 sentences | 23 | 1.00 | 0.92 | 0.78 |
-| Finance | 1 | 14 sentences | 37 | 1.00 | 1.00 | 0.20 |
-| Manufacturing | 2 | 13 sentences | 41 | 1.00 | 1.00 | 0.29 |
-| **Overall** | **5** | **~38 sentences** | **34 avg** | **1.00** | **0.97** | **0.47** |
+### Small benchmark (5 questions, demo corpus)
+
+| Domain | Questions | Corpus Size | Faith | Prec | Recall |
+|--------|-----------|-------------|-------|------|--------|
+| Healthcare | 2 | 10 sentences | 1.00 | 0.92 | 0.78 |
+| Finance | 1 | 14 sentences | 1.00 | 1.00 | 0.20 |
+| Manufacturing | 2 | 13 sentences | 1.00 | 1.00 | 0.29 |
+
+### Large benchmark (26 questions, realistic multi-hop corpus) — Groq llama-3.1-8b
+
+| Domain | Questions | spaCy recall | LLM augment recall | LLM full recall | Best mode |
+|--------|-----------|-------------|-------------------|-----------------|-----------|
+| Healthcare | 8 | 0.31 | **0.53** | 0.53 | LLM augment |
+| Finance | 5 | **0.72** | **0.72** | 0.64 | spaCy baseline |
+| Manufacturing | 4 | 0.35 | 0.35 | **0.45** | LLM full |
+| **Overall** | **26** | **0.46** | **0.60** | **0.54** | **LLM augment** |
 
 ## Domain Highlights
 

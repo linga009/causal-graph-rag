@@ -15,6 +15,21 @@ from typing import List
 sys.path.insert(0, os.path.dirname(__file__))
 
 
+def _load_env(path: str = ".env") -> None:
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+    except FileNotFoundError:
+        pass
+
+_load_env(os.path.join(os.path.dirname(__file__), ".env"))
+
+
 @dataclass
 class EvalSample:
     question: str
