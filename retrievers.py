@@ -1,21 +1,35 @@
 """
 retrievers.py
 =============
-Three complementary retrieval channels used to pick GRAPH ENTRY NODES, fused
+Four complementary retrieval channels used to pick GRAPH ENTRY NODES, fused
 with Reciprocal Rank Fusion (RRF). Each channel covers the others' blind spots:
 
-  * BM25      — exact terms, IDs, proper nouns, acronyms (dense smooths these).
-  * Dense     — paraphrase / synonyms (BM25 misses these).
-  * VSA       — causal DIRECTION (both others are direction-blind).
+  * BM25            — exact terms, IDs, proper nouns, acronyms.
+  * Dense           — paraphrase / synonyms (BM25 misses these).
+  * VSA             — causal DIRECTION (both others are direction-blind).
+  * PathSignature   — sequential order and trajectory shape of the narrative.
 
-Dependency-light: BM25 is implemented from scratch; the "dense" channel is a
-hashed-bag-of-trigrams embedding (a stand-in for a real sentence encoder —
-swap in SentenceTransformers / OpenAI / Voyage in production). RRF is
-parameter-free (k=60) and scale-agnostic, so mixing these heterogeneous
-scorers is safe.
+PathSignature channel (Rough Path Theory):
+  A document passage is treated not as a static point in embedding space but
+  as a continuous parametric curve X_t ∈ R^d.  The truncated path signature
+  S(X)_{s,t} = (1, ∫dX, ∫∫dX⊗dX, ∫∫∫dX⊗dX⊗dX, ...)
+  is a complete, fixed-size characterisation of the path up to level M.
 
-These return ranked NODES (events). The pipeline then traverses the causal
-graph from those nodes to assemble whole chains.
+  Non-commutativity of the iterated integrals (∫dX_i dX_j ≠ ∫dX_j dX_i)
+  mathematically guarantees that the *order* in which events appear is encoded
+  — chunking-invariant sequential structure that static embeddings cannot
+  represent.
+
+  Implementation notes:
+    • Sentence embeddings (d=384) are projected to d=proj_dim (default 16)
+      via a fixed random Gaussian matrix before computing signatures.
+      This controls the d^M explosion: at M=3, d=16 gives 4368 dims.
+    • Signatures are computed via Chen's recursive formula applied to
+      the discrete sequence of projected sentence embeddings.
+    • Queries are augmented with their top BM25 context sentences so that
+      both the query path and document paths are multi-point trajectories.
+
+Reference: Lyons (1998), Differential equations driven by rough signals.
 """
 
 from __future__ import annotations
@@ -151,6 +165,151 @@ def make_dense() -> "HashingDense | SentenceTransformerDense":
         return SentenceTransformerDense()
     except Exception:
         return HashingDense()
+
+
+# --------------------------------------------------------------------------- #
+#  Path Signature channel (Rough Path Theory)
+# --------------------------------------------------------------------------- #
+class PathSignatureRetriever:
+    """
+    Retrieval via truncated path signatures of sentence-embedding trajectories.
+
+    Each graph node's associated text is embedded sentence-by-sentence to form
+    a discrete path X_0, X_1, ..., X_N in projected R^proj_dim space.  The
+    level-M truncated signature captures the sequential shape of the passage:
+
+        S^1 = Σ ΔX_i                         (displacement, d dims)
+        S^2 = Σ_{i<j} ΔX_i ⊗ ΔX_j           (area / ordering, d² dims)
+        S^3 = Σ_{i<j<k} ΔX_i ⊗ ΔX_j ⊗ ΔX_k  (triple ordering, d³ dims)
+
+    For d=16, M=3 this gives 16+256+4096 = 4 368 dimensions — compact enough
+    for cosine inner-product search, yet encoding genuine sequential structure.
+    """
+
+    def __init__(self, embed_dim: int = 384, proj_dim: int = 16, level: int = 3):
+        self.embed_dim = embed_dim
+        self.proj_dim = proj_dim
+        self.level = level
+        self._proj: np.ndarray | None = None      # (embed_dim, proj_dim)
+        self._model = None
+        self._nodes: List[str] = []
+        self._sig_matrix: np.ndarray | None = None  # (N_nodes, sig_dim)
+        self._node_sents: Dict[str, List[str]] = {}  # for BM25 context injection
+
+    # -- random projection --------------------------------------------------- #
+    def _projection(self) -> np.ndarray:
+        if self._proj is None:
+            rng = np.random.default_rng(0xDEADBEEF)
+            P = rng.standard_normal((self.embed_dim, self.proj_dim)).astype(np.float32)
+            # Johnson-Lindenstrauss normalisation
+            P /= np.sqrt(self.proj_dim)
+            self._proj = P
+        return self._proj
+
+    # -- sentence encoder ---------------------------------------------------- #
+    def _encode(self, sentences: List[str]) -> np.ndarray:
+        """Return projected embeddings, shape (N, proj_dim)."""
+        if not sentences:
+            return np.zeros((0, self.proj_dim), dtype=np.float32)
+        if self._model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                self._model = SentenceTransformer("all-MiniLM-L6-v2")
+            except Exception:
+                # Fallback: random projections so the class still works
+                self._model = "random"
+        if self._model == "random":
+            rng = np.random.default_rng(abs(hash(sentences[0])) % (2**31))
+            return rng.standard_normal((len(sentences), self.proj_dim)).astype(np.float32)
+        embs = self._model.encode(sentences, convert_to_numpy=True,
+                                  normalize_embeddings=True)  # (N, embed_dim)
+        return (embs @ self._projection()).astype(np.float32)  # (N, proj_dim)
+
+    # -- path signature ------------------------------------------------------ #
+    @staticmethod
+    def _signature(path: np.ndarray, level: int) -> np.ndarray:
+        """
+        Truncated path signature via Chen's recursive formula.
+
+        path : (N, d)  — N waypoints in R^d
+        level: 1, 2 or 3
+
+        For each increment ΔX the running totals are updated *high-to-low*
+        to avoid using already-updated lower-level values in the same step:
+
+            S^3 += S^2_prev ⊗ ΔX
+            S^2 += S^1_prev ⊗ ΔX
+            S^1 += ΔX
+        """
+        N, d = path.shape
+        sig_dim = sum(d ** k for k in range(1, level + 1))
+        if N < 2:
+            return np.zeros(sig_dim, dtype=np.float32)
+
+        dX = np.diff(path, axis=0).astype(np.float32)  # (N-1, d)
+
+        S1 = np.zeros(d, dtype=np.float32)
+        S2 = np.zeros((d, d), dtype=np.float32) if level >= 2 else None
+        S3 = np.zeros((d, d, d), dtype=np.float32) if level >= 3 else None
+
+        for delta in dX:
+            # Update high-to-low (Chen's formula — order matters)
+            if level >= 3 and S3 is not None and S2 is not None:
+                S3 += np.einsum("jk,m->jkm", S2, delta, optimize=True)
+            if level >= 2 and S2 is not None:
+                S2 += np.outer(S1, delta)
+            S1 += delta
+
+        parts: List[np.ndarray] = [S1]
+        if level >= 2 and S2 is not None:
+            parts.append(S2.ravel())
+        if level >= 3 and S3 is not None:
+            parts.append(S3.ravel())
+        return np.concatenate(parts)
+
+    # -- split doc text into ordered sentences ------------------------------- #
+    @staticmethod
+    def _split(text: str) -> List[str]:
+        return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if len(s.strip()) > 5]
+
+    # -- public API ---------------------------------------------------------- #
+    def index(self, node_docs: Dict[str, str]) -> None:
+        self._nodes = list(node_docs.keys())
+        self._node_sents = {n: self._split(node_docs[n]) or [node_docs[n]]
+                            for n in self._nodes}
+        sigs = []
+        for node in self._nodes:
+            sents = self._node_sents[node]
+            path = self._encode(sents)
+            sigs.append(self._signature(path, self.level))
+        self._sig_matrix = np.stack(sigs).astype(np.float32)  # (N, sig_dim)
+
+    def score(self, query: str,
+              bm25_context: List[str] | None = None) -> List[Tuple[float, str]]:
+        """
+        Score nodes by inner product between their signature and the query
+        signature.
+
+        The query becomes a multi-point path by prepending BM25 context
+        sentences (in their original document order) before the query itself.
+        This lets the level-2 and level-3 components carry real sequential
+        information rather than being zero (as they would for a single point).
+        """
+        if self._sig_matrix is None or not self._nodes:
+            return []
+
+        path_sents = (bm25_context or []) + [query]
+        path = self._encode(path_sents)
+        q_sig = self._signature(path, self.level).astype(np.float32)
+
+        # Cosine-normalised inner product
+        q_norm = np.linalg.norm(q_sig) + 1e-9
+        d_norms = np.linalg.norm(self._sig_matrix, axis=1, keepdims=True) + 1e-9
+        scores = (self._sig_matrix / d_norms) @ (q_sig / q_norm)
+
+        out = [(float(s), n) for s, n in zip(scores.tolist(), self._nodes) if s > 0]
+        out.sort(key=lambda x: -x[0])
+        return out
 
 
 # --------------------------------------------------------------------------- #

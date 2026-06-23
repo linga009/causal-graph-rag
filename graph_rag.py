@@ -23,9 +23,9 @@ from typing import List, Optional, Tuple, Dict
 import numpy as np
 
 from vsa_core import Lexicon, Triple
-from causal_extractor import extract_edges
+from causal_extractor import extract_edges, extract_edges_hybrid
 from causal_graph import CausalGraph, GraphEdge
-from retrievers import BM25, HashingDense, make_dense, rrf_fuse, tokenize
+from retrievers import BM25, HashingDense, make_dense, PathSignatureRetriever, rrf_fuse, tokenize
 from parser import parse_triples
 from pipeline import MockLLM
 
@@ -67,22 +67,44 @@ class GraphRAG:
         self.graph = CausalGraph(self.lex)
         self.bm25 = BM25()
         self.dense = make_dense()
+        self.sig = PathSignatureRetriever()
         self.llm = llm or MockLLM()
         self.max_depth = max_depth
         self._node_docs: Dict[str, str] = {}
 
     # -- ingest -------------------------------------------------------------- #
-    def ingest(self, text: str, doc_id: str = "doc") -> int:
-        edges = extract_edges(text)
+    def ingest(self, text: str, doc_id: str = "doc",
+               llm_extractor: Optional[object] = None,
+               llm_mode: str = "augment") -> int:
+        """
+        Extract causal edges and build the retrieval indices.
+
+        Parameters
+        ----------
+        text          : Document text to ingest.
+        doc_id        : Identifier (unused internally, kept for API symmetry).
+        llm_extractor : Optional LLM (any .generate(str)->str object) to run
+                        alongside spaCy.  When supplied, uses hybrid extraction
+                        (borrowed from CausalRAG) to catch implicit causality
+                        that dependency parsing misses.
+        llm_mode      : "augment" — LLM only fills sentences spaCy missed.
+                        "full"    — LLM processes every sentence (highest recall,
+                        same cost profile as CausalRAG).
+        """
+        if llm_extractor is not None:
+            edges = extract_edges_hybrid(text, llm_extractor, mode=llm_mode)
+        else:
+            edges = extract_edges(text)
+
         for e in edges:
             self.graph.add_edge(e)
-            # accumulate the sentences each node appears in (for BM25/dense)
             for node in (e.cause, e.effect):
                 self._node_docs.setdefault(node, "")
                 if e.source_sent not in self._node_docs[node]:
                     self._node_docs[node] += " " + e.source_sent
         self.bm25.index(self._node_docs)
         self.dense.index(self._node_docs)
+        self.sig.index(self._node_docs)
         return len(edges)
 
     # -- entry-node selection (three-channel fusion) ------------------------- #
@@ -110,8 +132,15 @@ class GraphRAG:
         bm25_ranked = self.bm25.score(question)
         dense_ranked = self.dense.score(question)
 
-        fused = rrf_fuse([direct, vsa_ranked, bm25_ranked, dense_ranked],
-                         weights=[2.0, 1.2, 1.0, 1.0])   # direct match dominates
+        # Path signature channel: augment the query with top BM25 context
+        # sentences (in document order) so the query forms a multi-point path
+        # and levels 2 & 3 of the signature carry genuine sequential structure.
+        bm25_context = [self._node_docs.get(node, "")
+                        for _, node in bm25_ranked[:3] if node in self._node_docs]
+        sig_ranked = self.sig.score(question, bm25_context=bm25_context)
+
+        fused = rrf_fuse([direct, vsa_ranked, bm25_ranked, dense_ranked, sig_ranked],
+                         weights=[2.0, 1.2, 1.0, 1.0, 0.8])
         return fused[:top_n]
 
     # -- query direction ----------------------------------------------------- #
@@ -192,21 +221,80 @@ class GraphRAG:
         uniq.sort(key=lambda r: (-r.rerank_score, -r.rrf_score))
         return uniq[:top_k]
 
+    # -- causal path summarization (borrowed from CausalRAG) ---------------- #
+    def _causal_summary(self, question: str, chains: List[ChainResult]) -> str:
+        """
+        Compress retrieved causal chains into a single coherent narrative before
+        passing to the final generator.
+
+        Inspired by CausalRAG's "causal summary" stage: rather than feeding raw
+        chain text + provenance sentences verbatim, a dedicated LLM pass traces
+        the key path and compresses it.  This reduces context window usage and
+        removes noise from duplicate or peripheral edges.
+
+        Returns a compact causal paragraph (3-5 sentences).
+        """
+        chain_block = "\n".join(
+            f"Chain {i} [{c.direction}]: {c.text()}\n"
+            + "\n".join(f"  src: {s}" for s in c.provenance())
+            for i, c in enumerate(chains, 1)
+        )
+        prompt = (
+            "You are a causal reasoning assistant.\n"
+            "Given the causal chains below, write a single concise paragraph "
+            "(3-5 sentences) that summarises the KEY cause-effect relationships "
+            "relevant to the question. Preserve causal direction (use words like "
+            "'caused', 'led to', 'resulted in'). Do NOT add any information not "
+            "present in the chains.\n\n"
+            f"Causal chains:\n{chain_block}\n\n"
+            f"Question: {question}\n\n"
+            "Causal summary:"
+        )
+        return self.llm.generate(prompt)
+
     # -- generate ------------------------------------------------------------ #
-    def answer(self, question: str, top_k: int = 3) -> Tuple[str, List[ChainResult]]:
+    def answer(self, question: str, top_k: int = 3,
+               summarize: bool = False) -> Tuple[str, List[ChainResult]]:
+        """
+        Retrieve causal chains and generate an answer.
+
+        Parameters
+        ----------
+        question  : Natural-language query.
+        top_k     : Number of chains to retrieve.
+        summarize : When True, runs a dedicated causal-summary compression step
+                    before the final generation (borrowed from CausalRAG).
+                    Costs one extra LLM call but produces tighter, more coherent
+                    answers on multi-hop queries.
+        """
         chains = self.retrieve(question, top_k=top_k)
         if not chains:
             return ("No causal structure matching the query was found.", [])
-        ctx_lines = []
-        for i, c in enumerate(chains, 1):
-            ctx_lines.append(f"Causal chain {i}: {c.text()}")
-            for s in c.provenance():
-                ctx_lines.append(f"   source: {s}")
-        context = "\n".join(ctx_lines)
-        prompt = (
-            "Using the following RETRIEVED CAUSAL CHAINS as context, answer the "
-            "question. Each chain shows cause->effect direction explicitly; "
-            "respect that direction.\n\n"
-            f"Context:\n{context}\n\nQuestion: {question}\n"
-        )
+
+        if summarize:
+            # Two-step generation: compress first, then answer
+            causal_ctx = self._causal_summary(question, chains)
+            prompt = (
+                "You are a causal reasoning assistant. "
+                "Answer the question using ONLY the causal evidence provided. "
+                "Be direct and concise. Do not reference chain numbers or labels.\n\n"
+                f"Causal evidence:\n{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
+            )
+        else:
+            # Flatten provenance sentences (natural language) for clean context
+            seen_sents: set[str] = set()
+            prov_lines: list[str] = []
+            for c in chains:
+                for s in c.provenance():
+                    if s not in seen_sents:
+                        seen_sents.add(s)
+                        prov_lines.append(s)
+            causal_ctx = "\n".join(prov_lines)
+            prompt = (
+                "You are a causal reasoning assistant. "
+                "Answer the question using ONLY the evidence sentences provided. "
+                "Be direct and concise. Do not reference chain numbers or labels.\n\n"
+                f"Evidence:\n{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
+            )
+
         return self.llm.generate(prompt), chains

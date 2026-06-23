@@ -4,3 +4,5 @@ __pycache__/
 venv/
 .env
 .DS_Store
+*.pdf
+rinn_phd_text.txt

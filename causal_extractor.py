@@ -20,9 +20,11 @@ Polarity: +1 promotes/produces, -1 prevents/reduces.
 """
 
 from __future__ import annotations
+import json
 import re
+import textwrap
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from parser import parse_triples, _clean, _split_clauses
 from vsa_core import Triple
@@ -53,6 +55,20 @@ CAUSAL_VERBS = {
     "suppress": ("suppress", -1), "suppresses": ("suppress", -1),
     "block": ("block", -1), "blocks": ("block", -1), "blocked": ("block", -1),
     "inhibit": ("inhibit", -1), "inhibits": ("inhibit", -1),
+    # Purpose / goal verbs (common in policy, programme, and research documents)
+    "develop": ("develop", +1), "develops": ("develop", +1), "developed": ("develop", +1),
+    "advance": ("advance", +1), "advances": ("advance", +1), "advanced": ("advance", +1),
+    "investigate": ("investigate", +1), "investigates": ("investigate", +1),
+    "address": ("address", +1), "addresses": ("address", +1), "addressed": ("address", +1),
+    "equip": ("equip", +1), "equips": ("equip", +1), "equipped": ("equip", +1),
+    "benefit": ("benefit", +1), "benefits": ("benefit", +1),
+    "enhance": ("enhance", +1), "enhances": ("enhance", +1), "enhanced": ("enhance", +1),
+    "improve": ("improve", +1), "improves": ("improve", +1), "improved": ("improve", +1),
+    "predict": ("predict", +1), "predicts": ("predict", +1), "predicted": ("predict", +1),
+    "integrate": ("integrate", +1), "integrates": ("integrate", +1), "integrated": ("integrate", +1),
+    "inform": ("inform", +1), "informs": ("inform", +1), "informed": ("inform", +1),
+    "transform": ("transform", +1), "transforms": ("transform", +1), "transformed": ("transform", +1),
+    "empower": ("empower", +1), "empowers": ("empower", +1), "empowered": ("empower", +1),
 }
 
 # Connectives that mean "the PREVIOUS event caused THIS clause".
@@ -244,7 +260,7 @@ def _intra_rule(sent: str) -> List[CausalEdge]:
     edges = []
     for tr in parse_triples(sent):
         verb = tr.action.lower()
-        if verb in CAUSAL_VERBS:
+        if verb in CAUSAL_VERBS and tr.agent.lower() not in _PRONOUNS:
             rel, pol = CAUSAL_VERBS[verb]
             edges.append(CausalEdge(tr.agent, rel, tr.patient, pol, sent))
     return edges
@@ -391,3 +407,166 @@ def extract_edges(text: str) -> List[CausalEdge]:
             seen.add(key)
             uniq.append(e)
     return uniq
+
+
+# --------------------------------------------------------------------------- #
+#  LLM-assisted causal extraction  (borrowed from CausalRAG approach)
+# --------------------------------------------------------------------------- #
+
+class LLMEdgeExtractor:
+    """
+    Uses an LLM to extract causal edges from text, complementing the spaCy
+    extractor on sentences with implicit, metaphorical, or academic causality
+    that dependency parsing misses.
+
+    Borrowed from the CausalRAG paper (ACL 2025) idea of LLM-as-graph-builder,
+    but applied only to sentences where the spaCy/rule extractor found nothing
+    (augment mode) or to all sentences (full mode).
+
+    The LLM is prompted to return a strict JSON array so the output is
+    machine-parseable without a second parsing call.
+
+    Parameters
+    ----------
+    llm : any object with a .generate(prompt: str) -> str method
+        Works with MockLLM, GroqLLM, AnthropicLLM, or LangChainLLMAdapter.
+    mode : "augment" | "full"
+        "augment" (default) — LLM only processes sentences where spaCy/rules
+        found no edges.  Cheapest option: 0 LLM calls on well-parsed text.
+        "full" — LLM processes every sentence regardless.  Same cost profile
+        as CausalRAG, highest recall.
+    """
+
+    _PROMPT = textwrap.dedent("""\
+    Extract every CAUSAL relationship from the text below.
+    Return ONLY a valid JSON array, no explanation, no markdown.
+
+    Rules:
+    - Each item: {{"cause": "...", "relation": "...", "effect": "..."}}
+    - cause / effect  : short noun phrases, 1-5 words, lowercase
+    - relation        : single causal verb in base form (e.g. caused, triggered,
+                        led_to, reduced, increased, enabled, disrupted)
+    - Include explicit AND strongly implied causal links
+    - Omit pronouns (it, this, they) as cause or effect
+    - If no causal links exist, return []
+
+    Text:
+    {text}
+
+    JSON:""")
+
+    def __init__(self, llm: Any, mode: str = "augment") -> None:
+        self.llm = llm
+        self.mode = mode  # "augment" | "full"
+
+    def _parse_response(self, raw: str, source_sent: str) -> List[CausalEdge]:
+        """Parse LLM JSON output into CausalEdge objects."""
+        try:
+            # Strip markdown fences the LLM might add
+            cleaned = re.sub(r"```(?:json)?", "", raw).strip()
+            # Find the JSON array
+            match = re.search(r"\[.*\]", cleaned, re.DOTALL)
+            if not match:
+                return []
+            items = json.loads(match.group())
+        except (json.JSONDecodeError, ValueError):
+            return []
+
+        edges = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            cause = str(item.get("cause", "")).strip().lower()
+            relation = str(item.get("relation", "")).strip().lower().replace(" ", "_")
+            effect = str(item.get("effect", "")).strip().lower()
+            if not cause or not effect or not relation:
+                continue
+            if cause in _PRONOUNS or effect in _PRONOUNS:
+                continue
+            # Look up polarity from known verbs, default +1
+            pol = CAUSAL_VERBS.get(relation, ("", +1))[1]
+            edges.append(CausalEdge(cause, relation, effect, pol, source_sent))
+        return edges
+
+    def extract_sentence(self, sentence: str) -> List[CausalEdge]:
+        """Run LLM extraction on a single sentence."""
+        try:
+            raw = self.llm.generate(self._PROMPT.format(text=sentence))
+            return self._parse_response(raw, sentence)
+        except Exception:
+            return []
+
+    def extract(self, text: str) -> List[CausalEdge]:
+        """
+        Extract causal edges from full text using the LLM.
+        Processes sentence-by-sentence to keep prompts short and responses clean.
+        """
+        edges = []
+        for sent in _sentences(text):
+            edges.extend(self.extract_sentence(sent))
+        return edges
+
+
+def extract_edges_hybrid(
+    text: str,
+    llm: Any,
+    mode: str = "augment",
+) -> List[CausalEdge]:
+    """
+    Hybrid extraction: spaCy/rule extractor merged with LLM extractor.
+
+    Parameters
+    ----------
+    text : str
+        Document text to extract from.
+    llm  : object with .generate(prompt) -> str
+        Any LLM adapter.
+    mode : "augment" | "full"
+        "augment" — LLM only fills gaps (sentences where base extractor
+                    found no edges). Recommended for cost-sensitive use.
+        "full"    — LLM runs on all sentences. Higher recall, more API calls.
+
+    Returns
+    -------
+    Deduplicated list of CausalEdge, spaCy edges first then LLM-only edges.
+    """
+    llm_extractor = LLMEdgeExtractor(llm, mode=mode)
+    sents = _sentences(text)
+
+    # Base extraction (spaCy + rules) per sentence
+    base_edges: List[CausalEdge] = []
+    covered: set[int] = set()  # sentence indices where base found ≥1 edge
+    for i, sent in enumerate(sents):
+        sent_edges = _intra_edges(sent)
+        if sent_edges:
+            base_edges.extend(sent_edges)
+            covered.add(i)
+
+    # Inter-sentence edges from base extractor
+    base_edges_full = extract_edges(text)  # includes inter-sentence chaining
+    # Collect only the inter-sentence edges not already in per-sentence pass
+    intra_keys = {(e.cause, e.relation, e.effect) for e in base_edges}
+    for e in base_edges_full:
+        if (e.cause, e.relation, e.effect) not in intra_keys:
+            base_edges.append(e)
+
+    # LLM extraction
+    llm_edges: List[CausalEdge] = []
+    if mode == "augment":
+        # Only run LLM on sentences where base extractor found nothing
+        for i, sent in enumerate(sents):
+            if i not in covered:
+                llm_edges.extend(llm_extractor.extract_sentence(sent))
+    else:  # "full"
+        llm_edges = llm_extractor.extract(text)
+
+    # Merge, deduplicate — prefer base edges; LLM fills gaps
+    seen: set[tuple] = {(e.cause, e.relation, e.effect) for e in base_edges}
+    merged = list(base_edges)
+    for e in llm_edges:
+        key = (e.cause, e.relation, e.effect)
+        if key not in seen:
+            seen.add(key)
+            merged.append(e)
+
+    return merged

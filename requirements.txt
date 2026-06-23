@@ -1,14 +1,23 @@
-﻿numpy>=1.24
-sentence-transformers>=3.0   # auto-downloads all-MiniLM-L6-v2 on first use
-# Requires Microsoft Visual C++ Redistributable on Windows:
+numpy>=1.24
+sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
+
+# Windows: requires Microsoft Visual C++ Redistributable
 #   https://aka.ms/vs/17/release/vc_redist.x64.exe
 
-# --- optional: stronger causal extraction (passive voice, compound nouns) ---
-# Same VC++ requirement on Windows:
+# --- causal extraction (passive voice, compound nouns, amod patterns) ---
 # spacy>=3.7
 # then: python -m spacy download en_core_web_sm
 
-# --- optional: real LLM backends (replace MockLLM) ---
-# anthropic   # set ANTHROPIC_API_KEY=sk-ant-...  (Windows: set / Unix: export)
-# openai      # set OPENAI_API_KEY=sk-...
-# groq        # set GROQ_API_KEY=gsk_...
+# --- LangChain integration ---
+# langchain-core>=1.0
+# langchain>=1.0
+# langchain-groq>=1.0      # for ChatGroq
+# langchain-anthropic>=0.3  # for ChatAnthropic
+
+# --- LLM backends ---
+# groq        # set GROQ_API_KEY
+# anthropic   # set ANTHROPIC_API_KEY
+# openai      # set OPENAI_API_KEY
+
+# --- PDF ingestion (demo_rinn.py) ---
+# pypdf
