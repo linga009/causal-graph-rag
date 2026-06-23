@@ -19,5 +19,9 @@ sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
 # anthropic   # set ANTHROPIC_API_KEY
 # openai      # set OPENAI_API_KEY
 
+# --- Trained relation extractors (REBEL) ---
+# transformers>=4.30  # Hugging Face REBEL model
+# torch>=2.0         # PyTorch backend for transformers
+
 # --- PDF ingestion (demo_rinn.py) ---
 # pypdf
