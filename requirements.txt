@@ -23,5 +23,8 @@ sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
 # transformers>=4.30  # Hugging Face REBEL model
 # torch>=2.0         # PyTorch backend for transformers
 
+# --- Graph persistence (Neo4j) ---
+# neo4j>=5.0         # Neo4j driver for persistent graphs >1M nodes
+
 # --- PDF ingestion (demo_rinn.py) ---
 # pypdf

@@ -61,10 +61,63 @@ _BACKWARD_Q = ["why", "root cause", "caused by", "because", "reason for",
 
 
 class GraphRAG:
-    def __init__(self, dim: int = 10000, semantic_weight: int = 0,
-                 llm: Optional[object] = None, max_depth: int = 6):
+    def __init__(
+        self,
+        dim: int = 10000,
+        semantic_weight: int = 0,
+        llm: Optional[object] = None,
+        max_depth: int = 6,
+        neo4j_uri: Optional[str] = None,
+        neo4j_user: str = "neo4j",
+        neo4j_password: str = "password",
+        neo4j_database: str = "neo4j",
+    ):
+        """
+        Initialize GraphRAG with in-memory or Neo4j backend.
+
+        Parameters
+        ----------
+        dim : int
+            VSA hypervector dimension
+        semantic_weight : int
+            Weight for semantic similarity in VSA
+        llm : optional object
+            LLM for generation (defaults to MockLLM)
+        max_depth : int
+            Max chain depth for traversal
+        neo4j_uri : optional str
+            If provided, use Neo4j backend (e.g., "neo4j://localhost:7687")
+        neo4j_user : str
+            Neo4j username
+        neo4j_password : str
+            Neo4j password
+        neo4j_database : str
+            Neo4j database name
+        """
         self.lex = Lexicon(dim=dim, semantic_weight=semantic_weight)
-        self.graph = CausalGraph(self.lex)
+
+        # Choose backend: Neo4j or in-memory
+        if neo4j_uri:
+            try:
+                from neo4j_graph import Neo4jCausalGraph
+
+                self.graph = Neo4jCausalGraph(
+                    uri=neo4j_uri,
+                    user=neo4j_user,
+                    password=neo4j_password,
+                    database=neo4j_database,
+                    lex=self.lex,
+                )
+                self.using_neo4j = True
+            except ImportError:
+                raise ImportError(
+                    "neo4j package required for Neo4j backend. "
+                    "Install with: pip install neo4j>=5.0"
+                )
+        else:
+            self.graph = CausalGraph(self.lex)
+            self.using_neo4j = False
+
         self.bm25 = BM25()
         self.dense = make_dense()
         self.sig = PathSignatureRetriever()
@@ -298,3 +351,12 @@ class GraphRAG:
             )
 
         return self.llm.generate(prompt), chains
+
+    def close(self) -> None:
+        """Close database connections (for Neo4j backend)."""
+        if self.using_neo4j and hasattr(self.graph, "close"):
+            self.graph.close()
+
+    def __del__(self):
+        """Cleanup on deletion."""
+        self.close()
