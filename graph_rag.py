@@ -305,20 +305,54 @@ class GraphRAG:
         )
         return self.llm.generate(prompt)
 
+    # -- context assembly ---------------------------------------------------- #
+    @staticmethod
+    def _dedup_provenance(chains: List[ChainResult]) -> List[str]:
+        seen: set[str] = set()
+        out: List[str] = []
+        for c in chains:
+            for s in c.provenance():
+                if s not in seen:
+                    seen.add(s)
+                    out.append(s)
+        return out
+
+    def _build_context(self, chains: List[ChainResult], structured: bool) -> str:
+        """Assemble the LLM context from retrieved chains.
+
+        structured=True  : the causal CHAIN PATHS (with direction + polarity
+                           arrows) followed by the verbatim evidence sentences.
+                           The arrows carry structure flat sentences cannot —
+                           which event leads to which, and whether each link
+                           promotes (->) or inhibits (-/->) its effect.
+        structured=False : evidence sentences only (legacy; for A/B comparison).
+        """
+        evidence = "\n".join(self._dedup_provenance(chains))
+        if not structured:
+            return evidence
+        chain_block = "\n".join(f"  {c.text()}" for c in chains)
+        return f"Causal chains:\n{chain_block}\n\nEvidence:\n{evidence}"
+
     # -- generate ------------------------------------------------------------ #
     def answer(self, question: str, top_k: int = 3,
-               summarize: bool = False) -> Tuple[str, List[ChainResult]]:
+               summarize: bool = False, structured: bool = True
+               ) -> Tuple[str, List[ChainResult]]:
         """
         Retrieve causal chains and generate an answer.
 
         Parameters
         ----------
-        question  : Natural-language query.
-        top_k     : Number of chains to retrieve.
-        summarize : When True, runs a dedicated causal-summary compression step
-                    before the final generation (borrowed from CausalRAG).
-                    Costs one extra LLM call but produces tighter, more coherent
-                    answers on multi-hop queries.
+        question   : Natural-language query.
+        top_k      : Number of chains to retrieve.
+        summarize  : When True, runs a dedicated causal-summary compression step
+                     before the final generation (borrowed from CausalRAG).
+                     Costs one extra LLM call but produces tighter, more coherent
+                     answers on multi-hop queries.
+        structured : When True (default), the prompt includes the causal chain
+                     paths with direction + polarity arrows, not just the flat
+                     provenance sentences — so the model can reason over the
+                     graph structure (ordering, promote vs inhibit). Set False
+                     for the legacy sentence-only context (used for A/B tests).
         """
         chains = self.retrieve(question, top_k=top_k)
         if not chains:
@@ -334,20 +368,19 @@ class GraphRAG:
                 f"Causal evidence:\n{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
             )
         else:
-            # Flatten provenance sentences (natural language) for clean context
-            seen_sents: set[str] = set()
-            prov_lines: list[str] = []
-            for c in chains:
-                for s in c.provenance():
-                    if s not in seen_sents:
-                        seen_sents.add(s)
-                        prov_lines.append(s)
-            causal_ctx = "\n".join(prov_lines)
+            causal_ctx = self._build_context(chains, structured=structured)
+            legend = (
+                "In the causal chains, '->' means the cause promotes/produces "
+                "the effect and '-/->' means it inhibits/reduces the effect; "
+                "respect this direction and polarity.\n"
+                if structured else ""
+            )
             prompt = (
                 "You are a causal reasoning assistant. "
-                "Answer the question using ONLY the evidence sentences provided. "
+                "Answer the question using ONLY the evidence provided. "
+                f"{legend}"
                 "Be direct and concise. Do not reference chain numbers or labels.\n\n"
-                f"Evidence:\n{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
+                f"{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
             )
 
         return self.llm.generate(prompt), chains
