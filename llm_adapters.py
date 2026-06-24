@@ -9,6 +9,7 @@ These are optional; the pipeline defaults to MockLLM so it runs offline.
 
 from __future__ import annotations
 import os
+import time
 
 
 def _require_key(env_var: str, api_key: str | None) -> str:
@@ -20,6 +21,24 @@ def _require_key(env_var: str, api_key: str | None) -> str:
     return key
 
 
+def _retry(fn, attempts: int = 3, base: float = 1.5):
+    """Call fn() with exponential backoff on transient API errors.
+
+    Fails fast on a daily/quota cap — a short retry cannot clear it — and
+    re-raises the original error after the final attempt so callers still see it.
+    """
+    for i in range(attempts):
+        try:
+            return fn()
+        except Exception as exc:
+            msg = str(exc).lower()
+            if any(s in msg for s in ("per day", "tpd", "quota", "insufficient")):
+                raise
+            if i == attempts - 1:
+                raise
+            time.sleep(base ** (i + 1))
+
+
 class GroqLLM:
     """Matches a llama-3.1-8b-instant style Groq setup."""
     def __init__(self, model: str = "llama-3.1-8b-instant",
@@ -29,11 +48,11 @@ class GroqLLM:
         self.model = model
 
     def generate(self, prompt: str) -> str:
-        r = self.client.chat.completions.create(
+        r = _retry(lambda: self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
-        )
+        ))
         return r.choices[0].message.content or ""
 
 
@@ -44,11 +63,11 @@ class OpenAILLM:
         self.model = model
 
     def generate(self, prompt: str) -> str:
-        r = self.client.chat.completions.create(
+        r = _retry(lambda: self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
-        )
+        ))
         return r.choices[0].message.content or ""
 
 
@@ -59,8 +78,8 @@ class AnthropicLLM:
         self.model = model
 
     def generate(self, prompt: str) -> str:
-        r = self.client.messages.create(
+        r = _retry(lambda: self.client.messages.create(
             model=self.model, max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
-        )
+        ))
         return "".join(b.text for b in r.content if b.type == "text")

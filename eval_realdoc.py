@@ -46,6 +46,13 @@ from llm_adapters import GroqLLM
 WEAK = "llama-3.1-8b-instant"
 STRONG = "llama-3.3-70b-versatile"
 
+# Which generation models to run (env override: MODELS="weak,strong").
+# The capability-ablation only needs the weak model; the strong model has a low
+# daily token cap, so default to weak-only and opt into strong explicitly.
+_sel = os.environ.get("MODELS", "weak").lower()
+MODELS = tuple(m for tag, m in (("weak", WEAK), ("strong", STRONG)) if tag in _sel)
+JUDGE_MODEL = WEAK
+
 DOC_PATH = "subprime_causes.md"
 
 
@@ -69,10 +76,16 @@ QUESTIONS = [
       ["securit", "mortgage", "investor", "risk", "default"]),
 ]
 
+# Ablation: isolate the two generation-side structure signals.
+#   structured = causal chain paths (+ polarity arrows) in the prompt
+#   contextual = document heading-path annotation on each evidence sentence
+# (retrieval-side contextual indexing + MMR is always on; this varies only what
+#  structure is SHOWN to the model.)
 CONDITIONS = {
-    "flat":         dict(structured=False, contextual=False),
-    "structured":   dict(structured=True,  contextual=True),
-    "prose":        dict(structured=True,  contextual=True, prose_chains=True),
+    "flat":          dict(structured=False, contextual=False),
+    "+causal":       dict(structured=True,  contextual=False),
+    "+doc":          dict(structured=False, contextual=True),
+    "+causal+doc":   dict(structured=True,  contextual=True),
 }
 
 TOP_K = 6   # give MMR room to diversify coverage on global questions
@@ -96,32 +109,38 @@ def main():
           f"{len(rag._struct_index)} structural sentences, schema indexed.\n")
 
     from eval_ragas import RagasLLMJudge
-    judge = RagasLLMJudge(GroqLLM(STRONG))   # fixed strong judge for consistency
+    # Judge with the weak model to conserve the strong model's daily token cap;
+    # kw_recall (the ablation's key metric) is judge-independent anyway.
+    judge = RagasLLMJudge(GroqLLM(JUDGE_MODEL))
 
     # results[model][cond] = {"kr":, "faith":, "n":}
     results: Dict[str, Dict[str, Dict[str, float]]] = {}
 
-    for model in (WEAK, STRONG):
+    for model in MODELS:
         rag.llm = GroqLLM(model)
         results[model] = {c: {"kr": 0.0, "faith": 0.0, "n": 0} for c in CONDITIONS}
         print(f"--- generation model: {model} ---")
         for item in QUESTIONS:
             for cond, opts in CONDITIONS.items():
-                ans, chains = rag.answer(item.q, top_k=TOP_K, **opts)
-                contexts = GraphRAG._dedup_provenance(chains)
-                kr = keyword_recall(ans, item.concepts)
-                faith = judge.faithfulness(ans, contexts) if contexts else 0.0
+                try:
+                    ans, chains = rag.answer(item.q, top_k=TOP_K, **opts)
+                    contexts = GraphRAG._dedup_provenance(chains)
+                    kr = keyword_recall(ans, item.concepts)
+                    faith = judge.faithfulness(ans, contexts) if contexts else 0.0
+                except Exception as exc:  # rate limit, transient API error, ...
+                    print(f"    [skip] {model}/{cond}: {str(exc)[:80]}")
+                    continue
                 results[model][cond]["kr"] += kr
                 results[model][cond]["faith"] += faith
                 results[model][cond]["n"] += 1
         print()
 
     print("=" * 70)
-    print("RESULTS — structure on/off x weak/strong model (real large doc)")
+    print("RESULTS - causal/doc ablation x model (real large doc)")
     print("=" * 70)
     print(f"{'model':<26}{'condition':<12}{'kw_recall':>10}{'faithful':>10}")
     print("-" * 70)
-    for model in (WEAK, STRONG):
+    for model in MODELS:
         base = None
         for cond in CONDITIONS:
             r = results[model][cond]

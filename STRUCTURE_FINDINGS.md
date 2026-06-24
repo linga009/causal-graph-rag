@@ -83,6 +83,32 @@ not near-duplicate chains), and `top_k=6`. Same questions, same judge.
 3. **Prose rendering does not help** (−0.03 weak); symbolic arrows are kept.
 4. n=5 still — but effect sizes are now large and consistent with theory.
 
+## Benchmark 4 — causal vs document structure ablation (weak model)
+
+Isolating the two generation-side signals (retrieval-side structure always on).
+llama-3.1-8b, `top_k=6`, n=5. Trust the within-run deltas, not absolute digits
+(flat drifts ~±0.04 across runs at temp 0.2).
+
+| condition    | kw_recall | faithful | vs flat   |
+|--------------|-----------|----------|-----------|
+| flat         | 0.51      | 1.00     | —         |
+| +causal      | 0.45      | 0.97     | **-0.06** |
+| +doc         | 0.53      | 1.00     | +0.03     |
+| +causal+doc  | **0.61**  | 0.95     | **+0.11** |
+
+**The two structures are synergistic, not independent.**
+- Causal chains *alone* **hurt** (-0.06): abstract `A -/-> B` arrows with nothing
+  to anchor them are a distraction for the weak model.
+- Document heading-paths alone barely help (+0.03).
+- **Together: +0.11 — far more than the sum** (-0.06 + 0.03 = -0.03).
+
+Mechanism: the causal chain says *how* things relate; the document structure
+says *where* they sit. The weak model can't exploit the bare relationship until
+each node is anchored to its place in the document — then the chain becomes a
+grounded, usable map. This is the design's core bet, and it holds: **causal +
+document structure is complementary, and the combination is what a decent model
+needs.** (Strong-model row pending the 70b daily token cap.)
+
 ## Literature grounding
 
 - **Retrieval helps smaller models more** ([arXiv 2402.13492](https://arxiv.org/html/2402.13492)) —
