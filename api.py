@@ -109,12 +109,20 @@ class IngestRequest(BaseModel):
         description="LLM extraction mode: 'augment' (fill spaCy gaps) or 'full' (all sentences). "
                     "Omit to use spaCy-only extraction (free, fast)."
     )
+    schema_: str = Field(
+        "general", alias="schema",
+        description="Document-structure preset: 'general' (default, domain-agnostic), "
+                    "'research' (IMRaD), 'clinical' (SOAP), 'incident' (RCA), or 'auto'."
+    )
+
+    model_config = {"populate_by_name": True}
 
 class IngestResponse(BaseModel):
     edges_added: int
     total_nodes: int
     total_edges: int
     llm_mode_used: Optional[str]
+    schema_used: str
 
 class QueryRequest(BaseModel):
     question: str = Field(..., description="Causal question to answer")
@@ -150,6 +158,7 @@ class HealthResponse(BaseModel):
     llm: str
     nodes: int
     edges: int
+    available_schemas: List[str]
 
 
 # --------------------------------------------------------------------------- #
@@ -158,13 +167,16 @@ class HealthResponse(BaseModel):
 
 @app.get("/health", response_model=HealthResponse, tags=["system"])
 def health():
-    """Health check — returns LLM type and graph size."""
+    """Health check — LLM, graph size, and the document-structure presets a
+    client can choose from for /ingest."""
+    from doc_structure import AVAILABLE_SCHEMAS
     with _rag_lock:
         return HealthResponse(
             status="ok",
             llm=type(_llm).__name__ if _llm else "none (spaCy only)",
             nodes=len(_rag.graph.nodes()),
             edges=len(_edges(_rag)),
+            available_schemas=list(AVAILABLE_SCHEMAS),
         )
 
 
@@ -176,23 +188,33 @@ def ingest(req: IngestRequest):
     - **text**: The document to process (incident report, clinical note, financial report, etc.)
     - **llm_mode**: `"augment"` fills spaCy gaps with LLM; `"full"` uses LLM on every sentence.
       Omit for free spaCy-only extraction.
+    - **schema**: document-structure preset (`general` default, or `research`/`clinical`/`incident`/`auto`).
+      See `/health` → `available_schemas`.
     """
+    from doc_structure import AVAILABLE_SCHEMAS
     if not req.text or not req.text.strip():
         raise HTTPException(status_code=422, detail="'text' must be a non-empty string.")
     if req.llm_mode and req.llm_mode not in ("augment", "full"):
         raise HTTPException(status_code=422, detail="llm_mode must be 'augment' or 'full'.")
+    if req.schema_ not in AVAILABLE_SCHEMAS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"schema must be one of {list(AVAILABLE_SCHEMAS)}.",
+        )
 
     with _rag_lock:
         if req.llm_mode and _llm:
-            n = _rag.ingest(req.text, llm_extractor=_llm, llm_mode=req.llm_mode)
+            n = _rag.ingest(req.text, llm_extractor=_llm, llm_mode=req.llm_mode,
+                            schema=req.schema_)
         else:
-            n = _rag.ingest(req.text)
+            n = _rag.ingest(req.text, schema=req.schema_)
 
         return IngestResponse(
             edges_added=n,
             total_nodes=len(_rag.graph.nodes()),
             total_edges=len(_edges(_rag)),
             llm_mode_used=req.llm_mode if req.llm_mode and _llm else None,
+            schema_used=req.schema_,
         )
 
 

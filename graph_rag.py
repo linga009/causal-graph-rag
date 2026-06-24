@@ -383,22 +383,25 @@ class GraphRAG:
                     out.append(s)
         return out
 
-    def _build_context(self, chains: List[ChainResult], structured: bool) -> str:
+    def _build_context(self, chains: List[ChainResult], structured: bool,
+                       contextual: bool = True) -> str:
         """Assemble the LLM context from retrieved chains.
 
-        structured=True  : the causal CHAIN PATHS (with direction + polarity
-                           arrows) followed by the verbatim evidence sentences.
-                           The arrows carry structure flat sentences cannot —
-                           which event leads to which, and whether each link
-                           promotes (->) or inhibits (-/->) its effect.
-        structured=False : evidence sentences only (legacy; for A/B comparison).
+        Two independent structure signals, each separately toggleable so their
+        contributions can be measured in isolation:
 
-        Evidence sentences are annotated with their document location
-        (e.g. '[Results › Ablations] ...') when a structure index is present —
-        the domain-agnostic "where did this come from" signal.
+        structured : prepend the causal CHAIN PATHS with direction + polarity
+                     arrows ('->' promotes, '-/->' inhibits). Carries the graph
+                     topology flat sentences cannot.
+        contextual : annotate each evidence sentence with its document location,
+                     e.g. '[Results > Ablations] ...' — the "where did this come
+                     from" signal (contextual retrieval). No-op when no document
+                     structure was indexed.
+
+        Both False  -> flat evidence sentences (legacy baseline).
         """
         prov = self._dedup_provenance(chains)
-        evidence = "\n".join(self._annotate(s) for s in prov)
+        evidence = "\n".join((self._annotate(s) if contextual else s) for s in prov)
         if not structured:
             return evidence
         chain_block = "\n".join(f"  {c.text()}" for c in chains)
@@ -406,8 +409,8 @@ class GraphRAG:
 
     # -- generate ------------------------------------------------------------ #
     def answer(self, question: str, top_k: int = 3,
-               summarize: bool = False, structured: bool = True
-               ) -> Tuple[str, List[ChainResult]]:
+               summarize: bool = False, structured: bool = True,
+               contextual: bool = True) -> Tuple[str, List[ChainResult]]:
         """
         Retrieve causal chains and generate an answer.
 
@@ -439,7 +442,8 @@ class GraphRAG:
                 f"Causal evidence:\n{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
             )
         else:
-            causal_ctx = self._build_context(chains, structured=structured)
+            causal_ctx = self._build_context(chains, structured=structured,
+                                             contextual=contextual)
             legend = (
                 "In the causal chains, '->' means the cause promotes/produces "
                 "the effect and '-/->' means it inhibits/reduces the effect; "

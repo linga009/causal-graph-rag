@@ -20,3 +20,6 @@ rebel_*_train.txt
 *.egg-info/
 dist/
 build/
+
+# Raw web-download intermediates (reproducible via scripts)
+wiki_raw.json
