@@ -334,19 +334,17 @@ def build_rag_tool(graph_rag: Any, name: str = "causal_graph_search",
 
     Example (langchain 1.x)
     -----------------------
-        from langchain.agents import create_tool_calling_agent, AgentExecutor
-        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain.agents import create_agent
 
-        tool   = build_rag_tool(rag)
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a causal reasoning assistant."),
-            ("human",  "{input}"),
-            MessagesPlaceholder("agent_scratchpad"),
-        ])
-        agent    = create_tool_calling_agent(llm, [tool], prompt)
-        executor = AgentExecutor(agent=agent, tools=[tool])
-        result   = executor.invoke({"input": "Why did the power outage happen?"})
-        print(result["output"])
+        tool  = build_rag_tool(rag)
+        agent = create_agent(
+            llm, [tool],
+            system_prompt="You are a causal reasoning assistant.",
+        )
+        result = agent.invoke(
+            {"messages": [{"role": "user", "content": "Why did the power outage happen?"}]}
+        )
+        print(result["messages"][-1].content)
     """
     _require_lc()
     from langchain_core.tools import Tool
