@@ -114,6 +114,12 @@ Mechanism: structure here is a **grounding constraint**, not a coverage booster.
 It does not help the model *find* more facts; it helps it *not invent* ones.
 That is a real and useful property — but a different one than first claimed.
 
+**Strong-model row: open.** Whether the faithfulness gain shrinks for a stronger
+model (the properly-posed capability question) is **not yet answered**. The
+Gemini 2.5-flash attempt was blocked by the free-tier *daily* request quota
+(exhausted by a day of test runs); a single throttle cannot clear a daily cap.
+Needs a quota reset, a paid tier, or an Anthropic/OpenAI key to settle.
+
 ## Literature grounding
 
 - **Retrieval helps smaller models more** ([arXiv 2402.13492](https://arxiv.org/html/2402.13492)) —
