@@ -64,10 +64,11 @@ from typing import Any, List, Optional
 try:
     from langchain_core.retrievers import BaseRetriever
     from langchain_core.documents import Document
-    from langchain_core.callbacks import CallbackManagerForRetrieverRun
+    from langchain_core.callbacks import CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
     from langchain_core.prompts import ChatPromptTemplate
     from langchain_core.output_parsers import StrOutputParser
     from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+    from pydantic import ConfigDict
     _LC_AVAILABLE = True
 except ImportError as _lc_err:
     _LC_AVAILABLE = False
@@ -103,26 +104,21 @@ if _LC_AVAILABLE:
             Number of causal chains to return per query (default 3).
         """
 
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
         graph_rag: Any        # GraphRAG instance
         top_k: int = 3
 
-        class Config:
-            arbitrary_types_allowed = True
-
-        def _get_relevant_documents(
-            self,
-            query: str,
-            *,
-            run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-        ) -> List[Document]:
-            chains = self.graph_rag.retrieve(query, top_k=self.top_k)
+        def _make_docs(self, chains: list) -> List[Document]:
             docs = []
             for chain in chains:
-                # Build a rich page_content string: the chain text + its sources
-                chain_text = chain.text()
+                chain_text = chain.text()        # "A ->(cause) B ->(trigger) C"
                 sources = chain.provenance()
-                source_block = "\n".join(f"  source: {s}" for s in sources)
-                content = f"{chain_text}\n{source_block}".strip()
+                # Include BOTH the structured chain path AND the raw source sentences.
+                # The chain arrows give the LLM the causal structure;
+                # the sources give it verbatim evidence to quote from.
+                source_block = "\n".join(f"  [{i+1}] {s}" for i, s in enumerate(sources))
+                content = f"Chain: {chain_text}\nEvidence:\n{source_block}".strip()
 
                 docs.append(Document(
                     page_content=content,
@@ -136,6 +132,28 @@ if _LC_AVAILABLE:
                     },
                 ))
             return docs
+
+        def _get_relevant_documents(
+            self,
+            query: str,
+            *,
+            run_manager: Optional[CallbackManagerForRetrieverRun] = None,
+        ) -> List[Document]:
+            return self._make_docs(self.graph_rag.retrieve(query, top_k=self.top_k))
+
+        async def _aget_relevant_documents(
+            self,
+            query: str,
+            *,
+            run_manager: Optional[AsyncCallbackManagerForRetrieverRun] = None,
+        ) -> List[Document]:
+            # GraphRAG.retrieve is sync; run in executor to avoid blocking the event loop
+            import asyncio
+            loop = asyncio.get_event_loop()
+            chains = await loop.run_in_executor(
+                None, lambda: self.graph_rag.retrieve(query, top_k=self.top_k)
+            )
+            return self._make_docs(chains)
 
 else:
     # Stub so the module is importable even without langchain-core
@@ -171,16 +189,10 @@ class LangChainLLMAdapter:
         self._llm = lc_llm
 
     def generate(self, prompt: str) -> str:
-        try:
-            # ChatModel path (returns AIMessage with .content)
-            from langchain_core.messages import HumanMessage
-            result = self._llm.invoke([HumanMessage(content=prompt)])
-            if hasattr(result, "content"):
-                return str(result.content)
-        except Exception:
-            pass
-        # Plain LLM path (returns str)
-        result = self._llm.invoke(prompt)
+        from langchain_core.messages import HumanMessage, BaseMessage
+        result = self._llm.invoke([HumanMessage(content=prompt)])
+        if isinstance(result, BaseMessage):
+            return str(result.content)
         return str(result)
 
 
@@ -251,14 +263,11 @@ def build_rag_chain(retriever: Any, llm: Any, summarize: bool = False) -> Any:
     _require_lc()
 
     def _format_docs(docs: List[Document]) -> str:
-        parts = []
-        seen: set = set()
-        for doc in docs:
-            for sent in doc.metadata.get("provenance", [doc.page_content]):
-                if sent not in seen:
-                    seen.add(sent)
-                    parts.append(sent)
-        return "\n".join(parts) if parts else "No causal evidence found."
+        if not docs:
+            return "No causal evidence found."
+        # Pass full page_content: structured chain path + numbered evidence sentences.
+        # This gives the LLM both the causal structure AND verbatim source text.
+        return "\n\n".join(doc.page_content for doc in docs)
 
     if summarize:
         summary_prompt = ChatPromptTemplate.from_messages([
@@ -325,12 +334,19 @@ def build_rag_tool(graph_rag: Any, name: str = "causal_graph_search",
 
     Example (langchain 1.x)
     -----------------------
-        from langchain.agents import create_agent
-        tool  = build_rag_tool(rag)
-        agent = create_agent(model=llm, tools=[tool],
-                             system_prompt="You are a causal reasoning assistant.")
-        result = agent.invoke({"messages": [{"role": "user", "content": "Why did the power outage happen?"}]})
-        print(result["messages"][-1].content)
+        from langchain.agents import create_tool_calling_agent, AgentExecutor
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+        tool   = build_rag_tool(rag)
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are a causal reasoning assistant."),
+            ("human",  "{input}"),
+            MessagesPlaceholder("agent_scratchpad"),
+        ])
+        agent    = create_tool_calling_agent(llm, [tool], prompt)
+        executor = AgentExecutor(agent=agent, tools=[tool])
+        result   = executor.invoke({"input": "Why did the power outage happen?"})
+        print(result["output"])
     """
     _require_lc()
     from langchain_core.tools import Tool

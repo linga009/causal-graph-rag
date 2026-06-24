@@ -160,17 +160,24 @@ for chunk in chain.stream("What led to the failure?"):
 
 ### Tool-calling agent
 ```python
-from langchain.agents import create_agent
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_integration import build_rag_tool, LangChainLLMAdapter
 
 adapter = LangChainLLMAdapter(llm)
 rag     = GraphRAG(llm=adapter)
 rag.ingest(text, llm_extractor=adapter, llm_mode="full")
 
-tool  = build_rag_tool(rag)
-agent = create_agent(model=llm, tools=[tool],
-                     system_prompt="You are a causal reasoning assistant.")
-result = agent.invoke({"messages": [{"role": "user", "content": question}]})
+tool   = build_rag_tool(rag)
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a causal reasoning assistant."),
+    ("human", "{input}"),
+    MessagesPlaceholder("agent_scratchpad"),
+])
+agent    = create_tool_calling_agent(llm, [tool], prompt)
+executor = AgentExecutor(agent=agent, tools=[tool])
+result   = executor.invoke({"input": question})
+print(result["output"])
 ```
 
 ```bash

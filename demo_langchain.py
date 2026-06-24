@@ -127,7 +127,8 @@ def demo_chain(retriever, lc_llm) -> None:
 # --------------------------------------------------------------------------- #
 def demo_agent(rag, lc_llm) -> None:
     try:
-        from langchain.agents import create_agent  # langchain 1.x API
+        from langchain.agents import create_tool_calling_agent, AgentExecutor
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
     except ImportError:
         print("\n[skip] langchain agents require: pip install langchain")
         return
@@ -136,30 +137,25 @@ def demo_agent(rag, lc_llm) -> None:
 
     tool = build_rag_tool(rag)
 
-    agent = create_agent(
-        model=lc_llm,
-        tools=[tool],
-        system_prompt=(
-            "You are a helpful assistant with access to a causal knowledge graph. "
-            "Use the causal_graph_search tool to look up cause-effect relationships "
-            "before answering questions about why things happened or what effects they had."
-        ),
-    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "You are a helpful assistant with access to a causal knowledge graph. "
+         "Use the causal_graph_search tool to look up cause-effect relationships "
+         "before answering questions about why things happened or what effects they had."),
+        ("human", "{input}"),
+        MessagesPlaceholder("agent_scratchpad"),
+    ])
+
+    agent    = create_tool_calling_agent(lc_llm, [tool], prompt)
+    executor = AgentExecutor(agent=agent, tools=[tool], verbose=False)
 
     print("\n" + "=" * 64)
-    print("SURFACE 3: Tool-calling agent  (langchain 1.x create_agent)")
+    print("SURFACE 3: Tool-calling agent  (create_tool_calling_agent)")
     print("=" * 64)
     q = "I want to understand the full causal chain: why were hospital operations disrupted?"
     print(f"\nQ: {q}")
-    result = agent.invoke({"messages": [{"role": "user", "content": q}]})
-    # Extract the last AI message from the messages list
-    messages = result.get("messages", [])
-    last_ai = next(
-        (m for m in reversed(messages) if hasattr(m, "content") and hasattr(m, "type") and m.type == "ai"),
-        None,
-    )
-    answer = last_ai.content if last_ai else str(result)
-    print(f"A: {answer}")
+    result = executor.invoke({"input": q})
+    print(f"A: {result['output']}")
 
 
 # --------------------------------------------------------------------------- #
