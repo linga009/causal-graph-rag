@@ -9,6 +9,7 @@ These are optional; the pipeline defaults to MockLLM so it runs offline.
 
 from __future__ import annotations
 import os
+import re
 import time
 
 
@@ -21,65 +22,112 @@ def _require_key(env_var: str, api_key: str | None) -> str:
     return key
 
 
-def _retry(fn, attempts: int = 3, base: float = 1.5):
-    """Call fn() with exponential backoff on transient API errors.
+# Honors a server-specified delay like "Please retry in 54.1s" or
+# "retryDelay': '54s'", so we wait the right amount on per-minute rate limits.
+_RETRY_DELAY = re.compile(r"retry(?:delay)?[\"'\s:=]*?(\d+(?:\.\d+)?)\s*s", re.I)
 
-    Fails fast on a daily/quota cap — a short retry cannot clear it — and
-    re-raises the original error after the final attempt so callers still see it.
+
+def _retry(fn, attempts: int = 6, base: float = 1.5, max_wait: float = 65.0):
+    """Call fn() with backoff on transient API errors.
+
+    - Per-minute rate limits (Gemini/Groq free tiers) are honored by sleeping the
+      server's stated retry delay, so the call eventually succeeds.
+    - Per-DAY token caps cannot clear on a short retry, so we fail fast.
+    - Re-raises the original error after the final attempt.
     """
     for i in range(attempts):
         try:
             return fn()
         except Exception as exc:
-            msg = str(exc).lower()
-            if any(s in msg for s in ("per day", "tpd", "quota", "insufficient")):
-                raise
+            low = str(exc).lower()
+            if "per day" in low or "tpd" in low or "perday" in low.replace(" ", ""):
+                raise                       # daily cap — hopeless to retry
             if i == attempts - 1:
                 raise
-            time.sleep(base ** (i + 1))
+            m = _RETRY_DELAY.search(low)
+            wait = min(float(m.group(1)) + 1.0, max_wait) if m else base ** (i + 1)
+            time.sleep(wait)
 
 
 class GroqLLM:
-    """Matches a llama-3.1-8b-instant style Groq setup."""
+    """Matches a llama-3.1-8b-instant style Groq setup.
+
+    temperature defaults to 0.2 for app use; pass temperature=0 for
+    deterministic eval runs (removes run-to-run sampling variance).
+    """
     def __init__(self, model: str = "llama-3.1-8b-instant",
-                 api_key: str | None = None):
+                 api_key: str | None = None, temperature: float = 0.2):
         from groq import Groq  # pip install groq
         self.client = Groq(api_key=_require_key("GROQ_API_KEY", api_key))
         self.model = model
+        self.temperature = temperature
 
     def generate(self, prompt: str) -> str:
         r = _retry(lambda: self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
+            temperature=self.temperature,
         ))
         return r.choices[0].message.content or ""
 
 
 class OpenAILLM:
-    def __init__(self, model: str = "gpt-4o", api_key: str | None = None):
+    def __init__(self, model: str = "gpt-4o", api_key: str | None = None,
+                 temperature: float = 0.2):
         from openai import OpenAI  # pip install openai
         self.client = OpenAI(api_key=_require_key("OPENAI_API_KEY", api_key))
         self.model = model
+        self.temperature = temperature
 
     def generate(self, prompt: str) -> str:
         r = _retry(lambda: self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
+            temperature=self.temperature,
         ))
         return r.choices[0].message.content or ""
 
 
+class GeminiLLM:
+    """Google Gemini via the google-genai SDK. Reads GEMINI_API_KEY.
+
+    A class-level throttle spaces requests to respect the free tier's
+    ~5 requests/minute limit so batch jobs (evals) don't get rate-limited out.
+    """
+    _last_call = 0.0
+    _min_interval = 12.5   # seconds between calls (~5/min)
+
+    def __init__(self, model: str = "gemini-2.5-flash", api_key: str | None = None,
+                 temperature: float = 0.2):
+        from google import genai  # pip install google-genai
+        self.client = genai.Client(api_key=_require_key("GEMINI_API_KEY", api_key))
+        self.model = model
+        self.temperature = temperature
+
+    def generate(self, prompt: str) -> str:
+        gap = GeminiLLM._min_interval - (time.time() - GeminiLLM._last_call)
+        if gap > 0:
+            time.sleep(gap)
+        try:
+            r = _retry(lambda: self.client.models.generate_content(
+                model=self.model, contents=prompt,
+                config={"temperature": self.temperature}))
+        finally:
+            GeminiLLM._last_call = time.time()
+        return (getattr(r, "text", None) or "")
+
+
 class AnthropicLLM:
-    def __init__(self, model: str = "claude-opus-4-8", api_key: str | None = None):
+    def __init__(self, model: str = "claude-opus-4-8", api_key: str | None = None,
+                 temperature: float = 0.2):
         import anthropic  # pip install anthropic
         self.client = anthropic.Anthropic(api_key=_require_key("ANTHROPIC_API_KEY", api_key))
         self.model = model
+        self.temperature = temperature
 
     def generate(self, prompt: str) -> str:
         r = _retry(lambda: self.client.messages.create(
-            model=self.model, max_tokens=1024,
+            model=self.model, max_tokens=1024, temperature=self.temperature,
             messages=[{"role": "user", "content": prompt}],
         ))
         return "".join(b.text for b in r.content if b.type == "text")

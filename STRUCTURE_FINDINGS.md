@@ -11,14 +11,15 @@ measured, including the negative ones.
   `top_k=6` lifted flat recall from **0.27/0.30 → 0.47** on the real large doc,
   and faithfulness from **0.60 → 1.00**. This reproduces Anthropic Contextual
   Retrieval's −35–49% retrieval-failure effect.
-- **The capability hypothesis holds once retrieval works.** With good retrieval,
-  generation-side structure helps the **weak model (+0.11)** far more than the
-  **strong model (+0.01)** — a decent model needs the scaffolding; a strong one
-  figures it out itself. The earlier *inversion* was an artifact of broken
-  retrieval.
-- **Keep symbolic chain arrows; prose rendering does not help** (−0.03 weak).
-- Methodological lesson: never measure a generation-side lever while retrieval
-  is the binding constraint — fix retrieval first.
+- **Generation-side structure helps FAITHFULNESS, not recall** (deterministic,
+  n=12): chains + document anchoring raise groundedness +0.08–0.15 but do not
+  add concept coverage. The earlier recall-"synergy" and "capability-scaling"
+  claims were temperature-0.2 / n=5 **sampling noise and are retracted**
+  (see Benchmark 4 correction). Strong-model temp-0 row pending.
+- **Keep symbolic chain arrows; prose rendering does not help.**
+- Two methodological lessons: (a) fix retrieval before measuring any
+  generation-side lever; (b) evaluate at **temperature 0 with n≥12** — small
+  hot-sampled runs manufacture effects that vanish under determinism.
 
 ## Benchmark 1 — small synthetic docs (`eval_structure.py`)
 
@@ -85,29 +86,33 @@ not near-duplicate chains), and `top_k=6`. Same questions, same judge.
 
 ## Benchmark 4 — causal vs document structure ablation (weak model)
 
-Isolating the two generation-side signals (retrieval-side structure always on).
-llama-3.1-8b, `top_k=6`, n=5. Trust the within-run deltas, not absolute digits
-(flat drifts ~±0.04 across runs at temp 0.2).
+> **Correction.** An earlier version of this section claimed a recall "synergy"
+> (+0.11 for causal+doc) from an n=5, temperature-0.2 run. It **did not
+> replicate** — a second run gave -0.01 for the same cell. The deltas were
+> sampling noise. Re-run **deterministically (temperature 0) at n=12** below;
+> the recall synergy disappears and the real, stable signal is **faithfulness**.
 
-| condition    | kw_recall | faithful | vs flat   |
-|--------------|-----------|----------|-----------|
-| flat         | 0.51      | 1.00     | —         |
-| +causal      | 0.45      | 0.97     | **-0.06** |
-| +doc         | 0.53      | 1.00     | +0.03     |
-| +causal+doc  | **0.61**  | 0.95     | **+0.11** |
+llama-3.1-8b, `top_k=6`, n=12, **temperature 0** (deterministic — no sampling
+noise). Retrieval-side structure always on; only the prompt's structure varies.
 
-**The two structures are synergistic, not independent.**
-- Causal chains *alone* **hurt** (-0.06): abstract `A -/-> B` arrows with nothing
-  to anchor them are a distraction for the weak model.
-- Document heading-paths alone barely help (+0.03).
-- **Together: +0.11 — far more than the sum** (-0.06 + 0.03 = -0.03).
+| condition    | kw_recall      | faithfulness    |
+|--------------|----------------|-----------------|
+| flat         | 0.65           | 0.83            |
+| +causal      | 0.55 (**-0.10**)| 0.94 (**+0.11**)|
+| +doc         | 0.65 (-0.00)   | 0.98 (**+0.15**)|
+| +causal+doc  | 0.65 (-0.00)   | 0.92 (**+0.08**)|
 
-Mechanism: the causal chain says *how* things relate; the document structure
-says *where* they sit. The weak model can't exploit the bare relationship until
-each node is anchored to its place in the document — then the chain becomes a
-grounded, usable map. This is the design's core bet, and it holds: **causal +
-document structure is complementary, and the combination is what a decent model
-needs.** (Strong-model row pending the 70b daily token cap.)
+**The honest signal: structure improves faithfulness, not recall.**
+- **Recall:** structure is neutral-to-negative. Causal chains *alone* slightly
+  *hurt* concept coverage (-0.10) — the symbolic notation displaces breadth.
+  Document context is neutral. There is **no recall synergy** — that was noise.
+- **Faithfulness:** *every* structure condition raises groundedness
+  (+0.08 to +0.15). Showing the model the causal chains + document anchoring
+  keeps answers tethered to the evidence, reducing unsupported claims.
+
+Mechanism: structure here is a **grounding constraint**, not a coverage booster.
+It does not help the model *find* more facts; it helps it *not invent* ones.
+That is a real and useful property — but a different one than first claimed.
 
 ## Literature grounding
 
@@ -137,15 +142,28 @@ needs.** (Strong-model row pending the 70b daily token cap.)
 - [ ] **Cross-encoder reranking** (Contextual Retrieval reaches −67% with a
   reranker) — the next retrieval lever if more recall is wanted.
 
+## Methodological note (the most important lesson)
+
+Two generation-side claims in earlier drafts were **sampling noise** that
+vanished under determinism:
+- the recall "synergy" (+0.11) → -0.01 on replication;
+- the "capability-dependent +0.11" → not robust at temperature 0.2.
+
+Fix: **evaluate at temperature 0** (removes run-to-run variance) and use
+**n≥12** (tighter CIs). Never narrate a generation-side delta measured while
+temperature>0 and n is small. The earlier write-ups over-read single runs; this
+section supersedes them.
+
 ## Honest bottom line
 
-Two levers, both now measured to work:
+What survives rigorous (temp-0, n=12) measurement:
 1. **Causal extraction** (building the graph) — 26-q benchmark recall 0.46→0.60.
-2. **Retrieval-side structure** (contextual indexing + MMR) — flat recall
-   0.27/0.30→0.47, faithfulness 0.60→1.00 on a real large document.
+2. **Retrieval-side structure** (contextual indexing + MMR) — the large, robust
+   win: flat recall 0.27/0.30→0.47 on a real large document.
+3. **Generation-side structure → faithfulness, not recall.** Chains + document
+   anchoring raise groundedness (+0.08–0.15) but do not add concept coverage
+   (and bare causal chains slightly reduce it).
 
-Generation-side structure (chains+heading-paths in the prompt) is a real but
-*capability-dependent* add-on: +0.11 for a decent model, ~0 for a strong one.
-The headline: **a decent model + this structure approaches a strong model's
-answer quality** — which is exactly the practical value of the design. Measured,
-not assumed.
+The practical reading: **the retrieval graph is what lifts answer quality; the
+in-context structure is a grounding/anti-hallucination layer on top.** Recall
+synergy and capability-scaling claims are retracted pending stronger evidence.
