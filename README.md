@@ -1,5 +1,7 @@
 # Causal Graph RAG
 
+![Causal Graph RAG](banner.svg)
+
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![LangChain](https://img.shields.io/badge/LangChain-1.x-orange)

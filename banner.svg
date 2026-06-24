@@ -1,0 +1,118 @@
+<svg viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Causal Graph RAG — Banner</title>
+  <desc>Project banner showing causal chain traversal from cause to effect nodes</desc>
+
+  <!-- Background -->
+  <rect width="860" height="200" fill="#0f1117"/>
+
+  <!-- Subtle grid -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff08" stroke-width="0.5"/>
+    </pattern>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4ade80"/>
+    </marker>
+    <marker id="arrow2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4ade80"/>
+    </marker>
+    <marker id="arrow3" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4ade80"/>
+    </marker>
+    <marker id="arrow4" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4ade80"/>
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="860" height="200" fill="url(#grid)"/>
+
+  <!-- Left accent bar -->
+  <rect x="0" y="0" width="3" height="200" fill="#4ade80"/>
+
+  <!-- Title -->
+  <text x="36" y="68" font-family="'Courier New', monospace" font-size="32" font-weight="bold" fill="#ffffff" letter-spacing="-1">Causal Graph RAG</text>
+
+  <!-- Subtitle -->
+  <text x="37" y="96" font-family="'Courier New', monospace" font-size="13" fill="#9ca3af">Retrieval that follows cause → effect chains across documents</text>
+
+  <!-- Badges row -->
+  <!-- Python badge -->
+  <rect x="37" y="114" width="80" height="20" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="47" y="128" font-family="monospace" font-size="10" fill="#60a5fa">Python 3.9+</text>
+
+  <!-- LangChain badge -->
+  <rect x="124" y="114" width="88" height="20" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="134" y="128" font-family="monospace" font-size="10" fill="#a78bfa">LangChain 1.x</text>
+
+  <!-- FastAPI badge -->
+  <rect x="219" y="114" width="68" height="20" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="229" y="128" font-family="monospace" font-size="10" fill="#34d399">FastAPI</text>
+
+  <!-- Neo4j badge -->
+  <rect x="294" y="114" width="58" height="20" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="304" y="128" font-family="monospace" font-size="10" fill="#fbbf24">Neo4j</text>
+
+  <!-- MIT badge -->
+  <rect x="359" y="114" width="44" height="20" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="369" y="128" font-family="monospace" font-size="10" fill="#9ca3af">MIT</text>
+
+  <!-- Divider -->
+  <line x1="510" y1="20" x2="510" y2="180" stroke="#1f2937" stroke-width="1.5"/>
+
+  <!-- Right side: causal chain diagram -->
+  <!-- Node 1: overheating -->
+  <g filter="url(#glow)">
+    <rect x="526" y="64" width="72" height="28" rx="14" fill="#1a2e1a" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="562" y="82" font-family="monospace" font-size="10" fill="#4ade80" text-anchor="middle">overheating</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <line x1="598" y1="78" x2="626" y2="78" stroke="#4ade80" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="612" y="72" font-family="monospace" font-size="8" fill="#6b7280" text-anchor="middle">causes</text>
+
+  <!-- Node 2: valve -->
+  <g filter="url(#glow)">
+    <rect x="630" y="64" width="60" height="28" rx="14" fill="#1a2e1a" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="660" y="82" font-family="monospace" font-size="10" fill="#4ade80" text-anchor="middle">valve fail</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <line x1="690" y1="78" x2="718" y2="78" stroke="#4ade80" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="704" y="72" font-family="monospace" font-size="8" fill="#6b7280" text-anchor="middle">triggers</text>
+
+  <!-- Node 3: shutdown -->
+  <g filter="url(#glow)">
+    <rect x="722" y="64" width="66" height="28" rx="14" fill="#1a2e1a" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="755" y="82" font-family="monospace" font-size="10" fill="#4ade80" text-anchor="middle">shutdown</text>
+  </g>
+
+  <!-- Curved arrow down to outage -->
+  <path d="M 755 92 Q 755 115 755 115" stroke="#4ade80" stroke-width="1.5" fill="none" marker-end="url(#arrow3)"/>
+  <text x="762" y="108" font-family="monospace" font-size="8" fill="#6b7280">leads to</text>
+
+  <!-- Node 4: outage -->
+  <g filter="url(#glow)">
+    <rect x="722" y="118" width="66" height="28" rx="14" fill="#1a2e1a" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="755" y="136" font-family="monospace" font-size="10" fill="#fbbf24" text-anchor="middle">outage</text>
+  </g>
+
+  <!-- Arrow left to operations -->
+  <line x1="722" y1="132" x2="694" y2="132" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow4)"/>
+  <text x="708" y="126" font-family="monospace" font-size="8" fill="#6b7280" text-anchor="middle">disrupts</text>
+
+  <!-- Node 5: hospital (highlighted answer) -->
+  <g filter="url(#glow)">
+    <rect x="606" y="118" width="84" height="28" rx="14" fill="#2d1b1b" stroke="#f87171" stroke-width="2"/>
+    <text x="648" y="136" font-family="monospace" font-size="10" fill="#f87171" text-anchor="middle">hospital ops</text>
+  </g>
+
+  <!-- Query label -->
+  <text x="660" y="170" font-family="monospace" font-size="10" fill="#4b5563" text-anchor="middle">Q: "What did overheating ultimately disrupt?"</text>
+  <text x="660" y="185" font-family="monospace" font-size="10" fill="#f87171" text-anchor="middle">A: hospital operations  (4-hop chain)</text>
+
+  <!-- Chain label -->
+  <text x="530" y="54" font-family="monospace" font-size="9" fill="#4b5563">CAUSAL CHAIN TRAVERSAL</text>
+</svg>
