@@ -22,6 +22,8 @@ sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
 # --- Trained relation extractors (REBEL) ---
 # transformers>=4.30  # Hugging Face REBEL model
 # torch>=2.0         # PyTorch backend for transformers
+# accelerate>=1.1.0  # Required by Seq2SeqTrainer
+# datasets>=2.0      # HuggingFace datasets for fine-tuning
 
 # --- Graph persistence (Neo4j) ---
 # neo4j>=5.0         # Neo4j driver for persistent graphs >1M nodes
