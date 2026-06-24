@@ -5,11 +5,11 @@
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![LangChain](https://img.shields.io/badge/LangChain-1.x-orange)
-![LLM](https://img.shields.io/badge/LLM-Groq%20%7C%20Anthropic%20%7C%20OpenAI-purple)
+![LLM](https://img.shields.io/badge/LLM-Groq%20%7C%20Gemini%20%7C%20Anthropic%20%7C%20OpenAI-purple)
 
-**RAG that traverses cause→effect chains instead of returning similarity-matched chunks.**
+**RAG that traverses cause→effect chains and preserves document structure, instead of returning similarity-matched chunks.**
 
-Standard RAG embeds and retrieves *chunks*. When the answer requires following a chain across multiple chunks ("what did X ultimately cause?"), similarity search fails — the consequence lives in a chunk with near-zero lexical overlap with the cause. This system extracts causal edges at ingest, stores them in a directed graph, and returns whole chains as the retrieval unit.
+Standard RAG embeds and retrieves *chunks*. When the answer requires following a chain across multiple chunks ("what did X ultimately cause?"), similarity search fails — the consequence lives in a chunk with near-zero lexical overlap with the cause. This system extracts causal edges at ingest, stores them in a directed graph, and returns whole chains as the retrieval unit. It also keeps the document's **structure** (headings → sections → sentences) and folds it into both retrieval and the answer prompt.
 
 ---
 
@@ -54,6 +54,32 @@ Measured with LLM-as-judge (faithfulness, precision, recall). LLM: Groq llama-3.
 | **This system (LLM augment)** | **0.80** | **0.85** | **0.88** |
 
 Full results and domain-specific guidance: [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md) · [DOMAINS.md](DOMAINS.md)
+
+---
+
+## Structure-aware retrieval (and what actually moved the numbers)
+
+Beyond causal chains, the system preserves each document's **organization** and uses it on both sides of the pipeline. We measured each layer on a real large document (Wikipedia *Subprime mortgage crisis › Causes*, 566 sentences) — and report only what survived rigorous (temperature-0, n=12) measurement. Full write-up, including a retracted over-claim: [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
+
+| Lever | What it does | Measured effect |
+|---|---|---|
+| **Causal extraction** | Build more/better edges (spaCy + LLM) | Recall **0.46 → 0.60** (26-q benchmark) |
+| **Retrieval-side structure** | Contextual indexing (heading-path folded into BM25+dense) + MMR diversity | Flat recall **0.27 → 0.47**, faithfulness **0.60 → 1.00** — *the biggest win* |
+| **Generation-side structure** | Causal chains + heading-paths shown to the LLM | **Faithfulness +0.08–0.15** (grounding), recall neutral |
+
+Honest notes: showing structure to the LLM helps it *not invent* facts (faithfulness), not *find* more (recall). Whether that gain shrinks for a stronger model is **still open** — free-tier API quotas blocked the strong-model run. Techniques are grounded in [Anthropic Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval) and [Microsoft GraphRAG](https://arxiv.org/abs/2404.16130).
+
+**Document-structure presets (opt-in):** ingestion is domain-agnostic by default; pass a preset to tag discourse roles.
+
+```python
+rag.ingest(paper_markdown, schema="research")   # IMRaD: abstract/methods/results/conclusion
+rag.ingest(clinical_note,  schema="clinical")   # SOAP
+rag.ingest(incident_report, schema="incident")  # timeline/root_cause/impact/remediation
+rag.ingest(any_document)                          # "general" (default) — structure only, no domain assumptions
+# "auto" detects the best-fitting preset from the headings
+```
+
+Evidence handed to the LLM is annotated with its location, e.g. `[Causes > Securitization] Securitization spread mortgage risk to investors.`
 
 ---
 
@@ -103,10 +129,10 @@ uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
 ```bash
-# Ingest a document
+# Ingest a document (schema is optional; default "general")
 curl -X POST http://localhost:8000/ingest \
   -H "Content-Type: application/json" \
-  -d '{"text": "The reactor overheated. It caused the valve to fail. This triggered a shutdown.", "llm_mode": "augment"}'
+  -d '{"text": "The reactor overheated. It caused the valve to fail. This triggered a shutdown.", "llm_mode": "augment", "schema": "incident"}'
 
 # Query
 curl -X POST http://localhost:8000/query \
@@ -115,6 +141,9 @@ curl -X POST http://localhost:8000/query \
 
 # Inspect graph
 curl http://localhost:8000/graph
+
+# Health — also lists available document-structure presets
+curl http://localhost:8000/health
 
 # Interactive docs
 open http://localhost:8000/docs
@@ -189,7 +218,7 @@ pip install pytest
 pytest tests/ -q
 ```
 
-Covers VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), cross-process embedding determinism, end-to-end retrieval, and the Neo4j edge-id logic (via a fake driver — no server needed).
+36 tests covering VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), document-structure parsing (heading nesting, schema presets, synthesis score), contextual indexing + MMR diversity, structure-annotated context, end-to-end retrieval, and the Neo4j edge-id logic (via a fake driver — no server needed).
 
 ---
 
@@ -225,22 +254,24 @@ pip install neo4j       # neo4j>=5.0
 
 ```
 INGEST
-  ┌─ spaCy dep parse ─┐
-  │  + rule fallback   ├──► (cause, relation, effect) edges
-  │  + LLM extractor  │         │
-  └───────────────────┘         ▼
-                          VSA-encoded directed graph
-                          + BM25 / dense / path-signature indices
+  ┌─ spaCy dep parse ─┐                    ┌─ doc-structure parser ─┐
+  │  + rule fallback   ├─► causal edges    │  headings → sections   │
+  │  + LLM extractor  │         │          │  → paragraphs → sents  │
+  └───────────────────┘         ▼          └────────────┬───────────┘
+                          VSA-encoded directed graph     │ heading-path,
+                          + BM25 / dense / path-sig       │ position, synthesis
+                          (CONTEXTUAL: heading-path folded into BM25+dense)
 
-RETRIEVE  (5-channel RRF fusion)
+RETRIEVE  (5-channel RRF fusion → traverse → rerank → MMR diversity)
   name match (2.0) · VSA direction (1.2) · BM25 (1.0) · dense (1.0) · path signature (0.8)
                                     │
-                          TRAVERSE causal graph
-                          (forward / backward BFS)
+                          TRAVERSE causal graph (forward / backward BFS)
                                     │
                           RERANK chains (direction-aware + semantic)
                                     │
-                          LLM generates answer from ordered chains
+                          MMR select top-k (cover sections, not duplicates)
+                                    │
+                          LLM answers from chains + heading-path-annotated evidence
 ```
 
 | Query intent | Traversal | Example |
@@ -285,6 +316,7 @@ Performance: <100ms in-memory on 10K nodes · 50-200ms Neo4j on 1M+ nodes.
 | Retrieval channels | 1 (dense + k-hop) | 5 (name, VSA direction, BM25, dense, path signature) |
 | Causal direction | Not modelled | Forward / backward intent + directed traversal |
 | Path signatures | — | Rough Path Theory (level-3 iterated integrals) |
+| Document structure | — | Heading hierarchy + contextual indexing + MMR diversity |
 | LangChain | v0.2 | 1.x (BaseRetriever, LCEL, create_agent) |
 | REST API | — | FastAPI (ingest / query / graph endpoints) |
 | Neo4j backend | — | Drop-in for 1M+ node graphs |
@@ -308,24 +340,29 @@ Related paper: [CausalRAG (ACL 2025)](https://arxiv.org/abs/2503.19878)
 
 | File | Purpose |
 |---|---|
-| `graph_rag.py` | Orchestrating engine: ingest → retrieve → rerank → generate |
+| `graph_rag.py` | Orchestrating engine: ingest → retrieve → MMR → generate; contextual indexing, structure annotation |
+| `doc_structure.py` | Structure-preserving parser (headings→sections→sentences), schema presets, synthesis score |
 | `causal_extractor.py` | spaCy, LLM, REBEL, and coreference-based edge extraction |
 | `causal_graph.py` | In-memory VSA-encoded directed graph + BFS traversal |
 | `neo4j_graph.py` | Neo4j-backed persistent graph (drop-in for >1M nodes) |
 | `langchain_integration.py` | `VSAGraphRetriever`, LCEL chain builder, agent tool |
 | `api.py` | FastAPI REST service (ingest / query / graph / health) |
-| `llm_adapters.py` | GroqLLM, AnthropicLLM, OpenAILLM |
+| `llm_adapters.py` | GroqLLM, GeminiLLM, AnthropicLLM, OpenAILLM (temperature, rate-limit-aware retry) |
 | `vsa_core.py` | Bipolar hypervector algebra, role-filler triple encoding |
 | `retrievers.py` | BM25, dense, path-signature retrievers, RRF fusion |
-| `eval_multidomain_large.py` | 26-question benchmark (healthcare, finance, manufacturing) |
-| `demo_langchain.py` | LangChain demo (retriever, chain, agent) |
-| `demo_neo4j.py` | Neo4j backend demo |
+| `eval_multidomain_large.py` | 26-question extraction benchmark (healthcare, finance, manufacturing) |
+| `eval_realdoc.py` | Structure ablation on a real large document (weak vs strong model) |
+| `validate_neo4j.py` | End-to-end check against a real Neo4j server |
+| `demo_langchain.py` · `demo_neo4j.py` · `demo_structured.py` | Runnable demos |
 
 ---
 
-## Limitations
+## Limitations & honest findings
 
+- **Generation-side structure helps faithfulness, not recall.** Showing causal chains + heading-paths to the LLM improves grounding (+0.08–0.15 faithfulness) but does not increase coverage. The recall gains come from *retrieval-side* structure and better extraction, not prompt formatting. See [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md) — including a recall "synergy" claim we **retracted** after it failed to replicate (it was temperature-0.2 sampling noise at n=5).
+- **Capability-scaling is unmeasured.** Whether the faithfulness gain shrinks for a stronger model is open — free-tier API daily quotas (Groq 70b, Gemini) blocked the strong-model run. Add an `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` or a paid tier and rerun `MODELS=strong python eval_realdoc.py`.
 - **Implicit causality** requires LLM extraction (`llm_mode="augment"`). spaCy misses causality expressed without explicit causal verbs.
 - **Coreference** uses heuristic pronoun resolution (nearest antecedent). Neural coreference deferred for Python 3.14 compatibility.
+- **Structure parsing** targets Markdown / clean text with explicit headings. Real PDF layout (via `liteparse`/`markitdown`) plugs into the same data model but isn't wired into ingest yet.
 - **REBEL** (trained relation extractor) integrated but LLM extraction outperforms it on domain-specific text without fine-tuning.
-- **LLM judge** uses the same model for generation and evaluation. A stronger judge (GPT-4o, Claude) gives more reliable absolute scores; relative comparisons are valid either way.
+- **LLM judge** uses an LLM for evaluation; absolute scores are softer than a human, but relative comparisons (and the deterministic temp-0 ablations) are sound.
