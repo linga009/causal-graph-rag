@@ -27,6 +27,8 @@ sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
 
 # --- Graph persistence (Neo4j) ---
 # neo4j>=5.0         # Neo4j driver for persistent graphs >1M nodes
+#   Start a server:  docker run -d -p 7687:7687 -e NEO4J_AUTH=neo4j/testpassword neo4j:latest
+#   Then validate:   python validate_neo4j.py
 
 # --- REST API (api.py) ---
 # fastapi>=0.110
