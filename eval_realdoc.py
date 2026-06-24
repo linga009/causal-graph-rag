@@ -70,9 +70,12 @@ QUESTIONS = [
 ]
 
 CONDITIONS = {
-    "flat":       dict(structured=False, contextual=False),
-    "structured": dict(structured=True,  contextual=True),
+    "flat":         dict(structured=False, contextual=False),
+    "structured":   dict(structured=True,  contextual=True),
+    "prose":        dict(structured=True,  contextual=True, prose_chains=True),
 }
+
+TOP_K = 6   # give MMR room to diversify coverage on global questions
 
 
 def keyword_recall(answer: str, concepts: List[str]) -> float:
@@ -104,7 +107,7 @@ def main():
         print(f"--- generation model: {model} ---")
         for item in QUESTIONS:
             for cond, opts in CONDITIONS.items():
-                ans, chains = rag.answer(item.q, top_k=4, **opts)
+                ans, chains = rag.answer(item.q, top_k=TOP_K, **opts)
                 contexts = GraphRAG._dedup_provenance(chains)
                 kr = keyword_recall(ans, item.concepts)
                 faith = judge.faithfulness(ans, contexts) if contexts else 0.0

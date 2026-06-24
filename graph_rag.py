@@ -124,6 +124,10 @@ class GraphRAG:
         self.llm = llm or MockLLM()
         self.max_depth = max_depth
         self._node_docs: Dict[str, str] = {}
+        # Per-node document context (heading paths the node's sentences sit
+        # under). Folded into the BM25/dense index so retrieval can match on
+        # section-level topic words — Anthropic "Contextual Retrieval".
+        self._node_context: Dict[str, set] = {}
         # Document-structure index (Phase 2): each ingested sentence's location
         # in the document — heading path, reading position, synthesis score and
         # (optional) discourse role. Used to annotate evidence with WHERE it
@@ -165,16 +169,31 @@ class GraphRAG:
         else:
             edges = extract_edges(clean_text)
 
+        # Build the structure index FIRST so node docs can be enriched with the
+        # document context (heading path) each sentence came from.
+        self._index_document_structure(ds)
+
         for e in edges:
             self.graph.add_edge(e)
             for node in (e.cause, e.effect):
                 self._node_docs.setdefault(node, "")
                 if e.source_sent not in self._node_docs[node]:
                     self._node_docs[node] += " " + e.source_sent
-        self.bm25.index(self._node_docs)
-        self.dense.index(self._node_docs)
+                    meta = self._locate(e.source_sent)
+                    if meta and meta["heading_path"]:
+                        self._node_context.setdefault(node, set()).add(
+                            " ".join(meta["heading_path"]))
+
+        # Contextual Retrieval: index on context-enriched node docs (heading
+        # path prepended) for BM25 + dense so section topic words are matchable.
+        # Path signatures keep the raw sentence order.
+        enriched = {
+            n: (" ".join(self._node_context.get(n, ())) + " " + d).strip()
+            for n, d in self._node_docs.items()
+        }
+        self.bm25.index(enriched)
+        self.dense.index(enriched)
         self.sig.index(self._node_docs)
-        self._index_document_structure(ds)
         return len(edges)
 
     # -- document structure index (Phase 2) ---------------------------------- #
@@ -314,10 +333,57 @@ class GraphRAG:
                     score += float(q_emb @ chain_emb) * 3.0
             c.rerank_score = score
 
+    # -- diversity selection (MMR) ------------------------------------------ #
+    @staticmethod
+    def _chain_nodes(c: ChainResult) -> set:
+        s: set = set()
+        for e in c.chain:
+            s.add(e.cause)
+            s.add(e.effect)
+        return s
+
+    @staticmethod
+    def _jaccard(a: set, b: set) -> float:
+        if not a or not b:
+            return 0.0
+        return len(a & b) / len(a | b)
+
+    def _mmr_select(self, chains: List[ChainResult], top_k: int,
+                    lam: float = 0.6) -> List[ChainResult]:
+        """Maximal Marginal Relevance: pick top_k chains trading off relevance
+        against redundancy (shared nodes), so the selection COVERS more of the
+        document instead of returning near-duplicate local chains. This is the
+        lever for global / multi-hop questions (Vendi-RAG, MMR)."""
+        if len(chains) <= top_k:
+            return chains
+        scores = [c.rerank_score for c in chains]
+        lo, hi = min(scores), max(scores)
+        rng = (hi - lo) or 1.0
+        rel = {id(c): (c.rerank_score - lo) / rng for c in chains}
+        nodesets = {id(c): self._chain_nodes(c) for c in chains}
+
+        selected: List[ChainResult] = []
+        pool = list(chains)
+        while pool and len(selected) < top_k:
+            if not selected:
+                best = max(pool, key=lambda c: rel[id(c)])
+            else:
+                def mmr(c: ChainResult) -> float:
+                    red = max(self._jaccard(nodesets[id(c)], nodesets[id(s)])
+                              for s in selected)
+                    return lam * rel[id(c)] - (1 - lam) * red
+                best = max(pool, key=mmr)
+            selected.append(best)
+            pool.remove(best)
+        return selected
+
     # -- retrieve ------------------------------------------------------------ #
-    def retrieve(self, question: str, top_k: int = 3) -> List[ChainResult]:
+    def retrieve(self, question: str, top_k: int = 3,
+                 diversify: bool = True) -> List[ChainResult]:
         direction = self._direction(question)
-        entries = self._entry_nodes(question, top_n=4)
+        # Pull more candidate entry nodes than top_k so MMR has room to cover
+        # different parts of the document.
+        entries = self._entry_nodes(question, top_n=max(4, top_k * 2))
         results: List[ChainResult] = []
         for rrf_score, node in entries:
             if node not in self.graph.nodes():
@@ -338,6 +404,8 @@ class GraphRAG:
                 uniq.append(r)
         self._rerank(question, uniq)
         uniq.sort(key=lambda r: (-r.rerank_score, -r.rrf_score))
+        if diversify:
+            return self._mmr_select(uniq, top_k)
         return uniq[:top_k]
 
     # -- causal path summarization (borrowed from CausalRAG) ---------------- #
@@ -383,8 +451,21 @@ class GraphRAG:
                     out.append(s)
         return out
 
+    @staticmethod
+    def _chain_prose(c: ChainResult) -> str:
+        """Render a chain as a natural-language sentence instead of arrow
+        notation: 'A reduced B, which disrupted C'. Polarity is carried by the
+        relation verb. Avoids the symbolic-notation parsing tax that weaker
+        models pay on '-/->' arrows."""
+        if not c.chain:
+            return ""
+        parts = [f"{c.chain[0].cause} {c.chain[0].relation.replace('_', ' ')} {c.chain[0].effect}"]
+        for e in c.chain[1:]:
+            parts.append(f"which {e.relation.replace('_', ' ')} {e.effect}")
+        return ", ".join(parts)
+
     def _build_context(self, chains: List[ChainResult], structured: bool,
-                       contextual: bool = True) -> str:
+                       contextual: bool = True, prose_chains: bool = False) -> str:
         """Assemble the LLM context from retrieved chains.
 
         Two independent structure signals, each separately toggleable so their
@@ -404,13 +485,15 @@ class GraphRAG:
         evidence = "\n".join((self._annotate(s) if contextual else s) for s in prov)
         if not structured:
             return evidence
-        chain_block = "\n".join(f"  {c.text()}" for c in chains)
+        render = self._chain_prose if prose_chains else (lambda c: c.text())
+        chain_block = "\n".join(f"  {render(c)}" for c in chains)
         return f"Causal chains:\n{chain_block}\n\nEvidence:\n{evidence}"
 
     # -- generate ------------------------------------------------------------ #
     def answer(self, question: str, top_k: int = 3,
                summarize: bool = False, structured: bool = True,
-               contextual: bool = True) -> Tuple[str, List[ChainResult]]:
+               contextual: bool = True, prose_chains: bool = False
+               ) -> Tuple[str, List[ChainResult]]:
         """
         Retrieve causal chains and generate an answer.
 
@@ -443,7 +526,8 @@ class GraphRAG:
             )
         else:
             causal_ctx = self._build_context(chains, structured=structured,
-                                             contextual=contextual)
+                                             contextual=contextual,
+                                             prose_chains=prose_chains)
             legend = (
                 "In the causal chains, '->' means the cause promotes/produces "
                 "the effect and '-/->' means it inhibits/reduces the effect; "
