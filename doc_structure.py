@@ -125,6 +125,90 @@ class DocStructure:
         sec = self.section_of(block_id)
         return sec.role if sec else None
 
+    def heading_path(self, block_id: str) -> List[str]:
+        """Breadcrumb of enclosing section titles, outermost first.
+
+        e.g. a sentence under '## Results' nested in '# Experiments' returns
+        ['Experiments', 'Results']. The implicit '(body)' wrapper is omitted.
+        This is the domain-agnostic 'where in the document' signal we hand to
+        the LLM (contextual retrieval).
+        """
+        path: List[str] = []
+        cur = self.section_of(block_id)
+        while cur is not None and cur.kind == "section":
+            if cur.text != "(body)":
+                path.append(cur.text)
+            cur = self.blocks.get(cur.parent_id) if cur.parent_id else None
+        return list(reversed(path))
+
+    def position_of(self, block_id: str) -> float:
+        """Normalized reading position of a block in [0, 1] (0 = top)."""
+        b = self.blocks.get(block_id)
+        if b is None or len(self.order) <= 1:
+            return 0.0
+        return b.order / (len(self.order) - 1)
+
+    # -- synthesis score: general replacement for role-guessing ------------- #
+    def synthesis_scores(self, embed=None) -> Dict[str, float]:
+        """Per-section 'synthesis' score in [0, 1].
+
+        A section scores high when it is SHORT yet its content is ECHOED across
+        the rest of the document — i.e. it summarizes/synthesizes (abstract,
+        conclusion, executive summary, TL;DR) — *without naming any of them*.
+        This is the domain-agnostic signal that lets retrieval prefer the
+        summarizing section for 'what's the main takeaway' queries.
+
+            synthesis = coverage x brevity
+              coverage = fraction of the section's content words that also
+                         appear elsewhere in the document
+              brevity  = min(1, mean_section_length / section_length)
+
+        embed : optional callable str->unit-vector; when given, coverage uses
+                cosine(section_centroid, rest_centroid) instead of token overlap.
+                Falls back to token overlap (no dependency) otherwise.
+        """
+        secs = [s for s in self.sections() if s.text != "(body)"]
+        if not secs:
+            return {}
+
+        def sec_text(sec: Block) -> str:
+            return " ".join(
+                self.blocks[b].text for b in self.order
+                if self.blocks[b].kind == "sentence"
+                and self.section_of(b) is sec
+            )
+
+        texts = {s.block_id: sec_text(s) for s in secs}
+        lengths = {sid: max(1, len(_content_words(t))) for sid, t in texts.items()}
+        mean_len = sum(lengths.values()) / len(lengths)
+
+        scores: Dict[str, float] = {}
+        if embed is not None:
+            import numpy as np
+            vecs = {sid: embed(t) for sid, t in texts.items() if t.strip()}
+            for sid in texts:
+                others = [v for o, v in vecs.items() if o != sid]
+                if sid in vecs and others:
+                    rest = np.mean(others, axis=0)
+                    n = np.linalg.norm(rest)
+                    coverage = float(vecs[sid] @ (rest / n)) if n else 0.0
+                else:
+                    coverage = 0.0
+                coverage = max(0.0, coverage)
+                brevity = min(1.0, mean_len / lengths[sid])
+                scores[sid] = round(coverage * brevity, 4)
+        else:
+            for sid in texts:
+                words = set(_content_words(texts[sid]))
+                rest = set()
+                for o, t in texts.items():
+                    if o != sid:
+                        rest |= set(_content_words(t))
+                coverage = (len(words & rest) / len(words)) if words else 0.0
+                brevity = min(1.0, mean_len / lengths[sid])
+                scores[sid] = round(coverage * brevity, 4)
+        return scores
+
     # -- typed structural edges (CONTAINS / FOLLOWS) ------------------------ #
     def structural_edges(self) -> List[Tuple[str, str, str]]:
         """Yield (head_id, relation, tail_id) for the hierarchy + sequence.
@@ -160,6 +244,21 @@ _ALL_ROLE_PATTERNS = [p for schema in ROLE_PATTERNS.values() for p in schema.val
 
 def _split_sentences(text: str) -> List[str]:
     return [s.strip() for s in _SENT_SPLIT.split(text.strip()) if len(s.strip()) > 1]
+
+
+# Minimal stoplist so the synthesis score measures *content* overlap, not
+# shared function words. Deliberately small and dependency-free.
+_STOPWORDS = frozenset("""
+a an the of to in on at for and or but if then else this that these those is are
+was were be been being it its as by with from we our you your they their he she
+his her not no nor so than too very can will would should could may might must
+do does did has have had into over under more most such only own same out up down
+""".split())
+_WORD = re.compile(r"[a-z][a-z0-9]+")
+
+
+def _content_words(text: str) -> List[str]:
+    return [w for w in _WORD.findall(text.lower()) if w not in _STOPWORDS]
 
 
 def _heading(line: str) -> Optional[Tuple[int, str]]:
@@ -249,18 +348,34 @@ def parse(text: str, doc_id: str = "doc", schema: str = "general") -> DocStructu
         counters[kind_prefix] += 1
         return f"{kind_prefix}:{counters[kind_prefix]}"
 
-    root = Block(block_id="doc:0", kind="document", text=doc_id, order=0)
+    root = Block(block_id="doc:0", kind="document", text=doc_id, order=0, level=0)
     blocks[root.block_id] = root
     order.append(root.block_id)
 
+    # Section stack for level-based nesting: a '##' nests under the nearest
+    # preceding '#'. The stack always holds the chain of currently-open
+    # ancestors (root + open sections), so a sentence's heading_path is just
+    # the section titles along this chain.
+    section_stack: List[Block] = [root]
+
+    def open_section(level: int, title: str) -> Block:
+        # Pop siblings/deeper sections; parent is the nearest shallower one.
+        while len(section_stack) > 1 and section_stack[-1].level >= level:
+            section_stack.pop()
+        parent = section_stack[-1]
+        sec = Block(
+            block_id=new_id("sec"), kind="section", text=title,
+            order=len(order), level=level, role=detect_role(title, schema),
+            parent_id=parent.block_id,
+        )
+        blocks[sec.block_id] = sec
+        parent.children.append(sec.block_id)
+        order.append(sec.block_id)
+        section_stack.append(sec)
+        return sec
+
     # Implicit section for any preamble before the first heading.
-    cur_section = Block(
-        block_id=new_id("sec"), kind="section", text="(body)", order=len(order),
-        level=1, role=None, parent_id=root.block_id,
-    )
-    blocks[cur_section.block_id] = cur_section
-    root.children.append(cur_section.block_id)
-    order.append(cur_section.block_id)
+    cur_section = open_section(level=1, title="(body)")
 
     para_buf: List[str] = []
 
@@ -294,14 +409,7 @@ def parse(text: str, doc_id: str = "doc", schema: str = "general") -> DocStructu
         if h:
             flush_paragraph()
             level, title = h
-            cur_section = Block(
-                block_id=new_id("sec"), kind="section", text=title,
-                order=len(order), level=level,
-                role=detect_role(title, schema), parent_id=root.block_id,
-            )
-            blocks[cur_section.block_id] = cur_section
-            root.children.append(cur_section.block_id)
-            order.append(cur_section.block_id)
+            cur_section = open_section(level, title)
         elif not line.strip():
             flush_paragraph()
         else:

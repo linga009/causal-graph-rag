@@ -95,3 +95,48 @@ def test_unknown_schema_rejected():
     import pytest
     with pytest.raises(ValueError):
         parse(RESEARCH_DOC, schema="nonsense")
+
+
+NESTED_DOC = """# Experiments
+Intro to experiments.
+
+## Results
+We observed a clear effect.
+
+## Ablations
+Removing the module hurt performance.
+"""
+
+
+def test_heading_path_nesting():
+    ds = parse(NESTED_DOC, doc_id="paper")
+    # the sentence under "## Results" should carry the full breadcrumb
+    target = next(s for s in ds.sentences() if "clear effect" in s.text)
+    assert ds.heading_path(target.block_id) == ["Experiments", "Results"]
+    ablation = next(s for s in ds.sentences() if "Removing the module" in s.text)
+    assert ds.heading_path(ablation.block_id) == ["Experiments", "Ablations"]
+
+
+def test_position_monotonic():
+    ds = parse(RESEARCH_DOC, doc_id="paper")
+    sents = ds.sentences()
+    positions = [ds.position_of(s.block_id) for s in sents]
+    assert positions == sorted(positions)
+    assert 0.0 <= positions[0] <= positions[-1] <= 1.0
+
+
+def test_synthesis_score_prefers_summarizing_sections():
+    # Synthesis sections (abstract / conclusion) restate the paper briefly, so
+    # they should outrank descriptive sections (methods / introduction) — with
+    # NO domain role table involved (general signal). We do NOT privilege any
+    # specific section name: the top section is simply whichever summarizes most.
+    ds = parse(RESEARCH_DOC, doc_id="paper")  # schema='general'
+    scores = ds.synthesis_scores()            # token-based, no embeddings
+    by_title = {ds.blocks[sid].text: sc for sid, sc in scores.items()}
+    assert by_title, "expected per-section scores"
+
+    top = max(by_title, key=by_title.get)
+    assert top in {"Abstract", "Conclusion"}, f"top should summarize, got {top!r} ({by_title})"
+    # both synthesis sections beat the descriptive ones
+    assert by_title["Abstract"] > by_title["Methods"]
+    assert by_title["Conclusion"] > by_title["Introduction"]

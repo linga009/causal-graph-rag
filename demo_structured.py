@@ -26,12 +26,16 @@ from graph_rag import GraphRAG
 from llm_adapters import GroqLLM
 from pipeline import MockLLM
 
-DOC = (
-    "The reactor overheated. The overheating caused the coolant valve to fail. "
-    "The valve failure triggered an emergency shutdown. "
-    "The shutdown reduced power output. "
-    "Lower power output disrupted hospital operations."
-)
+DOC = """# Incident Report: Plant Outage
+
+## Timeline
+The reactor overheated during the night shift. The overheating caused the
+coolant valve to fail. The valve failure triggered an emergency shutdown.
+
+## Impact
+The shutdown reduced power output. Lower power output disrupted hospital
+operations across the district.
+"""
 
 QUESTION = "Did the emergency shutdown raise or lower power output, and what did that ultimately affect?"
 
@@ -47,6 +51,9 @@ def main():
     print("Retrieved causal chains (note the polarity arrows):")
     for c in chains:
         print(f"  {c.text()}")
+    print()
+    print("Context handed to the LLM (note heading-path tags):")
+    print(rag._build_context(chains, structured=True))
     print()
 
     ans_flat, _ = rag.answer(QUESTION, structured=False)

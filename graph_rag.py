@@ -124,11 +124,16 @@ class GraphRAG:
         self.llm = llm or MockLLM()
         self.max_depth = max_depth
         self._node_docs: Dict[str, str] = {}
+        # Document-structure index (Phase 2): each ingested sentence's location
+        # in the document — heading path, reading position, synthesis score and
+        # (optional) discourse role. Used to annotate evidence with WHERE it
+        # came from, the domain-agnostic "contextual retrieval" signal.
+        self._struct_index: List[Tuple[set, dict, str]] = []
 
     # -- ingest -------------------------------------------------------------- #
     def ingest(self, text: str, doc_id: str = "doc",
                llm_extractor: Optional[object] = None,
-               llm_mode: str = "augment") -> int:
+               llm_mode: str = "augment", schema: str = "general") -> int:
         """
         Extract causal edges and build the retrieval indices.
 
@@ -143,11 +148,22 @@ class GraphRAG:
         llm_mode      : "augment" — LLM only fills sentences spaCy missed.
                         "full"    — LLM processes every sentence (highest recall,
                         same cost profile as CausalRAG).
+        schema        : Document-structure preset for the ingested text — the
+                        user's choice. "general" (default) captures hierarchy +
+                        position with no domain assumptions; "research"/
+                        "clinical"/"incident"/"auto" additionally tag discourse
+                        roles. Structure is captured either way.
         """
+        from doc_structure import parse
+        ds = parse(text, schema=schema)
+        # Extract causality from the clean BODY sentences only, so markdown
+        # heading lines ("## Impact") never leak into edges or provenance.
+        clean_text = " ".join(s.text for s in ds.sentences()) or text
+
         if llm_extractor is not None:
-            edges = extract_edges_hybrid(text, llm_extractor, mode=llm_mode)
+            edges = extract_edges_hybrid(clean_text, llm_extractor, mode=llm_mode)
         else:
-            edges = extract_edges(text)
+            edges = extract_edges(clean_text)
 
         for e in edges:
             self.graph.add_edge(e)
@@ -158,7 +174,57 @@ class GraphRAG:
         self.bm25.index(self._node_docs)
         self.dense.index(self._node_docs)
         self.sig.index(self._node_docs)
+        self._index_document_structure(ds)
         return len(edges)
+
+    # -- document structure index (Phase 2) ---------------------------------- #
+    def _embed_fn(self):
+        """Return a str->unit-vector encoder if a real dense model is loaded,
+        else None (synthesis score falls back to token overlap)."""
+        model = getattr(self.dense, "_model", None)
+        if model is None:
+            return None
+        return lambda t: model.encode([t], convert_to_numpy=True,
+                                      normalize_embeddings=True)[0]
+
+    def _index_document_structure(self, ds) -> None:
+        from doc_structure import _content_words
+        syn = ds.synthesis_scores(embed=self._embed_fn())
+        for s in ds.sentences():
+            sec = ds.section_of(s.block_id)
+            meta = {
+                "heading_path": ds.heading_path(s.block_id),
+                "position": round(ds.position_of(s.block_id), 3),
+                "role": ds.role_of(s.block_id),
+                "synthesis": syn.get(sec.block_id, 0.0) if sec else 0.0,
+            }
+            self._struct_index.append((set(_content_words(s.text)), meta, s.text))
+
+    def _locate(self, sentence: str) -> Optional[dict]:
+        """Best-matching structural location for a (possibly coref-rewritten)
+        sentence, by content-word Jaccard. None if nothing matches well."""
+        if not self._struct_index:
+            return None
+        from doc_structure import _content_words
+        q = set(_content_words(sentence))
+        if not q:
+            return None
+        best, best_j = None, 0.0
+        for toks, meta, _ in self._struct_index:
+            if not toks:
+                continue
+            j = len(q & toks) / len(q | toks)
+            if j > best_j:
+                best, best_j = meta, j
+        return best if best_j >= 0.4 else None
+
+    def _annotate(self, sentence: str) -> str:
+        """Prefix a sentence with its heading path, e.g. '[Results › Ablations] ...'."""
+        meta = self._locate(sentence)
+        if not meta:
+            return sentence
+        hp = " > ".join(meta["heading_path"])
+        return f"[{hp}] {sentence}" if hp else sentence
 
     # -- entry-node selection (three-channel fusion) ------------------------- #
     def _entry_nodes(self, question: str, top_n: int = 4) -> List[Tuple[float, str]]:
@@ -326,8 +392,13 @@ class GraphRAG:
                            which event leads to which, and whether each link
                            promotes (->) or inhibits (-/->) its effect.
         structured=False : evidence sentences only (legacy; for A/B comparison).
+
+        Evidence sentences are annotated with their document location
+        (e.g. '[Results › Ablations] ...') when a structure index is present —
+        the domain-agnostic "where did this come from" signal.
         """
-        evidence = "\n".join(self._dedup_provenance(chains))
+        prov = self._dedup_provenance(chains)
+        evidence = "\n".join(self._annotate(s) for s in prov)
         if not structured:
             return evidence
         chain_block = "\n".join(f"  {c.text()}" for c in chains)
