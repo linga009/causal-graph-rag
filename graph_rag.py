@@ -353,10 +353,16 @@ class GraphRAG:
         return self.llm.generate(prompt), chains
 
     def close(self) -> None:
-        """Close database connections (for Neo4j backend)."""
-        if self.using_neo4j and hasattr(self.graph, "close"):
-            self.graph.close()
+        """Close database connections (for Neo4j backend). Idempotent."""
+        if getattr(self, "using_neo4j", False):
+            graph = getattr(self, "graph", None)
+            if graph is not None and hasattr(graph, "close"):
+                graph.close()
 
     def __del__(self):
-        """Cleanup on deletion."""
-        self.close()
+        # Guard against partial __init__ and interpreter-shutdown teardown:
+        # GC must never raise.
+        try:
+            self.close()
+        except Exception:
+            pass

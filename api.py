@@ -24,7 +24,8 @@ Endpoints
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional
+import threading
+from typing import List, Optional
 
 # Load .env before any imports that read env vars
 def _load_env(path: str = ".env") -> None:
@@ -84,6 +85,17 @@ def _build_llm():
 
 _llm = _build_llm()
 _rag = GraphRAG(dim=10000, llm=_llm)
+
+# GraphRAG mutates shared in-memory indices on ingest. FastAPI runs sync
+# endpoints in a threadpool, so without a lock a concurrent /ingest and /query
+# would read a half-rebuilt BM25/dense index. Serialize all graph access.
+_rag_lock = threading.Lock()
+
+
+def _edges(rag: GraphRAG) -> list:
+    """Backend-agnostic edge list (in-memory list or Neo4j fetch)."""
+    g = rag.graph
+    return g._get_edges() if hasattr(g, "_get_edges") else list(g.edges)
 
 
 # --------------------------------------------------------------------------- #
@@ -147,13 +159,13 @@ class HealthResponse(BaseModel):
 @app.get("/health", response_model=HealthResponse, tags=["system"])
 def health():
     """Health check — returns LLM type and graph size."""
-    edges = _rag.graph._get_edges() if hasattr(_rag.graph, "_get_edges") else list(_rag.graph.edges)
-    return HealthResponse(
-        status="ok",
-        llm=type(_llm).__name__ if _llm else "none (spaCy only)",
-        nodes=len(_rag.graph.nodes()),
-        edges=len(edges),
-    )
+    with _rag_lock:
+        return HealthResponse(
+            status="ok",
+            llm=type(_llm).__name__ if _llm else "none (spaCy only)",
+            nodes=len(_rag.graph.nodes()),
+            edges=len(_edges(_rag)),
+        )
 
 
 @app.post("/ingest", response_model=IngestResponse, tags=["graph"])
@@ -165,22 +177,23 @@ def ingest(req: IngestRequest):
     - **llm_mode**: `"augment"` fills spaCy gaps with LLM; `"full"` uses LLM on every sentence.
       Omit for free spaCy-only extraction.
     """
-    before = len(_rag.graph.nodes())
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=422, detail="'text' must be a non-empty string.")
+    if req.llm_mode and req.llm_mode not in ("augment", "full"):
+        raise HTTPException(status_code=422, detail="llm_mode must be 'augment' or 'full'.")
 
-    if req.llm_mode and _llm:
-        n = _rag.ingest(req.text, llm_extractor=_llm, llm_mode=req.llm_mode)
-    else:
-        n = _rag.ingest(req.text)
+    with _rag_lock:
+        if req.llm_mode and _llm:
+            n = _rag.ingest(req.text, llm_extractor=_llm, llm_mode=req.llm_mode)
+        else:
+            n = _rag.ingest(req.text)
 
-    edges = _rag.graph._get_edges() if hasattr(_rag.graph, "_get_edges") else list(_rag.graph.edges)
-    after = len(_rag.graph.nodes())
-
-    return IngestResponse(
-        edges_added=n,
-        total_nodes=after,
-        total_edges=len(edges),
-        llm_mode_used=req.llm_mode if req.llm_mode and _llm else None,
-    )
+        return IngestResponse(
+            edges_added=n,
+            total_nodes=len(_rag.graph.nodes()),
+            total_edges=len(_edges(_rag)),
+            llm_mode_used=req.llm_mode if req.llm_mode and _llm else None,
+        )
 
 
 @app.post("/query", response_model=QueryResponse, tags=["retrieval"])
@@ -194,34 +207,38 @@ def query(req: QueryRequest):
 
     Returns the answer and the supporting causal chains with provenance.
     """
-    if not _rag.graph.nodes():
-        raise HTTPException(status_code=400, detail="Graph is empty. POST to /ingest first.")
-
+    if not req.question or not req.question.strip():
+        raise HTTPException(status_code=422, detail="'question' must be a non-empty string.")
     if not _llm:
         raise HTTPException(
             status_code=503,
             detail="No LLM configured. Set GROQ_API_KEY or ANTHROPIC_API_KEY."
         )
 
-    answer, chains = _rag.answer(req.question, top_k=req.top_k, summarize=req.summarize)
+    with _rag_lock:
+        if not _rag.graph.nodes():
+            raise HTTPException(status_code=400, detail="Graph is empty. POST to /ingest first.")
+        answer, chains = _rag.answer(req.question, top_k=req.top_k, summarize=req.summarize)
 
-    chain_out = []
-    for c in chains:
-        chain_out.append(CausalChain(
+    chain_out = [
+        CausalChain(
             text=c.text(),
-            entry_node=getattr(c, "entry_node", ""),
-            direction=getattr(c, "direction", "forward"),
-            score=float(getattr(c, "score", 0.0)),
+            entry_node=c.entry_node,
+            direction=c.direction,
+            score=round(float(c.rerank_score), 4),
             provenance=c.provenance(),
-        ))
-
+        )
+        for c in chains
+    ]
     return QueryResponse(answer=answer, chains=chain_out, question=req.question)
 
 
 @app.get("/graph", response_model=GraphStats, tags=["graph"])
 def graph_stats():
     """Return graph statistics and a sample of edges."""
-    edges = _rag.graph._get_edges() if hasattr(_rag.graph, "_get_edges") else list(_rag.graph.edges)
+    with _rag_lock:
+        edges = _edges(_rag)
+        n_nodes = len(_rag.graph.nodes())
     sample = [
         GraphEdge(
             cause=e.cause,
@@ -232,16 +249,16 @@ def graph_stats():
         )
         for e in edges[:20]
     ]
-    return GraphStats(
-        nodes=len(_rag.graph.nodes()),
-        edges=len(edges),
-        sample_edges=sample,
-    )
+    return GraphStats(nodes=n_nodes, edges=len(edges), sample_edges=sample)
 
 
 @app.delete("/graph", tags=["graph"])
 def clear_graph():
     """Clear all edges and nodes from the graph."""
     global _rag
-    _rag = GraphRAG(dim=10000, llm=_llm)
+    with _rag_lock:
+        old = _rag
+        _rag = GraphRAG(dim=10000, llm=_llm)
+        if getattr(old, "using_neo4j", False):
+            old.close()
     return {"status": "cleared"}

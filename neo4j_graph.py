@@ -101,24 +101,45 @@ class Neo4jCausalGraph:
         self._edge_matrix_cache: Optional[np.ndarray] = None
         self._edge_cache: Optional[List[GraphEdge]] = None
 
-    def _init_schema(self) -> None:
-        """Create indexes and constraints for efficient queries."""
+        # Monotonic edge-id counter. Seeded once from the DB so ids stay unique
+        # across restarts; incremented in-memory thereafter. This avoids a
+        # MAX() scan on every insert (which is O(n) per edge -> O(n^2) bulk load)
+        # and the read-modify-write race two concurrent inserts would hit.
+        self._next_edge_id: int = self._max_edge_id() + 1
+
+    def _max_edge_id(self) -> int:
+        """Highest edge_id currently stored on :CAUSES relationships (-1 if none)."""
         with self.driver.session(database=self.database) as session:
-            # Node indexes
+            result = session.run(
+                "MATCH ()-[e:CAUSES]->() RETURN max(e.edge_id) AS max_id"
+            )
+            row = result.single()
+            return (row["max_id"] if row and row["max_id"] is not None else -1)
+
+    def _init_schema(self) -> None:
+        """Create indexes and constraints for efficient queries.
+
+        Edges are :CAUSES *relationships*, not :Edge nodes, so the uniqueness
+        constraint and lookup indexes must target the relationship type.
+        """
+        with self.driver.session(database=self.database) as session:
+            # Node-name lookup (used by nodes() / traversal entry points)
             session.run(
                 "CREATE INDEX node_name IF NOT EXISTS FOR (n:Node) ON (n.name)"
             )
-            # Edge indexes
-            session.run(
-                "CREATE INDEX edge_cause IF NOT EXISTS FOR (e:Edge) ON (e.cause)"
-            )
-            session.run(
-                "CREATE INDEX edge_effect IF NOT EXISTS FOR (e:Edge) ON (e.effect)"
-            )
-            # Constraints
-            session.run(
-                "CREATE CONSTRAINT edge_id IF NOT EXISTS FOR (e:Edge) REQUIRE e.edge_id IS UNIQUE"
-            )
+            # Relationship-property indexes (Neo4j 5.x supports REL indexes)
+            for stmt in (
+                "CREATE INDEX rel_cause IF NOT EXISTS FOR ()-[e:CAUSES]-() ON (e.cause)",
+                "CREATE INDEX rel_effect IF NOT EXISTS FOR ()-[e:CAUSES]-() ON (e.effect)",
+                "CREATE CONSTRAINT rel_edge_id IF NOT EXISTS "
+                "FOR ()-[e:CAUSES]-() REQUIRE e.edge_id IS UNIQUE",
+            ):
+                try:
+                    session.run(stmt)
+                except Exception:
+                    # Relationship indexes/constraints require Neo4j 5.x+.
+                    # Degrade gracefully on older servers rather than fail init.
+                    pass
 
     def _clear_all(self) -> None:
         """Delete all nodes and edges (for testing)."""
@@ -134,33 +155,23 @@ class Neo4jCausalGraph:
     # -- Build --------------------------------------------------------------- #
 
     def add_edge(self, e: CausalEdge) -> None:
-        """Add a causal edge to the graph."""
-        # Encode the edge using VSA
+        """Add a causal edge to the graph.
+
+        Nodes are MERGEd (deduplicated by name) and the :CAUSES relationship is
+        created with a unique, monotonically increasing edge_id. The whole
+        operation is a single round-trip.
+        """
         hv = encode_triple(Triple(e.cause, e.relation, e.effect), self.lex)
+        edge_id = self._next_edge_id
+        self._next_edge_id += 1
+        hv_str = self._serialize_vector(hv)
 
         with self.driver.session(database=self.database) as session:
-            # Get next edge ID
-            result = session.run(
-                "MATCH (e:Edge) RETURN max(e.edge_id) AS max_id"
-            )
-            max_id = result.single()[0] or -1
-            edge_id = max_id + 1
-
-            # Create/merge nodes
-            session.run(
-                "MERGE (cause:Node {name: $cause}) "
-                "MERGE (effect:Node {name: $effect})",
-                cause=e.cause,
-                effect=e.effect,
-            )
-
-            # Create edge with VSA encoding (stored as serialized numpy array)
-            hv_str = self._serialize_vector(hv)
             session.run(
                 """
-                MATCH (cause:Node {name: $cause})
-                MATCH (effect:Node {name: $effect})
-                CREATE (cause)-[edge:CAUSES {
+                MERGE (cause:Node {name: $cause})
+                MERGE (effect:Node {name: $effect})
+                CREATE (cause)-[:CAUSES {
                     edge_id: $edge_id,
                     cause: $cause,
                     relation: $relation,
@@ -171,14 +182,56 @@ class Neo4jCausalGraph:
                 }]->(effect)
                 """,
                 cause=e.cause,
-                relation=e.relation,
                 effect=e.effect,
                 edge_id=edge_id,
+                relation=e.relation,
                 polarity=e.polarity,
                 source_sent=e.source_sent,
                 hv=hv_str,
             )
 
+        self._invalidate_cache()
+
+    def add_edges(self, edges: List[CausalEdge]) -> None:
+        """Bulk-insert edges in a single transaction (UNWIND).
+
+        Far faster than repeated add_edge for large corpora — one round-trip
+        for the whole batch instead of one per edge.
+        """
+        if not edges:
+            return
+        rows = []
+        for e in edges:
+            hv = encode_triple(Triple(e.cause, e.relation, e.effect), self.lex)
+            rows.append({
+                "edge_id": self._next_edge_id,
+                "cause": e.cause,
+                "relation": e.relation,
+                "effect": e.effect,
+                "polarity": e.polarity,
+                "source_sent": e.source_sent,
+                "hv": self._serialize_vector(hv),
+            })
+            self._next_edge_id += 1
+
+        with self.driver.session(database=self.database) as session:
+            session.run(
+                """
+                UNWIND $rows AS row
+                MERGE (cause:Node {name: row.cause})
+                MERGE (effect:Node {name: row.effect})
+                CREATE (cause)-[:CAUSES {
+                    edge_id: row.edge_id,
+                    cause: row.cause,
+                    relation: row.relation,
+                    effect: row.effect,
+                    polarity: row.polarity,
+                    source_sent: row.source_sent,
+                    hv: row.hv
+                }]->(effect)
+                """,
+                rows=rows,
+            )
         self._invalidate_cache()
 
     def nodes(self) -> Set[str]:
@@ -406,10 +459,19 @@ class Neo4jCausalGraph:
         return " ".join(parts)
 
     def close(self) -> None:
-        """Close the database connection."""
-        if self.driver:
-            self.driver.close()
+        """Close the database connection (idempotent)."""
+        driver = getattr(self, "driver", None)
+        if driver is not None:
+            try:
+                driver.close()
+            except Exception:
+                pass
+            self.driver = None
 
     def __del__(self):
-        """Cleanup on deletion."""
-        self.close()
+        # __del__ can run during interpreter shutdown when modules are already
+        # gone; guard everything so GC never raises.
+        try:
+            self.close()
+        except Exception:
+            pass

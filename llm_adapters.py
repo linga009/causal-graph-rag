@@ -11,12 +11,21 @@ from __future__ import annotations
 import os
 
 
+def _require_key(env_var: str, api_key: str | None) -> str:
+    key = api_key or os.environ.get(env_var)
+    if not key:
+        raise RuntimeError(
+            f"{env_var} is not set. Export it or pass api_key=... explicitly."
+        )
+    return key
+
+
 class GroqLLM:
     """Matches a llama-3.1-8b-instant style Groq setup."""
     def __init__(self, model: str = "llama-3.1-8b-instant",
                  api_key: str | None = None):
         from groq import Groq  # pip install groq
-        self.client = Groq(api_key=api_key or os.environ["GROQ_API_KEY"])
+        self.client = Groq(api_key=_require_key("GROQ_API_KEY", api_key))
         self.model = model
 
     def generate(self, prompt: str) -> str:
@@ -25,13 +34,13 @@ class GroqLLM:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
-        return r.choices[0].message.content
+        return r.choices[0].message.content or ""
 
 
 class OpenAILLM:
     def __init__(self, model: str = "gpt-4o", api_key: str | None = None):
         from openai import OpenAI  # pip install openai
-        self.client = OpenAI(api_key=api_key or os.environ["OPENAI_API_KEY"])
+        self.client = OpenAI(api_key=_require_key("OPENAI_API_KEY", api_key))
         self.model = model
 
     def generate(self, prompt: str) -> str:
@@ -40,13 +49,13 @@ class OpenAILLM:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
-        return r.choices[0].message.content
+        return r.choices[0].message.content or ""
 
 
 class AnthropicLLM:
     def __init__(self, model: str = "claude-opus-4-8", api_key: str | None = None):
         import anthropic  # pip install anthropic
-        self.client = anthropic.Anthropic(api_key=api_key or os.environ["ANTHROPIC_API_KEY"])
+        self.client = anthropic.Anthropic(api_key=_require_key("ANTHROPIC_API_KEY", api_key))
         self.model = model
 
     def generate(self, prompt: str) -> str:

@@ -35,6 +35,11 @@ class GraphEdge:
 
 
 class CausalGraph:
+    # Hard cap on enumerated paths per traversal. A densely connected graph has
+    # exponentially many simple paths; without a cap a single query can hang and
+    # exhaust memory. 2000 is far more than any reranker will use.
+    MAX_PATHS = 2000
+
     def __init__(self, lex: Lexicon):
         self.lex = lex
         self.edges: List[GraphEdge] = []
@@ -91,6 +96,8 @@ class CausalGraph:
         paths: List[List[GraphEdge]] = []
 
         def dfs(node, path, visited, depth):
+            if len(paths) >= self.MAX_PATHS:
+                return
             edge_ids = adj.get(node, [])
             if not edge_ids or depth >= max_depth:
                 if path:
@@ -98,6 +105,8 @@ class CausalGraph:
                 return
             extended = False
             for eid in edge_ids:
+                if len(paths) >= self.MAX_PATHS:
+                    break
                 e = self.edges[eid]
                 nxt = next_node(e)
                 if nxt in visited:           # cycle guard

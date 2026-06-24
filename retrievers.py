@@ -33,11 +33,12 @@ Reference: Lyons (1998), Differential equations driven by rough signals.
 """
 
 from __future__ import annotations
+import hashlib
 import math
 import re
 from collections import defaultdict, Counter
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -47,6 +48,13 @@ _TOK = re.compile(r"[a-z0-9]+")
 
 def tokenize(s: str) -> List[str]:
     return _TOK.findall(s.lower())
+
+
+def _stable_hash(s: str) -> int:
+    """Process-independent hash. Python's builtin hash() is randomized per
+    process (PYTHONHASHSEED), which would make hashed embeddings differ between
+    runs. blake2b keeps the index reproducible across restarts."""
+    return int.from_bytes(hashlib.blake2b(s.encode("utf-8"), digest_size=8).digest(), "little")
 
 
 # --------------------------------------------------------------------------- #
@@ -112,7 +120,7 @@ class HashingDense:
             t = f"#{tok}#"
             for i in range(len(t) - 2):
                 g = t[i:i + 3]
-                v[hash(g) % self.dim] += 1.0
+                v[_stable_hash(g) % self.dim] += 1.0
         n = np.linalg.norm(v)
         return v / n if n else v
 
@@ -219,7 +227,7 @@ class PathSignatureRetriever:
                 # Fallback: random projections so the class still works
                 self._model = "random"
         if self._model == "random":
-            rng = np.random.default_rng(abs(hash(sentences[0])) % (2**31))
+            rng = np.random.default_rng(_stable_hash(sentences[0]) % (2**31))
             return rng.standard_normal((len(sentences), self.proj_dim)).astype(np.float32)
         embs = self._model.encode(sentences, convert_to_numpy=True,
                                   normalize_embeddings=True)  # (N, embed_dim)
@@ -316,7 +324,7 @@ class PathSignatureRetriever:
 #  Reciprocal Rank Fusion
 # --------------------------------------------------------------------------- #
 def rrf_fuse(ranked_lists: List[List[Tuple[float, str]]], k: int = 60,
-             weights: List[float] = None) -> List[Tuple[float, str]]:
+             weights: Optional[List[float]] = None) -> List[Tuple[float, str]]:
     """Combine multiple ranked node lists by rank position only (scale-agnostic)."""
     if weights is None:
         weights = [1.0] * len(ranked_lists)

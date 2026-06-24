@@ -6,3 +6,17 @@ venv/
 .DS_Store
 *.pdf
 rinn_phd_text.txt
+
+# Fine-tuned model weights (large binaries — never commit)
+models/
+*.safetensors
+*.bin
+
+# Generated training artifacts
+rebel_*_train.txt
+
+# Test / build artifacts
+.pytest_cache/
+*.egg-info/
+dist/
+build/

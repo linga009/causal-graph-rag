@@ -28,5 +28,12 @@ sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
 # --- Graph persistence (Neo4j) ---
 # neo4j>=5.0         # Neo4j driver for persistent graphs >1M nodes
 
+# --- REST API (api.py) ---
+# fastapi>=0.110
+# uvicorn>=0.29
+
+# --- Tests ---
+# pytest>=8.0        # run: pytest tests/ -q
+
 # --- PDF ingestion (demo_rinn.py) ---
 # pypdf

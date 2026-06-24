@@ -188,6 +188,17 @@ python demo_langchain.py   # full demo — auto-picks GROQ_API_KEY / ANTHROPIC_A
 
 ---
 
+## Tests
+
+```bash
+pip install pytest
+pytest tests/ -q
+```
+
+Covers VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), cross-process embedding determinism, end-to-end retrieval, and the Neo4j edge-id logic (via a fake driver — no server needed).
+
+---
+
 ## Installation
 
 ```bash
