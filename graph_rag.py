@@ -238,7 +238,7 @@ class GraphRAG:
         return best if best_j >= 0.4 else None
 
     def _annotate(self, sentence: str) -> str:
-        """Prefix a sentence with its heading path, e.g. '[Results › Ablations] ...'."""
+        """Prefix a sentence with its heading path, e.g. '[Results > Ablations] ...'."""
         meta = self._locate(sentence)
         if not meta:
             return sentence

@@ -15,9 +15,10 @@ sentence-transformers>=3.0   # all-MiniLM-L6-v2 downloaded on first use
 # langchain-anthropic>=0.3  # for ChatAnthropic
 
 # --- LLM backends ---
-# groq        # set GROQ_API_KEY
-# anthropic   # set ANTHROPIC_API_KEY
-# openai      # set OPENAI_API_KEY
+# groq          # set GROQ_API_KEY
+# google-genai  # set GEMINI_API_KEY
+# anthropic     # set ANTHROPIC_API_KEY
+# openai        # set OPENAI_API_KEY
 
 # --- Trained relation extractors (REBEL) ---
 # transformers>=4.30  # Hugging Face REBEL model

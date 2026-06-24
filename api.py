@@ -50,7 +50,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
 from graph_rag import GraphRAG
-from llm_adapters import GroqLLM, AnthropicLLM
+from llm_adapters import GroqLLM, GeminiLLM, AnthropicLLM, OpenAILLM
 
 # --------------------------------------------------------------------------- #
 #  App setup
@@ -77,10 +77,15 @@ app.add_middleware(
 # --------------------------------------------------------------------------- #
 
 def _build_llm():
+    """Pick an LLM from whatever API key is present (Groq → Gemini → Anthropic → OpenAI)."""
     if os.environ.get("GROQ_API_KEY"):
         return GroqLLM()
+    if os.environ.get("GEMINI_API_KEY"):
+        return GeminiLLM()
     if os.environ.get("ANTHROPIC_API_KEY"):
         return AnthropicLLM()
+    if os.environ.get("OPENAI_API_KEY"):
+        return OpenAILLM()
     return None
 
 _llm = _build_llm()
@@ -234,7 +239,8 @@ def query(req: QueryRequest):
     if not _llm:
         raise HTTPException(
             status_code=503,
-            detail="No LLM configured. Set GROQ_API_KEY or ANTHROPIC_API_KEY."
+            detail="No LLM configured. Set GROQ_API_KEY, GEMINI_API_KEY, "
+                   "ANTHROPIC_API_KEY, or OPENAI_API_KEY.",
         )
 
     with _rag_lock:
