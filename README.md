@@ -125,7 +125,17 @@ causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
 
 These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all.
 
-**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** with *hybrid* retrieval (coverage sentences + causal chains) and entity normalization, causal-graph RAG **ties flat RAG on fact lookups and significantly beats it on the reasoning questions causality is for** — multi-hop **+0.14 (p=0.006)** and root-cause **+0.18 (p=0.001)**. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
+**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** causal-graph RAG **ties flat RAG on fact lookups and significantly beats it on the reasoning questions causality is for** — multi-hop **+0.24 (p=0.006)** and root-cause **+0.24 (p=0.002)**. Fact questions are a statistical tie (delta=0.00, p=0.655) — the graph never hurts. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
+
+### Rigorous flat vs causal-graph benchmark (n=54, Haiku generation, Sonnet judge)
+
+| Question type | Flat RAG | Causal Graph RAG | Delta | p-value |
+|---|---|---|---|---|
+| Fact lookups | 0.97 | 0.97 | **0.00** | 0.655 (tie) |
+| Multi-hop reasoning | 0.42 | 0.66 | **+0.24** | 0.006 ✓ |
+| Root-cause analysis | 0.36 | 0.60 | **+0.24** | 0.002 ✓ |
+
+Improvement history (multihop delta / rootcause delta): entity normalization (+0.14 / +0.18) → BFS + O(1) lookup + MMR (+0.26 / +0.19) → score gate + org causality (+0.27 / +0.24) → rerank tuning + adaptive depth + bridge BFS (+0.24 / +0.24, fact regression eliminated).
 
 ## Quick start
 
@@ -269,7 +279,7 @@ pip install pytest
 pytest tests/ -q
 ```
 
-42 tests covering VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), document-structure parsing (heading nesting, schema presets, synthesis score), contextual indexing + MMR diversity, structure-annotated context, end-to-end retrieval, entity normalization (canonical node merging), and the Neo4j edge-id logic (via a fake driver — no server needed).
+62 tests covering VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), document-structure parsing (heading nesting, schema presets, synthesis score), contextual indexing + MMR diversity, structure-annotated context, end-to-end retrieval, entity normalization (canonical node merging), Neo4j edge-id logic (via a fake driver — no server needed), and entity normalization regression suite.
 
 ---
 
@@ -314,7 +324,7 @@ INGEST
                           (CONTEXTUAL: heading-path folded into BM25+dense)
 
 RETRIEVE  (5-channel RRF fusion → traverse → rerank → MMR diversity)
-  name match (2.0) · VSA direction (1.2) · BM25 (1.0) · dense (1.0) · path signature (0.8)
+  name match (1.5) · VSA direction (2.0) · BM25 (1.0) · dense (1.0) · path signature (1.2)
                                     │
                           TRAVERSE causal graph (forward / backward BFS)
                                     │
