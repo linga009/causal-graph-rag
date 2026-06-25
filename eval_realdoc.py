@@ -11,14 +11,14 @@ The corrected experiment (grounded in the literature):
                            single-hop factoids).
   * STRUCTURE on vs off  : flat sentences  vs  causal chains + heading paths,
                            ablated into +causal / +doc / +causal+doc.
-  * WEAK vs STRONG model : Groq llama-3.1-8b-instant  vs  Gemini 2.5-flash.
+  * WEAK vs STRONG model : Claude Haiku 4.5  vs  Claude Sonnet 4.6 (same family).
                            Hypothesis (arXiv 2402.13492): structure helps the
                            weak model more; converges to ~0 for the strong one.
 
 Retrieval is identical across all cells (spaCy graph, LLM-independent), so we
-swap only the GENERATION model. A fixed weak judge scores faithfulness.
+swap only the GENERATION model. A fixed Sonnet judge scores faithfulness.
 
-Run:  python eval_realdoc.py            (needs GROQ_API_KEY + GEMINI_API_KEY)
+Run:  python eval_realdoc.py            (needs ANTHROPIC_API_KEY)
       MODELS=weak python eval_realdoc.py   (weak model only)
 """
 from __future__ import annotations
@@ -43,23 +43,32 @@ def _load_env(path=".env"):
 _load_env()
 
 from graph_rag import GraphRAG
-from llm_adapters import GroqLLM, GeminiLLM
+from llm_adapters import GroqLLM, GeminiLLM, AnthropicLLM
 
-WEAK = "llama-3.1-8b-instant"     # Groq — the "decent" model
-STRONG = "gemini-2.5-flash"       # Gemini — the "strong" model (Groq 70b daily-capped)
+# Clean same-family capability ablation: Haiku (weak) vs Sonnet (strong).
+# Anthropic has no per-minute/day free-tier cap, so the strong row completes in
+# one run — settling whether structure's faithfulness gain shrinks for a
+# stronger model. Both are cheap; Opus is intentionally avoided.
+WEAK = "claude-haiku-4-5"     # cheap, weaker model
+STRONG = "claude-sonnet-4-6"  # stronger model
 
 
 def make_llm(label: str, temperature: float = 0.0):
-    """Adapter factory: Gemini for 'gemini-*', Groq otherwise.
+    """Adapter factory by model-name prefix.
     Defaults to temperature=0 so eval runs are deterministic (no sampling noise)."""
-    cls = GeminiLLM if label.startswith("gemini") else GroqLLM
+    if label.startswith("gemini"):
+        cls = GeminiLLM
+    elif label.startswith("claude"):
+        cls = AnthropicLLM
+    else:
+        cls = GroqLLM
     return cls(label, temperature=temperature)
 
 
 # Which generation models to run (env override: MODELS="weak,strong").
 _sel = os.environ.get("MODELS", "weak,strong").lower()
 MODELS = tuple(m for tag, m in (("weak", WEAK), ("strong", STRONG)) if tag in _sel)
-JUDGE_MODEL = WEAK   # fixed weak judge: cheap, consistent, kw_recall is judge-free
+JUDGE_MODEL = STRONG   # fixed strong judge (Sonnet) for reliable faithfulness scores
 
 DOC_PATH = "subprime_causes.md"
 
@@ -119,13 +128,13 @@ def keyword_recall(answer: str, concepts: List[str]) -> float:
 
 
 def main():
-    if not os.environ.get("GROQ_API_KEY"):
-        print("GROQ_API_KEY required for this benchmark.")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print("ANTHROPIC_API_KEY required for this benchmark (Haiku + Sonnet).")
         return
     text = open(DOC_PATH, encoding="utf-8").read()
 
     print("Ingesting real document (spaCy, LLM-independent retrieval)...")
-    rag = GraphRAG(dim=10000, llm=GroqLLM(WEAK))
+    rag = GraphRAG(dim=10000, llm=make_llm(WEAK))   # replaced per model in the loop
     n = rag.ingest(text, schema="auto")
     print(f"  {n} causal edges, {len(rag.graph.nodes())} nodes, "
           f"{len(rag._struct_index)} structural sentences, schema indexed.\n")

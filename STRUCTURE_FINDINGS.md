@@ -114,11 +114,30 @@ Mechanism: structure here is a **grounding constraint**, not a coverage booster.
 It does not help the model *find* more facts; it helps it *not invent* ones.
 That is a real and useful property — but a different one than first claimed.
 
-**Strong-model row: open.** Whether the faithfulness gain shrinks for a stronger
-model (the properly-posed capability question) is **not yet answered**. The
-Gemini 2.5-flash attempt was blocked by the free-tier *daily* request quota
-(exhausted by a day of test runs); a single throttle cannot clear a daily cap.
-Needs a quota reset, a paid tier, or an Anthropic/OpenAI key to settle.
+**Strong-model row: SETTLED (Claude Haiku vs Sonnet, temp 0, n=5).** Same-family
+ablation, no rate limits.
+
+| model | condition | kw_recall | faithful |
+|---|---|---|---|
+| Haiku 4.5 (weak) | flat | 0.78 | 0.84 |
+| Haiku 4.5 (weak) | +causal | 0.77 | 0.89 (+0.06) |
+| Haiku 4.5 (weak) | +doc | 0.78 | **0.94 (+0.10)** |
+| Haiku 4.5 (weak) | +causal+doc | 0.84 | 0.82 |
+| Sonnet 4.6 (strong) | flat | 0.78 | 0.83 |
+| Sonnet 4.6 (strong) | +causal | 0.74 | 0.89 (+0.06) |
+| Sonnet 4.6 (strong) | +doc | 0.80 | 0.85 (+0.02) |
+| Sonnet 4.6 (strong) | +causal+doc | 0.74 | 0.89 (+0.06) |
+
+**Answer: the capability dependence is signal-specific.**
+- **Document structure (+doc) is capability-dependent** as hypothesized:
+  faithfulness +0.10 for Haiku vs +0.02 for Sonnet. The weaker model benefits
+  ~5x more from heading-path grounding; the stronger model already grounds well.
+- **Causal chains (+causal) help both equally (+0.06)** — a general grounding
+  aid, not capability-dependent.
+- **Recall flat ~0.78 for both** — generation-side structure is not a recall
+  lever; recall was already lifted by retrieval-side structure.
+- Caveat: n=5. The +0.10 (Haiku +doc) is the clear signal; +causal+doc is noisy
+  (the two signals don't combine cleanly). Direction is consistent with theory.
 
 ## Literature grounding
 

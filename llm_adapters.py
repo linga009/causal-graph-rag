@@ -118,7 +118,9 @@ class GeminiLLM:
 
 
 class AnthropicLLM:
-    def __init__(self, model: str = "claude-opus-4-8", api_key: str | None = None,
+    # Default to Sonnet (balanced quality/cost); pass claude-haiku-4-5 for the
+    # cheapest option or claude-opus-4-8 for max quality.
+    def __init__(self, model: str = "claude-sonnet-4-6", api_key: str | None = None,
                  temperature: float = 0.2):
         import anthropic  # pip install anthropic
         self.client = anthropic.Anthropic(api_key=_require_key("ANTHROPIC_API_KEY", api_key))
