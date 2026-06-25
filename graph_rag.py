@@ -446,6 +446,58 @@ class GraphRAG:
             return self._mmr_select(uniq, top_k)
         return uniq[:top_k]
 
+    # -- direct graph queries (what flat RAG cannot do) ---------------------- #
+    def _resolve_node(self, term: str) -> Optional[str]:
+        """Map a free-text event to the best-matching graph node (exact, then
+        content-word Jaccard). None if nothing matches."""
+        nodes = list(self.graph.nodes())
+        if not nodes:
+            return None
+        low = {n.lower(): n for n in nodes}
+        if term.lower().strip() in low:
+            return low[term.lower().strip()]
+        q = set(tokenize(term))
+        if not q:
+            return None
+        best, best_j = None, 0.0
+        for n in nodes:
+            nt = set(tokenize(n))
+            if not nt:
+                continue
+            j = len(q & nt) / len(q | nt)
+            if j > best_j:
+                best, best_j = n, j
+        return best if best_j > 0 else None
+
+    def root_causes(self, event: str, max_depth: int = 6):
+        """Backward causal chains INTO the event — its root causes.
+        Returns (resolved_node, [ChainResult,...]). Pure graph query, no LLM."""
+        node = self._resolve_node(event)
+        if node is None:
+            return None, []
+        chains = [ChainResult(p, node, 0.0, 0.0, "backward")
+                  for p in self.graph.backward_chain(node, max_depth) if p]
+        return node, chains
+
+    def impact(self, event: str, max_depth: int = 6):
+        """Forward causal chains OUT of the event — its downstream impact /
+        blast radius. Returns (resolved_node, [ChainResult,...])."""
+        node = self._resolve_node(event)
+        if node is None:
+            return None, []
+        chains = [ChainResult(p, node, 0.0, 0.0, "forward")
+                  for p in self.graph.forward_chain(node, max_depth) if p]
+        return node, chains
+
+    def connect(self, src: str, dst: str, max_depth: int = 6):
+        """Shortest causal path from src to dst.
+        Returns (resolved_src, resolved_dst, ChainResult|None)."""
+        s, d = self._resolve_node(src), self._resolve_node(dst)
+        if s is None or d is None:
+            return s, d, None
+        path = self.graph.path_between(s, d, max_depth)
+        return s, d, (ChainResult(path, s, 0.0, 0.0, "path") if path else None)
+
     # -- causal path summarization (borrowed from CausalRAG) ---------------- #
     def _causal_summary(self, question: str, chains: List[ChainResult]) -> str:
         """

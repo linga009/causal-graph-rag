@@ -125,6 +125,59 @@ def cmd_info(args) -> int:
     return 0
 
 
+def _print_chains(chains, limit=12):
+    if not chains:
+        print("  (no causal chains found)")
+        return
+    for c in chains[:limit]:
+        print(f"  {c.text()}")
+    if len(chains) > limit:
+        print(f"  ... and {len(chains) - limit} more")
+
+
+def cmd_rootcause(args) -> int:
+    """Backward causal chains into an event — its root causes. No LLM needed."""
+    from graph_rag import GraphRAG
+    rag = GraphRAG.load(args.graph)
+    node, chains = rag.root_causes(args.event, max_depth=args.depth)
+    if node is None:
+        print(f"error: no node matching {args.event!r} in the graph", file=sys.stderr)
+        return 1
+    print(f"Root-cause chains into '{node}':")
+    _print_chains(chains)
+    return 0
+
+
+def cmd_impact(args) -> int:
+    """Forward causal chains out of an event — its downstream impact / blast radius."""
+    from graph_rag import GraphRAG
+    rag = GraphRAG.load(args.graph)
+    node, chains = rag.impact(args.event, max_depth=args.depth)
+    if node is None:
+        print(f"error: no node matching {args.event!r} in the graph", file=sys.stderr)
+        return 1
+    print(f"Impact chains from '{node}':")
+    _print_chains(chains)
+    return 0
+
+
+def cmd_path(args) -> int:
+    """Shortest causal path from one event to another."""
+    from graph_rag import GraphRAG
+    rag = GraphRAG.load(args.graph)
+    s, d, chain = rag.connect(args.src, args.dst, max_depth=args.depth)
+    if s is None or d is None:
+        miss = args.src if s is None else args.dst
+        print(f"error: no node matching {miss!r} in the graph", file=sys.stderr)
+        return 1
+    if chain is None:
+        print(f"No causal path from '{s}' to '{d}'.")
+        return 0
+    print(f"Causal path '{s}' -> '{d}':")
+    print(f"  {chain.text()}")
+    return 0
+
+
 def cmd_serve(args) -> int:
     try:
         import uvicorn
@@ -171,6 +224,22 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("info", help="show stats for a saved graph")
     sp.add_argument("graph")
     sp.set_defaults(func=cmd_info)
+
+    # -- direct causal graph queries (no LLM; what flat RAG cannot do) -------- #
+    sp = sub.add_parser("rootcause", help="root-cause chains INTO an event (backward)")
+    sp.add_argument("graph"); sp.add_argument("event")
+    sp.add_argument("--depth", type=int, default=6)
+    sp.set_defaults(func=cmd_rootcause)
+
+    sp = sub.add_parser("impact", help="impact / blast-radius chains OUT of an event (forward)")
+    sp.add_argument("graph"); sp.add_argument("event")
+    sp.add_argument("--depth", type=int, default=6)
+    sp.set_defaults(func=cmd_impact)
+
+    sp = sub.add_parser("path", help="shortest causal path between two events")
+    sp.add_argument("graph"); sp.add_argument("src"); sp.add_argument("dst")
+    sp.add_argument("--depth", type=int, default=6)
+    sp.set_defaults(func=cmd_path)
 
     sp = sub.add_parser("serve", help="run the REST API")
     sp.add_argument("--host", default="127.0.0.1")

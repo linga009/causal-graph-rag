@@ -113,6 +113,18 @@ causal-rag info graph.pkl
 causal-rag serve --port 8000
 ```
 
+### Causal analysis queries (what flat RAG structurally cannot do)
+
+Beyond Q&A, query the graph directly — no LLM, instant, free:
+
+```bash
+causal-rag rootcause graph.pkl "hospital outage"   # backward: what caused it?
+causal-rag impact    graph.pkl "deferred maintenance"  # forward: blast radius
+causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
+```
+
+These map to `backward_chain` / `forward_chain` / `path_between` and are the measured value of the system (see [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md): causal-graph RAG ~doubles root-cause answer correctness vs strong flat RAG). **Caveat:** long-chain traversal quality depends on **entity normalization** — the same event can surface as "the pump" / "cooling pump" / "pump", fragmenting the graph. Cleaner extraction (`--llm-mode full`) helps; canonical entity resolution is the next improvement.
+
 ## Quick start
 
 ```bash

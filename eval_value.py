@@ -140,10 +140,21 @@ DISASTER = [
       ["hydrogen", "explosion"]),
 ]
 
-DOCS = [
-    ("finance", "subprime_causes.md", FINANCE),
-    ("disaster", "chernobyl.md", DISASTER),
-]
+DOC_PATHS = {"finance": "subprime_causes.md", "disaster": "chernobyl.md"}
+_INLINE = {"finance": FINANCE, "disaster": DISASTER}
+
+
+def load_docs():
+    """(domain, path, [Q,...]) — from questions.json if present (large n for
+    real statistical power), else the inline hand-written seed set."""
+    if os.path.exists("questions.json"):
+        raw = json.load(open("questions.json", encoding="utf-8"))
+        by_domain: Dict[str, List[Q]] = {}
+        for r in raw:
+            by_domain.setdefault(r["domain"], []).append(
+                Q(r["qtype"], r["q"], r["reference"], r["concepts"]))
+        return [(d, DOC_PATHS[d], qs) for d, qs in by_domain.items() if d in DOC_PATHS]
+    return [(d, DOC_PATHS[d], _INLINE[d]) for d in DOC_PATHS]
 
 
 # --------------------------------------------------------------------------- #
@@ -197,8 +208,10 @@ def main():
     gen = AnthropicLLM(GEN_MODEL, temperature=0.0)
     judge = AnthropicLLM(JUDGE_MODEL, temperature=0.0)
 
+    docs = load_docs()
+    print(f"loaded {sum(len(qs) for _,_,qs in docs)} questions across {len(docs)} domains\n")
     rows = []   # per-question records
-    for domain, path, qs in DOCS:
+    for domain, path, qs in docs:
         text = open(path, encoding="utf-8").read()
         print(f"[{domain}] ingesting {path} ...")
         causal = GraphRAG(dim=10000, llm=gen)
