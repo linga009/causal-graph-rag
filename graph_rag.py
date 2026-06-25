@@ -199,7 +199,8 @@ class GraphRAG:
         # replacement for coverage (MS GraphRAG local search; NVIDIA/BlackRock
         # HybridRAG: graph+vector beats either alone).
         self._sentences: List[str] = []
-        self._sent_vecs = None   # np.ndarray (N, D) once indexed
+        self._sent_vecs = None        # np.ndarray (N, D) once indexed
+        self._sent_bm25: Optional[BM25] = None  # sentence-level keyword index
 
     # -- ingest -------------------------------------------------------------- #
     def ingest(self, text: str, doc_id: str = "doc",
@@ -391,13 +392,20 @@ class GraphRAG:
         self.bm25.index(enriched)
         self.dense.index(enriched)
         self.sig.index(self._node_docs)
-        # Sentence-level coverage index, reusing the dense model (no 2nd load).
+        # Sentence-level coverage index: dense vectors + BM25 for hybrid retrieval.
         model = getattr(self.dense, "_model", None)
         if model is not None and self._sentences:
             self._sent_vecs = model.encode(self._sentences, convert_to_numpy=True,
                                            normalize_embeddings=True)
         else:
             self._sent_vecs = None
+        # Sentence-level BM25 — keyed by string index so score() returns (score,"i")
+        if self._sentences:
+            sent_docs = {str(i): s for i, s in enumerate(self._sentences)}
+            self._sent_bm25 = BM25()
+            self._sent_bm25.index(sent_docs)
+        else:
+            self._sent_bm25 = None
         # O(1) sentence-position lookup for provenance expansion
         self._sent_idx: Dict[str, int] = {s: i for i, s in enumerate(self._sentences)}
         self._dirty = False
@@ -407,15 +415,40 @@ class GraphRAG:
 
     def _retrieve_sentences(self, question: str, k: int = 6,
                             chain_nodes: Optional[set] = None) -> List[str]:
-        """Top-k most relevant raw sentences by dense cosine with MMR diversity.
-        chain_nodes: if supplied, sentences mentioning chain nodes get a small
-        relevance bonus — keeps coverage grounded in the retrieved causal context."""
+        """Top-k most relevant raw sentences via hybrid BM25+dense RRF with MMR diversity.
+
+        Hybrid retrieval catches what each channel alone misses:
+          - Dense: semantic equivalence, paraphrases, conceptual similarity
+          - BM25:  exact keyword match, rare technical terms, named entities
+        RRF (k=60) fuses both rank lists before the MMR diversity pass.
+        chain_nodes bonus: sentences mentioning chain nodes score +0.15."""
         self._ensure_indexed()
         if self._sent_vecs is None or not self._sentences:
             return []
         model = self.dense._model
         q = model.encode([question], convert_to_numpy=True, normalize_embeddings=True)[0]
-        sims = self._sent_vecs @ q
+        dense_sims = self._sent_vecs @ q   # shape (N,)
+        n = len(self._sentences)
+
+        # --- Hybrid RRF: fuse dense and BM25 rank lists --------------------- #
+        _RRF_K = 60  # standard constant; smooths rank differences
+        dense_rank = np.empty(n, dtype=np.float32)
+        dense_rank[np.argsort(-dense_sims)] = np.arange(n)
+
+        if self._sent_bm25 is not None:
+            bm25_raw = np.zeros(n, dtype=np.float32)
+            for score, key in self._sent_bm25.score(question):
+                bm25_raw[int(key)] = score
+            bm25_rank = np.empty(n, dtype=np.float32)
+            bm25_rank[np.argsort(-bm25_raw)] = np.arange(n)
+            fused = (1.0 / (_RRF_K + dense_rank) + 1.0 / (_RRF_K + bm25_rank))
+        else:
+            fused = 1.0 / (_RRF_K + dense_rank)
+
+        # Normalise fused to [0,1] so chain-node bonus has consistent scale
+        fused_max = fused.max()
+        if fused_max > 0:
+            fused = fused / fused_max
 
         # Build chain-node term set for coverage bonus
         chain_terms: set = set()
@@ -424,20 +457,21 @@ class GraphRAG:
                 chain_terms.update(tokenize(node))
 
         # Retrieve a larger candidate pool, then apply MMR
-        pool_size = min(k * 4, len(self._sentences))
-        pool_idx = np.argsort(-sims)[:pool_size]
-        pool_sims = sims[pool_idx].copy().astype(float)
+        pool_size = min(k * 4, n)
+        pool_idx = np.argsort(-fused)[:pool_size]
+        pool_scores = fused[pool_idx].copy()
 
         # Apply chain-node relevance bonus before MMR
         if chain_terms:
             for i, idx in enumerate(pool_idx):
                 sent_words = set(tokenize(self._sentences[idx]))
                 overlap = len(chain_terms & sent_words) / max(1, len(chain_terms))
-                pool_sims[i] += 0.15 * overlap   # up to +0.15 for full node overlap
+                pool_scores[i] += 0.15 * overlap
 
         pool_vecs = self._sent_vecs[pool_idx]
 
-        # MMR: lam=0.7 (relevance-weighted), iteratively select diverse sentences
+        # MMR: lam=0.7 (relevance-weighted), iteratively select diverse sentences.
+        # Relevance = hybrid RRF score; redundancy = dense cosine (best for dedup).
         lam = 0.7
         selected_idx: List[int] = []
         selected_vecs: List[np.ndarray] = []
@@ -447,7 +481,7 @@ class GraphRAG:
             for i in range(len(pool_idx)):
                 if i in selected_idx:
                     continue
-                rel = float(pool_sims[i])
+                rel = float(pool_scores[i])
                 if selected_vecs:
                     red = max(float(pool_vecs[i] @ sv) for sv in selected_vecs)
                 else:
