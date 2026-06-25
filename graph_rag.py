@@ -42,6 +42,38 @@ def _norm_sent(s: str) -> str:
     return " ".join(s.lower().split())
 
 
+# --- Entity normalization (canonical node names so chains don't fragment) ---- #
+_ENT_ARTICLES = ("the ", "a ", "an ", "its ", "their ", "this ", "that ")
+_ENT_STOP = frozenset("the a an of to in on at and or for by with from".split())
+
+
+def _canon_entity(name: str) -> str:
+    """Lexical canonical form: lowercase, collapse whitespace, strip a leading
+    article and a trailing possessive. Merges 'The Cooling Pump' -> 'cooling pump'."""
+    n = " ".join(name.lower().split()).strip(" .,:;\"'`()")
+    for art in _ENT_ARTICLES:
+        if n.startswith(art):
+            n = n[len(art):]
+            break
+    if n.endswith("'s"):
+        n = n[:-2]
+    return n.strip()
+
+
+def _stem_tok(t: str) -> str:
+    """Light, consistent stem: drop a trailing 'ing' or plural 's' (not 'ss')."""
+    if len(t) > 5 and t.endswith("ing"):
+        t = t[:-3]
+    if len(t) > 3 and t.endswith("s") and not t.endswith("ss"):
+        t = t[:-1]
+    return t
+
+
+def _entity_tokens(name: str) -> frozenset:
+    return frozenset(_stem_tok(t) for t in re.findall(r"[a-z0-9]+", name.lower())
+                     if t not in _ENT_STOP)
+
+
 @dataclass
 class ChainResult:
     chain: List[GraphEdge]
@@ -79,6 +111,7 @@ class GraphRAG:
         semantic_weight: int = 0,
         llm: Optional[object] = None,
         max_depth: int = 6,
+        normalize_entities: bool = True,
         neo4j_uri: Optional[str] = None,
         neo4j_user: str = "neo4j",
         neo4j_password: str = "password",
@@ -135,6 +168,7 @@ class GraphRAG:
         self.sig = PathSignatureRetriever()
         self.llm = llm or MockLLM()
         self.max_depth = max_depth
+        self.normalize_entities = normalize_entities
         self._node_docs: Dict[str, str] = {}
         # Per-node document context (heading paths the node's sentences sit
         # under). Folded into the BM25/dense index so retrieval can match on
@@ -197,6 +231,10 @@ class GraphRAG:
         else:
             edges = extract_edges(clean_text)
 
+        # Canonicalize node names so the same event ("pump"/"cooling pump") is one
+        # node — longer connected chains instead of fragments.
+        edges = self._normalize_edges(edges)
+
         # Build the structure index FIRST so node docs can be enriched with the
         # document context (heading path) each sentence came from.
         self._index_document_structure(ds)
@@ -220,6 +258,45 @@ class GraphRAG:
         log.info("ingested %d edges (%d nodes total); indices marked dirty",
                  len(edges), len(self._node_docs))
         return len(edges)
+
+    def _normalize_edges(self, edges):
+        """Canonicalize cause/effect node names so variant surface forms of the
+        same event become one node. Two conservative, dependency-free passes:
+          1. lexical: lowercase, strip articles/possessives.
+          2. subset-merge: a name whose stemmed content tokens are a STRICT
+             subset of another's is the less-specific variant -> merge it into
+             the most-specific (longest) superset. 'pump' -> 'cooling pump',
+             'overheat' -> 'reactor overheat'. Cannot merge distinct entities
+             like 'power output' / 'power loss' (neither is a subset).
+        Self-loops created by a merge are dropped.
+        """
+        for e in edges:
+            e.cause = _canon_entity(e.cause)
+            e.effect = _canon_entity(e.effect)
+        if self.normalize_entities:
+            names = sorted({n for e in edges for n in (e.cause, e.effect)}
+                           | set(self.graph.nodes()))
+            toks = {n: _entity_tokens(n) for n in names}
+            direct = {}
+            for a in names:
+                if not toks[a]:
+                    continue
+                supers = [b for b in names if b != a and toks[a] < toks[b]]
+                if supers:
+                    direct[a] = max(supers, key=len)   # most specific superset
+
+            def resolve(x):
+                seen = set()
+                while x in direct and x not in seen:
+                    seen.add(x)
+                    x = direct[x]
+                return x
+
+            cmap = {n: resolve(n) for n in names}
+            for e in edges:
+                e.cause = cmap.get(e.cause, e.cause)
+                e.effect = cmap.get(e.effect, e.effect)
+        return [e for e in edges if e.cause != e.effect]   # drop self-loops
 
     def _ensure_indexed(self) -> None:
         """(Re)build BM25/dense/path-signature indices if ingest marked them
