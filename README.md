@@ -125,9 +125,7 @@ causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
 
 These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all.
 
-**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** with *hybrid* retrieval (coverage sentences + causal chains), causal-graph RAG **ties flat RAG on fact lookups and significantly beats it on the reasoning questions causality is for** — multi-hop **+0.15 (p=0.005)** and root-cause **+0.11 (p=0.035)**. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
-
-**Known limitation:** long-chain traversal depends on **entity normalization** — "the pump"/"cooling pump"/"pump" fragment the graph (cleaner extraction via `--llm-mode full` helps; canonical entity resolution is the next step).
+**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** with *hybrid* retrieval (coverage sentences + causal chains) and entity normalization, causal-graph RAG **ties flat RAG on fact lookups and significantly beats it on the reasoning questions causality is for** — multi-hop **+0.14 (p=0.006)** and root-cause **+0.18 (p=0.001)**. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
 
 ## Quick start
 
@@ -271,7 +269,7 @@ pip install pytest
 pytest tests/ -q
 ```
 
-36 tests covering VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), document-structure parsing (heading nesting, schema presets, synthesis score), contextual indexing + MMR diversity, structure-annotated context, end-to-end retrieval, and the Neo4j edge-id logic (via a fake driver — no server needed).
+42 tests covering VSA encoding (direction sensitivity), graph traversal (cycle-safety, distinct edge ids), document-structure parsing (heading nesting, schema presets, synthesis score), contextual indexing + MMR diversity, structure-annotated context, end-to-end retrieval, entity normalization (canonical node merging), and the Neo4j edge-id logic (via a fake driver — no server needed).
 
 ---
 
