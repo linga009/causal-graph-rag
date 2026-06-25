@@ -26,7 +26,7 @@ def test_structured_context_includes_chain_arrows():
     chains = rag.retrieve("What did the overheating ultimately disrupt?", top_k=3)
     assert chains, "expected at least one chain"
     ctx = rag._build_context(chains, structured=True)
-    assert "Causal chains:" in ctx
+    assert "Causal chains" in ctx
     assert "Evidence:" in ctx
     assert "->" in ctx, "structured context must contain causal arrows"
 
@@ -35,7 +35,7 @@ def test_unstructured_context_is_sentences_only():
     rag = _ingested()
     chains = rag.retrieve("What did the overheating ultimately disrupt?", top_k=3)
     ctx = rag._build_context(chains, structured=False)
-    assert "Causal chains:" not in ctx
+    assert "Causal chains" not in ctx
     assert "->" not in ctx
     # still carries the evidence sentences
     assert "reactor" in ctx.lower() or "shutdown" in ctx.lower()

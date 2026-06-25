@@ -153,6 +153,14 @@ class GraphRAG:
         # the indices dirty; they are (re)built lazily on the next retrieve().
         # Keeps repeated ingest() O(total) instead of O(docs x nodes).
         self._dirty = False
+        # Sentence-level coverage index (HYBRID retrieval). The graph alone only
+        # surfaces causally-connected content; standalone facts fall through.
+        # We ALSO retrieve the top-k most relevant raw sentences (like vector RAG)
+        # and feed them alongside the causal chains — structure is additive, not a
+        # replacement for coverage (MS GraphRAG local search; NVIDIA/BlackRock
+        # HybridRAG: graph+vector beats either alone).
+        self._sentences: List[str] = []
+        self._sent_vecs = None   # np.ndarray (N, D) once indexed
 
     # -- ingest -------------------------------------------------------------- #
     def ingest(self, text: str, doc_id: str = "doc",
@@ -192,6 +200,8 @@ class GraphRAG:
         # Build the structure index FIRST so node docs can be enriched with the
         # document context (heading path) each sentence came from.
         self._index_document_structure(ds)
+        # Accumulate ALL sentences (not just causal ones) for coverage retrieval.
+        self._sentences.extend(s.text for s in ds.sentences())
 
         for e in edges:
             self.graph.add_edge(e)
@@ -225,8 +235,28 @@ class GraphRAG:
         self.bm25.index(enriched)
         self.dense.index(enriched)
         self.sig.index(self._node_docs)
+        # Sentence-level coverage index, reusing the dense model (no 2nd load).
+        model = getattr(self.dense, "_model", None)
+        if model is not None and self._sentences:
+            self._sent_vecs = model.encode(self._sentences, convert_to_numpy=True,
+                                           normalize_embeddings=True)
+        else:
+            self._sent_vecs = None
         self._dirty = False
-        log.info("rebuilt retrieval indices over %d nodes", len(self._node_docs))
+        log.info("rebuilt retrieval indices over %d nodes, %d sentences",
+                 len(self._node_docs), len(self._sentences))
+
+    def _retrieve_sentences(self, question: str, k: int = 6) -> List[str]:
+        """Top-k most relevant raw sentences by dense cosine — the coverage
+        channel a pure graph misses. Empty if no dense model (hashing fallback)."""
+        self._ensure_indexed()
+        if self._sent_vecs is None or not self._sentences:
+            return []
+        model = self.dense._model
+        q = model.encode([question], convert_to_numpy=True, normalize_embeddings=True)[0]
+        sims = self._sent_vecs @ q
+        idx = np.argsort(-sims)[:k]
+        return [self._sentences[i] for i in idx]
 
     # -- document structure index (Phase 2) ---------------------------------- #
     def _embed_fn(self):
@@ -555,29 +585,31 @@ class GraphRAG:
         return ", ".join(parts)
 
     def _build_context(self, chains: List[ChainResult], structured: bool,
-                       contextual: bool = True, prose_chains: bool = False) -> str:
-        """Assemble the LLM context from retrieved chains.
+                       contextual: bool = True, prose_chains: bool = False,
+                       coverage_sentences: Optional[List[str]] = None) -> str:
+        """Assemble the LLM context — HYBRID: coverage sentences + causal chains.
 
-        Two independent structure signals, each separately toggleable so their
-        contributions can be measured in isolation:
+        Evidence = the top-k dense-retrieved sentences (coverage, like vector
+        RAG) UNION the chains' provenance, deduped, in that order. Standalone
+        facts that aren't part of any chain are therefore included — the fix for
+        the pure-graph coverage gap.
 
-        structured : prepend the causal CHAIN PATHS with direction + polarity
-                     arrows ('->' promotes, '-/->' inhibits). Carries the graph
-                     topology flat sentences cannot.
-        contextual : annotate each evidence sentence with its document location,
-                     e.g. '[Results > Ablations] ...' — the "where did this come
-                     from" signal (contextual retrieval). No-op when no document
-                     structure was indexed.
-
-        Both False  -> flat evidence sentences (legacy baseline).
+        structured : also prepend the causal CHAIN PATHS (direction + polarity
+                     arrows) as a cause-effect scaffold for reasoning questions.
+        contextual : annotate evidence with its document location ([Section > ...]).
         """
-        prov = self._dedup_provenance(chains)
-        evidence = "\n".join((self._annotate(s) if contextual else s) for s in prov)
-        if not structured:
-            return evidence
+        evidence_sents = list(coverage_sentences or [])
+        for s in self._dedup_provenance(chains):          # add chain provenance not already covered
+            if s not in evidence_sents:
+                evidence_sents.append(s)
+        evidence = "\n".join((self._annotate(s) if contextual else s)
+                             for s in evidence_sents)
+        if not structured or not chains:
+            return f"Evidence:\n{evidence}"
         render = self._chain_prose if prose_chains else (lambda c: c.text())
         chain_block = "\n".join(f"  {render(c)}" for c in chains)
-        return f"Causal chains:\n{chain_block}\n\nEvidence:\n{evidence}"
+        return (f"Causal chains (cause->effect structure):\n{chain_block}\n\n"
+                f"Evidence:\n{evidence}")
 
     # -- generate ------------------------------------------------------------ #
     def answer(self, question: str, top_k: int = 3,
@@ -602,47 +634,50 @@ class GraphRAG:
                      for the legacy sentence-only context (used for A/B tests).
         """
         chains = self.retrieve(question, top_k=top_k)
+        # Hybrid: also pull the top-k most relevant sentences for coverage.
+        coverage = self._retrieve_sentences(question, k=max(6, top_k * 2))
         return self.generate(question, chains, summarize=summarize,
                              structured=structured, contextual=contextual,
-                             prose_chains=prose_chains), chains
+                             prose_chains=prose_chains,
+                             coverage_sentences=coverage), chains
 
     def generate(self, question: str, chains: List[ChainResult],
                  summarize: bool = False, structured: bool = True,
-                 contextual: bool = True, prose_chains: bool = False) -> str:
-        """Generate an answer from already-retrieved chains (the LLM step only).
+                 contextual: bool = True, prose_chains: bool = False,
+                 coverage_sentences: Optional[List[str]] = None) -> str:
+        """Generate an answer from retrieved chains + coverage sentences (LLM step
+        only). Split out from answer() so a server can retrieve under a lock and
+        run the stateless LLM call without holding it (concurrent queries)."""
+        if not chains and not coverage_sentences:
+            return "No relevant information found for the query."
 
-        Split out from answer() so a server can retrieve under a lock and then
-        run the (stateless) LLM call WITHOUT holding it — letting queries run
-        concurrently while only retrieval is serialized.
-        """
-        if not chains:
-            return "No causal structure matching the query was found."
-
-        if summarize:
-            # Two-step generation: compress first, then answer
+        if summarize and chains:
+            # Two-step generation: compress chains first, then answer
             causal_ctx = self._causal_summary(question, chains)
+            cov = "\n".join(coverage_sentences or [])
             prompt = (
-                "You are a causal reasoning assistant. "
-                "Answer the question using ONLY the causal evidence provided. "
-                "Be direct and concise. Do not reference chain numbers or labels.\n\n"
-                f"Causal evidence:\n{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
+                "You are a careful assistant. Answer the question using the "
+                "evidence below. Be direct and concise.\n\n"
+                f"Causal summary:\n{causal_ctx}\n\nEvidence:\n{cov}\n\n"
+                f"Question: {question}\n\nAnswer:"
             )
         else:
-            causal_ctx = self._build_context(chains, structured=structured,
-                                             contextual=contextual,
-                                             prose_chains=prose_chains)
+            ctx = self._build_context(chains, structured=structured,
+                                      contextual=contextual,
+                                      prose_chains=prose_chains,
+                                      coverage_sentences=coverage_sentences)
             legend = (
-                "In the causal chains, '->' means the cause promotes/produces "
-                "the effect and '-/->' means it inhibits/reduces the effect; "
-                "respect this direction and polarity.\n"
-                if structured else ""
+                "Use the evidence sentences to answer factual details; use the "
+                "causal chains to understand cause-effect structure ('->' = "
+                "promotes/produces, '-/->' = inhibits/reduces).\n"
+                if (structured and chains) else ""
             )
             prompt = (
-                "You are a causal reasoning assistant. "
-                "Answer the question using ONLY the evidence provided. "
+                "You are a careful assistant. Answer the question using ONLY the "
+                "evidence provided. "
                 f"{legend}"
                 "Be direct and concise. Do not reference chain numbers or labels.\n\n"
-                f"{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
+                f"{ctx}\n\nQuestion: {question}\n\nAnswer:"
             )
 
         return self.llm.generate(prompt)
@@ -666,6 +701,7 @@ class GraphRAG:
             "node_context": self._node_context,
             "struct_index": self._struct_index,
             "sent_meta": self._sent_meta,
+            "sentences": self._sentences,
         }
         with open(path, "wb") as f:
             pickle.dump(state, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -693,7 +729,8 @@ class GraphRAG:
         rag._node_context = state["node_context"]
         rag._struct_index = state["struct_index"]
         rag._sent_meta = state["sent_meta"]
-        rag._dirty = True   # rebuild BM25/dense/sig on first retrieve()
+        rag._sentences = state.get("sentences", [])
+        rag._dirty = True   # rebuild BM25/dense/sig + sentence index on first query
         log.info("loaded graph (%d edges, %d nodes) from %s",
                  len(rag.graph.edges), len(rag._node_docs), path)
         return rag

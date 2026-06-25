@@ -139,13 +139,26 @@ class HashingDense:
 #  Dense channel — real SentenceTransformers encoder (preferred).
 #  Falls back to HashingDense automatically if the package isn't installed.
 # --------------------------------------------------------------------------- #
+# Process-wide model cache: loading the ~90 MB encoder once and sharing it across
+# every retriever/GraphRAG instance avoids redundant loads (a real efficiency
+# win) and the native crash from loading it dozens of times in one process.
+_ST_MODELS: dict = {}
+
+
+def shared_st_model(model_name: str = "all-MiniLM-L6-v2"):
+    """Return a single shared SentenceTransformer per model name per process."""
+    from sentence_transformers import SentenceTransformer  # pip install sentence-transformers
+    if model_name not in _ST_MODELS:
+        _ST_MODELS[model_name] = SentenceTransformer(model_name)
+    return _ST_MODELS[model_name]
+
+
 class SentenceTransformerDense:
     """Cosine similarity over sentence-transformer embeddings.
     Uses all-MiniLM-L6-v2 by default: 384-dim, ~80 MB, no API key required.
     """
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        from sentence_transformers import SentenceTransformer  # pip install sentence-transformers
-        self._model = SentenceTransformer(model_name)
+        self._model = shared_st_model(model_name)   # shared, loaded once per process
         self.vecs: Dict[str, np.ndarray] = {}
         self._nodes: List[str] = []
         self._matrix: np.ndarray | None = None
@@ -225,8 +238,7 @@ class PathSignatureRetriever:
             return np.zeros((0, self.proj_dim), dtype=np.float32)
         if self._model is None:
             try:
-                from sentence_transformers import SentenceTransformer
-                self._model = SentenceTransformer("all-MiniLM-L6-v2")
+                self._model = shared_st_model("all-MiniLM-L6-v2")  # shared instance
             except Exception:
                 # Fallback: random projections so the class still works
                 self._model = "random"
