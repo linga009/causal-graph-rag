@@ -23,3 +23,8 @@ build/
 
 # Raw web-download intermediates (reproducible via scripts)
 wiki_raw.json
+
+# Raw web-download intermediates
+chern_raw.json
+# Generated eval output
+eval_value_raw.json
