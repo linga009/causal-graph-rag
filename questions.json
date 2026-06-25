@@ -1,0 +1,624 @@
+[
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the value of American subprime mortgages as of March 2007?",
+    "reference": "$1.3 trillion, with over 7.5 million first-lien subprime mortgages outstanding",
+    "concepts": [
+      "subprime mortgages",
+      "value",
+      "2007"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "By how much did the price of the typical American house increase between 1997 and 2006?",
+    "reference": "124%",
+    "concepts": [
+      "housing prices",
+      "increase",
+      "bubble"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the US home ownership rate all-time high, and when was it reached?",
+    "reference": "69.2% in 2004",
+    "concepts": [
+      "home ownership rate",
+      "peak",
+      "2004"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the total amount of mortgage-backed securities issued in 2007?",
+    "reference": "$7.3 trillion, nearly tripling from 1996 to 2007",
+    "concepts": [
+      "mortgage-backed securities",
+      "total",
+      "2007"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "How much did Wall Street executives take home in bonuses in 2006?",
+    "reference": "$23.9 billion",
+    "concepts": [
+      "wall street",
+      "bonuses",
+      "2006"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What percentage of homes purchased in 2006 were for investment purposes?",
+    "reference": "22% (1.65 million units)",
+    "concepts": [
+      "investment homes",
+      "speculation",
+      "2006"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the global pool of reserves that initially fueled the real estate bubble?",
+    "reference": "approximately U.S. $70 trillion",
+    "concepts": [
+      "global reserves",
+      "real estate bubble",
+      "liquidity"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "By what percentage did foreclosure filings increase from 2006 to 2007?",
+    "reference": "79% increase; lenders began foreclosure proceedings on nearly 1.3 million properties in 2007",
+    "concepts": [
+      "foreclosures",
+      "increase",
+      "2007"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was US household debt as a percentage of annual disposable personal income at the end of 2007?",
+    "reference": "127%",
+    "concepts": [
+      "household debt",
+      "disposable income",
+      "2007"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What leverage ratio did some major investment banks reach during the subprime crisis?",
+    "reference": "1:40, meaning for every dollar of equity they owed $40",
+    "concepts": [
+      "leverage ratio",
+      "investment banks",
+      "debt"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the global pool of $70 trillion in fixed income investments ultimately lead to the collapse of mortgage-backed securities?",
+    "reference": "The giant pool of money sought higher yields than Treasury bonds -> Wall Street created MBS and CDOs to meet demand -> lending standards were loosened to generate more mortgages -> when housing prices fell, defaults rose and MBS values collapsed.",
+    "concepts": [
+      "global savings",
+      "mortgage-backed securities",
+      "lending standards",
+      "collapse"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the SEC's 2004 net capital rule decision propagated into the near-failure of major investment banks by 2008.",
+    "reference": "SEC rule change allowed investment banks to issue substantially more debt -> banks used proceeds to purchase MBS -> leverage ratios increased dramatically (up to 1:40) -> when housing prices fell and MBS values declined, banks suffered massive losses, leading to bankruptcies and fire-sale acquisitions.",
+    "concepts": [
+      "leverage",
+      "sec",
+      "investment banks",
+      "mbs"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the originate-to-distribute securitization model ultimately lead to a deterioration in mortgage quality and widespread defaults?",
+    "reference": "Banks originated loans then sold them as MBS, removing credit risk from their books -> moral hazard meant lenders no longer cared if mortgages were repaid -> underwriting standards declined (SIVA, NIVA, NINA loans) -> unqualified borrowers received mortgages -> defaults surged when housing prices fell.",
+    "concepts": [
+      "securitization",
+      "moral hazard",
+      "underwriting standards",
+      "defaults"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did adjustable-rate mortgage teaser rates ultimately lead to a surge in foreclosures and falling housing prices?",
+    "reference": "Borrowers were enticed by below-market teaser rates -> they planned to refinance before rates reset -> housing prices began declining in 2006, eliminating refinancing ability -> monthly payments doubled or tripled after reset -> borrowers defaulted -> foreclosures increased, adding housing supply and further depressing prices.",
+    "concepts": [
+      "adjustable-rate mortgage",
+      "refinancing",
+      "foreclosure",
+      "housing prices"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the deregulation of over-the-counter derivatives markets ultimately propagated into systemic financial instability during the 2008 crisis.",
+    "reference": "OTC derivatives markets were deregulated (Commodity Futures Modernization Act 2000) -> complex instruments like CDS and CDOs proliferated without transparency or capital requirements -> institutions like AIG sold CDS protection without adequate reserves -> when mortgage defaults surged, AIG and others faced catastrophic obligations -> uncertainty froze credit markets and destabilized the entire financial system.",
+    "concepts": [
+      "derivatives",
+      "deregulation",
+      "cds",
+      "systemic risk"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did income inequality and wage stagnation ultimately lead to unsustainable household debt levels and the housing bubble?",
+    "reference": "Growing income inequality and stagnant wages left families unable to maintain desired living standards -> families increased household debt to compensate -> demand for housing and mortgage products grew -> housing prices rose, fueling the bubble -> debt levels became unsustainable once prices fell, triggering defaults and crisis.",
+    "concepts": [
+      "income inequality",
+      "wage stagnation",
+      "household debt",
+      "housing bubble"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how inaccurate credit ratings by rating agencies ultimately led to losses spreading throughout the global financial system.",
+    "reference": "Rating agencies assigned investment-grade ratings to MBS and CDO products backed by risky subprime mortgages -> money market funds and pension funds, restricted to safe securities, purchased these highly rated instruments -> when subprime defaults rose and MBS values collapsed, these widely held securities lost value -> losses spread across institutional investors globally, amplifying the financial crisis.",
+    "concepts": [
+      "credit ratings",
+      "mbs",
+      "pension funds",
+      "contagion"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did speculative homebuying by real estate investors ultimately lead to disproportionately high foreclosure rates and accelerated price declines?",
+    "reference": "Investors purchased multiple properties using high leverage, often misreporting intent to occupy -> investor share of mortgage originations rose from 25% in 2000 to 45% in 2006 in key states -> when prices fell, investors had strong incentive to default on investment properties -> investor delinquency rose from 15% to over 35% -> mass foreclosures flooded housing supply, accelerating price declines.",
+    "concepts": [
+      "speculation",
+      "investor defaults",
+      "foreclosure",
+      "housing prices"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and structural conditions caused credit rating agencies to assign investment-grade ratings to risky MBS and CDO securities?",
+    "reference": "Agencies were paid by investment banks for desired ratings, used flawed models based on less than a decade of house price data, assumed mortgage defaults were uncorrelated, and lacked experience with complex mortgage pools.",
+    "concepts": [
+      "credit ratings",
+      "faulty models",
+      "moral hazard",
+      "securitization"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying regulatory and market conditions caused the shadow banking system to become as large as the traditional banking system yet remain unprotected by financial safeguards?",
+    "reference": "Over 30+ years, growth of shadow banking was permitted without extending deposit insurance or regulatory oversight; it operated with short-term borrowing to fund long-term illiquid assets, outside existing regulatory frameworks.",
+    "concepts": [
+      "shadow banking",
+      "deregulation",
+      "regulatory gaps",
+      "systemic vulnerability"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying incentive structures caused mortgage lending standards to deteriorate precipitously between 2004 and 2007?",
+    "reference": "Originate-to-distribute securitization model removed default risk from originators; mortgage brokers earned fees regardless of loan quality; automated underwriting bypassed documentation; demand from Wall Street for MBS drove loosening of standards.",
+    "concepts": [
+      "moral hazard",
+      "securitization",
+      "lending standards",
+      "incentives"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying financial and psychological conditions caused the U.S. housing bubble to inflate dramatically between 1997 and 2006?",
+    "reference": "Low interest rates, large inflows of foreign funds creating easy credit, belief that house prices would never fall dramatically, speculative borrowing, contagious optimism, and lax lending standards all fueled the bubble.",
+    "concepts": [
+      "housing bubble",
+      "easy credit",
+      "speculation",
+      "optimism"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses caused major investment banks to be highly vulnerable to even minor declines in asset values before the crisis?",
+    "reference": "Extreme leverage ratios (up to 1:40), heavy investment in MBS, a 2004 SEC net capital rule change allowing more debt issuance, and reliance on short-term funding sources like repo markets made banks fragile.",
+    "concepts": [
+      "leverage",
+      "investment banks",
+      "mbs",
+      "vulnerability"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying global financial conditions caused the demand for mortgage-backed securities to grow so rapidly in the early 2000s?",
+    "reference": "A $70 trillion global pool of fixed-income savings sought higher yields than U.S. Treasury bonds; this pool doubled from 2000 to 2007 while supply of safe income-generating investments did not keep pace, pushing investors toward MBS.",
+    "concepts": [
+      "global savings",
+      "yield-seeking",
+      "mbs demand",
+      "capital flows"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying economic and social conditions caused household debt levels in the U.S. to reach record highs in the decades before the crisis?",
+    "reference": "Growing income inequality and wage stagnation encouraged families to increase household debt to maintain living standards; easy credit, home equity extraction, and rising housing prices enabled and encouraged borrowing.",
+    "concepts": [
+      "household debt",
+      "wage stagnation",
+      "income inequality",
+      "easy credit"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying conditions caused the derivatives market, particularly credit default swaps, to grow to a scale exceeding global GDP and amplify systemic risk?",
+    "reference": "Deregulation via the Commodity Futures Modernization Act of 2000, absence of central clearing, lack of capital reserve requirements for CDS sellers, and active opposition to regulation by Greenspan, Rubin, and Levitt allowed unchecked growth.",
+    "concepts": [
+      "derivatives",
+      "deregulation",
+      "cds",
+      "systemic risk"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying conditions caused subprime borrowers to default on mortgages at dramatically higher rates beginning in 2007?",
+    "reference": "Adjustable-rate mortgages reset to higher payments borrowers could not afford; housing prices fell preventing refinancing; many borrowers had been approved despite inability to repay due to lax standards; negative equity removed incentive to continue payments.",
+    "concepts": [
+      "subprime defaults",
+      "arm resets",
+      "negative equity",
+      "predatory lending"
+    ]
+  },
+  {
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying failures in corporate governance and compensation structures caused financial institutions to take on excessive risk in the years before the crisis?",
+    "reference": "Trader bonuses were tied to short-term fee generation rather than long-term product performance; bonuses were paid in cash without clawback provisions; senior executives did not understand the instruments being created; excessive leverage was not factored into executive compensation.",
+    "concepts": [
+      "corporate governance",
+      "compensation",
+      "short-term incentives",
+      "excessive risk"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many individual fuel channels did Reactor No. 4 have?",
+    "reference": "1,661 individual fuel channels",
+    "concepts": [
+      "reactor",
+      "fuel channels",
+      "chernobyl"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How long did the backup diesel generators at Chernobyl take to reach full load?",
+    "reference": "60\u201375 seconds",
+    "concepts": [
+      "diesel generators",
+      "full load",
+      "backup"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What thermal power level was the reactor test procedure intended to reduce power to?",
+    "reference": "between 700 MW and 1,000 MW",
+    "concepts": [
+      "test procedure",
+      "thermal power",
+      "reactor"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How old was Leonid Toptunov at the time of the accident?",
+    "reference": "25 years old",
+    "concepts": [
+      "toptunov",
+      "age",
+      "engineer"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the estimated power equivalent of the second explosion?",
+    "reference": "225 tons of TNT",
+    "concepts": [
+      "second explosion",
+      "power equivalent",
+      "tnt"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many people were evacuated to the Kiev region by 15:00 on 27 April 1986?",
+    "reference": "53,000 people",
+    "concepts": [
+      "evacuation",
+      "pripyat",
+      "kiev"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What were the ionizing radiation levels estimated to be in the worst-hit areas of the reactor building?",
+    "reference": "5.6 roentgens per second, equivalent to more than 20,000 roentgens per hour",
+    "concepts": [
+      "radiation levels",
+      "roentgens",
+      "reactor building"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How much did the Chernobyl Shelter Fund receive from international donors in 2011?",
+    "reference": "\u20ac864 million",
+    "concepts": [
+      "shelter fund",
+      "donors",
+      "funding"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What are the dimensions of the New Safe Confinement metal arch?",
+    "reference": "105 m high and spanning 257 m",
+    "concepts": [
+      "new safe confinement",
+      "arch",
+      "dimensions"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many tourists visited the Chernobyl site between 2017 and 2022?",
+    "reference": "over 350,000 tourists",
+    "concepts": [
+      "tourism",
+      "chernobyl",
+      "visitors"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the test delay caused by the Kiev grid controller ultimately lead to the night shift conducting the experiment under dangerous conditions?",
+    "reference": "Kiev grid controller requested postponement at 14:00 -> test delayed ~9 hours -> day and evening shifts departed -> night shift inherited the experiment with very limited preparation time -> night shift conducted test with inexperienced personnel (Toptunov had only ~3 months experience) under time pressure, increasing risk of errors.",
+    "concepts": [
+      "test delay",
+      "shift change",
+      "night shift",
+      "grid controller"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the unexpected power drop to 30 MW ultimately led to the reactor being in an extremely unstable state at the start of the test.",
+    "reference": "Power dropped to ~30 MW -> xenon-135 buildup inhibited power recovery -> operators withdrew nearly all 211 control rods to raise power -> only 200 MW achieved -> two additional pumps activated, increasing coolant flow -> more neutron absorption by water -> more rods withdrawn, inserted rod equivalent fell below 15 -> reactor left with positive void coefficient nearly unchecked and highly sensitive to power excursion.",
+    "concepts": [
+      "xenon poisoning",
+      "control rods",
+      "reactor instability",
+      "void coefficient"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the RBMK's positive void coefficient ultimately lead to a runaway power excursion during the test?",
+    "reference": "Turbine steam supply cut -> coolant pumps slowed -> water flow decreased -> more steam voids formed in coolant -> positive void coefficient meant voids increased reactivity -> more boiling produced more voids -> self-reinforcing feedback loop -> reactor power surged uncontrollably to ~30,000 MW thermal.",
+    "concepts": [
+      "positive void coefficient",
+      "steam voids",
+      "feedback loop",
+      "power excursion"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how pressing the AZ-5 emergency shutdown button ultimately caused a power spike rather than stopping the reactor.",
+    "reference": "AZ-5 pressed -> control rods inserted -> graphite neutron moderator extensions at rod tips entered core first, displacing neutron-absorbing water with neutron-moderating graphite -> this initially increased reactivity (positive scram effect) -> power spiked above 530 MW within seconds -> fuel rods fractured, possibly jamming rods at one-third insertion -> power rose to ~30,000 MW thermal.",
+    "concepts": [
+      "az-5",
+      "graphite tip",
+      "positive scram effect",
+      "power spike"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the first steam explosion ultimately lead to a second, more powerful explosion and massive radioactive release?",
+    "reference": "First explosion destroyed reactor casing and blew off upper biological shield -> ruptured further fuel channels and severed coolant lines -> remaining coolant flashed to steam and escaped -> total water loss combined with high positive void coefficient further increased thermal power -> second explosion (~225 tons TNT equivalent) dispersed reactor core, ejected graphite and fuel, breached containment -> radioactive material released into atmosphere.",
+    "concepts": [
+      "steam explosion",
+      "coolant loss",
+      "second explosion",
+      "radioactive release"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did inaccurate dosimeter readings ultimately lead to fatal radiation exposure for reactor crew members?",
+    "reference": "Most dosimeters had limits of 0.001 R/s and read off-scale -> crew chief Akimov assumed reactor was intact based on low readings -> evidence of graphite and fuel around building was ignored -> Akimov sent crew to pump water into reactor without protective gear -> crew members received lethal radiation doses -> most including Akimov died within three weeks.",
+    "concepts": [
+      "dosimeter",
+      "akimov",
+      "radiation exposure",
+      "protective gear"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how xenon-135 buildup after the power reduction ultimately contributed to operators withdrawing nearly all control rods.",
+    "reference": "Reactor power reduced -> iodine-135 decayed into xenon-135 faster than reduced neutron flux could burn it off -> xenon-135 absorbed neutrons, inhibiting power recovery (reactor poisoning) -> power dropped to ~30 MW -> operators withdrew control rods to raise power -> power only recovered to 200 MW with nearly all 211 rods withdrawn -> inserted rod equivalent fell below safe minimum of 15.",
+    "concepts": [
+      "xenon-135",
+      "reactor poisoning",
+      "control rod withdrawal",
+      "reactor instability"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying design flaw in the RBMK control rods caused the initial power increase when the AZ-5 emergency shutdown was initiated?",
+    "reference": "Each control rod had a graphite neutron moderator extension at its tip; when rods were inserted, the graphite extensions initially displaced neutron-absorbing water with neutron-moderating graphite, increasing reactivity before the absorbing portion of the rod entered the core.",
+    "concepts": [
+      "control rod",
+      "graphite tip",
+      "positive scram effect",
+      "rbmk"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying reactor physics characteristic caused increased boiling in the coolant to intensify rather than suppress the nuclear chain reaction at Chernobyl?",
+    "reference": "The RBMK design had a positive void coefficient, meaning steam voids formed during boiling increased core reactivity rather than decreasing it, creating a positive feedback loop.",
+    "concepts": [
+      "positive void coefficient",
+      "rbmk",
+      "feedback loop"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying phenomenon caused reactor power to continue dropping toward shutdown even after operators had reduced power to 720 MW during the test preparation?",
+    "reference": "Xenon-135, a fission byproduct and neutron absorber, accumulated in the core (reactor poisoning); at reduced power, iodine-135 decayed into xenon-135 faster than the reduced neutron flux could burn it off.",
+    "concepts": [
+      "xenon poisoning",
+      "xenon-135",
+      "reactor poisoning"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying conditions primed the reactor to be in an extremely unstable state just before the test began at 01:23:04?",
+    "reference": "Nearly all 211 control rods had been withdrawn to maintain 200 MW power; excessive coolant flow caused water to re-enter the core near boiling point; the inserted rod equivalent fell below the required 15-rod minimum; and the positive void coefficient left the reactor highly sensitive to void formation.",
+    "concepts": [
+      "control rods withdrawn",
+      "positive void coefficient",
+      "unstable reactor"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and procedural failures caused the safety test to proceed without proper nuclear safety oversight or design authority approval?",
+    "reference": "The test was classified as purely an electrical generator test, so existing regulations did not require approval from the chief reactor design authority (NIKIET) or the nuclear safety regulator; only the site chief engineer's approval was needed. The test authors were also unaware of unusual RBMK behavior under the planned conditions.",
+    "concepts": [
+      "regulatory gap",
+      "safety culture",
+      "test classification"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying circumstances caused the night shift to conduct the critical safety test under severe time pressure and inadequate preparation?",
+    "reference": "The Kiev grid controller delayed the test by ~9 hours to meet peak evening power demand; the day and evening shifts departed before the test could be completed; the night shift inherited the experiment mid-job with very limited preparation time and Toptunov had only ~3 months of independent experience.",
+    "concepts": [
+      "test delay",
+      "shift change",
+      "night shift",
+      "preparation"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying reactor condition caused the inserted control rod equivalent to fall below the required safety minimum without operators being aware of it?",
+    "reference": "Two additional main circulating pumps were activated, increasing coolant flow, which reduced steam voids and neutron flux, causing operators to withdraw more manual control rods to maintain power; there were no instruments capable of calculating the rod equivalent value in real time.",
+    "concepts": [
+      "control rods",
+      "real-time instrumentation",
+      "coolant flow"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying factors caused firefighters responding to the initial explosion to be unaware of the extreme radiation hazard they faced?",
+    "reference": "Firefighters were not informed of the radiation danger; most dosimeters on site had limits of only 0.001 R/s and read off-scale, so true radiation levels could not be measured; reactor crew chief Akimov incorrectly assumed the reactor was intact based on inaccurate low readings.",
+    "concepts": [
+      "dosimeter limits",
+      "misinformation",
+      "radiation awareness"
+    ]
+  },
+  {
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying design and safety culture failures caused the emergency core cooling system to remain disabled for 11 hours during the test delay?",
+    "reference": "The ECCS had been manually disabled as part of test preparations before the Kiev grid delay; it required two or three people manually turning large valve wheels to reconnect, and despite the extended unplanned delay, no one reinstated it, reflecting a general lack of safety culture.",
+    "concepts": [
+      "eccs disabled",
+      "safety culture",
+      "manual valve",
+      "test delay"
+    ]
+  }
+]

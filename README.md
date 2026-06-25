@@ -123,7 +123,7 @@ causal-rag impact    graph.pkl "deferred maintenance"  # forward: blast radius
 causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
 ```
 
-These map to `backward_chain` / `forward_chain` / `path_between` and are the measured value of the system (see [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md): causal-graph RAG ~doubles root-cause answer correctness vs strong flat RAG). **Caveat:** long-chain traversal quality depends on **entity normalization** — the same event can surface as "the pump" / "cooling pump" / "pump", fragmenting the graph. Cleaner extraction (`--llm-mode full`) helps; canonical entity resolution is the next improvement.
+These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all. **This is the system's distinctive capability** — *not* question-answering: a controlled n≈20 benchmark found causal-graph RAG **underperforms strong flat RAG on QA** (including multi-hop/root-cause), because it answers from causal-chain provenance and misses content that isn't part of a chain (see [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md) for the full result and the retraction of an earlier, biased n=7 claim). **Two real limitations:** (1) long-chain traversal depends on **entity normalization** — "the pump"/"cooling pump"/"pump" fragment the graph (cleaner extraction via `--llm-mode full` helps; canonical entity resolution is the next step); (2) for general QA, use flat/vector RAG — reach for these graph queries when you specifically need root-cause / impact / path analysis.
 
 ## Quick start
 

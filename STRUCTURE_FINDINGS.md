@@ -139,33 +139,44 @@ ablation, no rate limits.
 - Caveat: n=5. The +0.10 (Haiku +doc) is the clear signal; +causal+doc is noisy
   (the two signals don't combine cleanly). Direction is consistent with theory.
 
-## Benchmark 5 — the value question: causal-graph RAG vs a STRONG flat baseline (`eval_value.py`)
+## Benchmark 5 — causal-graph RAG vs a STRONG flat baseline (`eval_value.py`)
 
-Tested in the regime the system is *for* (multi-hop, root-cause) against strong
-vector RAG (same encoder, top_k, LLM). 2 domains (finance fan-in + Chernobyl
-deep cascade) x 3 question types, n=7/type, Haiku generation, Sonnet judge,
-per-question logging, paired stats.
+**RETRACTION + the real result.** A first pass with n=7 *hand-written* questions
+showed causal winning (fact +0.12, multihop +0.24, rootcause +0.36, "root-cause
+~2x"). That did **not replicate** — it was **question-selection bias**: questions
+I wrote whose answers happened to sit in the causal chains.
 
-| qtype | flat | causal | delta | 95% CI | Wilcoxon p |
+Re-run with **n~20 independent, LLM-generated questions** (paired design, so
+question quality cancels in the delta), 2 domains, Haiku gen, Sonnet judge:
+
+| qtype | flat | causal | delta (causal-flat) | 95% CI | Wilcoxon p |
 |---|---|---|---|---|---|
-| fact | 0.45 | 0.57 | +0.12 | [-0.07, +0.28] | 0.250 |
-| multihop | 0.24 | 0.47 | +0.24 | [+0.06, +0.55] | 0.125 |
-| rootcause | 0.38 | 0.74 | +0.36 | [+0.10, +0.69] | 0.250 |
+| fact (n=20) | 0.98 | 0.25 | **-0.73** | [-0.90, -0.53] | **0.000** |
+| multihop (n=15) | 0.42 | 0.25 | -0.18 | [-0.38, +0.04] | 0.158 |
+| rootcause (n=19) | 0.35 | 0.23 | -0.13 | [-0.26, -0.01] | 0.088 |
 
-**The advantage scales with causal complexity** (fact < multihop < rootcause) —
-causal-graph RAG nearly doubles root-cause correctness (0.38 -> 0.74) over a
-strong baseline. Bootstrap CIs exclude zero for multihop and rootcause.
+**Causal-graph RAG LOSES to strong flat RAG as a QA system** — decisively on fact
+lookups (p<0.001), and it does not win on multi-hop/root-cause either (worse to
+tie).
 
-**Honest stats:** Wilcoxon p is non-significant (0.125, 0.25) — a POWER problem,
-not absence of effect: at n=7 the test cannot reach p<0.05 with a few tied
-deltas. The bootstrap CIs and the monotonic pattern are the trustworthy signals.
-Strong directional evidence; n>=20/type needed for p<0.05 confirmation.
+**Mechanism (confirmed by inspecting answers, not speculation):** the causal
+system answers from **causal-chain provenance** — a biased subset of the
+document. Standalone facts (statistics, dates, definitions) and many multi-hop
+answers are not in those chains, so it repeatedly returns "I cannot answer." A
+strong flat dense retriever returns the top-k most relevant sentences and
+answers them. Example (multi-hop, SEC net-capital-rule): flat answered correctly;
+causal said "I cannot answer ... the evidence does not contain ...".
 
-**Bottom line:** the earlier "small faithfulness bump" was testing a causal
-tool as a fact-gathering box. In its real regime — multi-hop and root-cause,
-vs a strong baseline — the causal graph delivers a large, complexity-scaling
-advantage. That is the project's demonstrated value, and it is specialized
-(causal reasoning), not general "better RAG".
+**This is an architectural limitation, not a bug:** the graph indexes
+causally-connected content, so it is *not* a general retrieval substrate. As a
+QA box it underperforms flat RAG.
+
+**Honest bottom line:** the causal-graph approach, as implemented, does **not**
+beat strong flat RAG on question answering — including multi-hop and root-cause
+QA. Any unique value lives only in the **direct graph-analysis queries**
+(`rootcause` / `impact` / `path` — structured cause-effect outputs flat RAG
+cannot produce at all), not in QA answer correctness. The honest verdict from the
+whole investigation: a niche analysis tool, not a better RAG.
 
 ## Literature grounding
 
