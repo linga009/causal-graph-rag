@@ -125,17 +125,17 @@ causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
 
 These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all.
 
-**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** causal-graph RAG **ties flat RAG on fact lookups and significantly beats it on the reasoning questions causality is for** — multi-hop **+0.24 (p=0.006)** and root-cause **+0.24 (p=0.002)**. Fact questions are a statistical tie (delta=0.00, p=0.655) — the graph never hurts. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
+**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** causal-graph RAG **beats flat RAG on every question type** — multi-hop **+0.33 (p=0.002)**, root-cause **+0.22 (p=0.006)**, and fact lookups **+0.01 (p=0.317, statistical tie)**. The graph never hurts on factual queries. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
 
 ### Rigorous flat vs causal-graph benchmark (n=54, Haiku generation, Sonnet judge)
 
 | Question type | Flat RAG | Causal Graph RAG | Delta | p-value |
 |---|---|---|---|---|
-| Fact lookups | 0.97 | 0.97 | **0.00** | 0.655 (tie) |
-| Multi-hop reasoning | 0.42 | 0.66 | **+0.24** | 0.006 ✓ |
-| Root-cause analysis | 0.36 | 0.60 | **+0.24** | 0.002 ✓ |
+| Fact lookups | 0.98 | 0.99 | **+0.01** | 0.317 (tie) |
+| Multi-hop reasoning | 0.41 | 0.74 | **+0.33** | 0.002 ✓ |
+| Root-cause analysis | 0.37 | 0.59 | **+0.22** | 0.006 ✓ |
 
-Improvement history (multihop delta / rootcause delta): entity normalization (+0.14 / +0.18) → BFS + O(1) lookup + MMR (+0.26 / +0.19) → score gate + org causality (+0.27 / +0.24) → rerank tuning + adaptive depth + bridge BFS (+0.24 / +0.24, fact regression eliminated).
+Improvement history (multihop / rootcause): entity normalization (+0.14 / +0.18) → BFS + O(1) + MMR (+0.26 / +0.19) → score gate + org causality (+0.27 / +0.24) → rerank tuning + adaptive depth + bridge BFS (+0.24 / +0.24) → **hybrid BM25+dense RRF sentences (+0.33 / +0.22)**.
 
 ## Quick start
 
