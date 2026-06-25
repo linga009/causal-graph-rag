@@ -123,7 +123,11 @@ causal-rag impact    graph.pkl "deferred maintenance"  # forward: blast radius
 causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
 ```
 
-These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all. **This is the system's distinctive capability** — *not* question-answering: a controlled n≈20 benchmark found causal-graph RAG **underperforms strong flat RAG on QA** (including multi-hop/root-cause), because it answers from causal-chain provenance and misses content that isn't part of a chain (see [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md) for the full result and the retraction of an earlier, biased n=7 claim). **Two real limitations:** (1) long-chain traversal depends on **entity normalization** — "the pump"/"cooling pump"/"pump" fragment the graph (cleaner extraction via `--llm-mode full` helps; canonical entity resolution is the next step); (2) for general QA, use flat/vector RAG — reach for these graph queries when you specifically need root-cause / impact / path analysis.
+These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all.
+
+**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** with *hybrid* retrieval (coverage sentences + causal chains), causal-graph RAG **ties flat RAG on fact lookups and significantly beats it on the reasoning questions causality is for** — multi-hop **+0.15 (p=0.005)** and root-cause **+0.11 (p=0.035)**. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
+
+**Known limitation:** long-chain traversal depends on **entity normalization** — "the pump"/"cooling pump"/"pump" fragment the graph (cleaner extraction via `--llm-mode full` helps; canonical entity resolution is the next step).
 
 ## Quick start
 

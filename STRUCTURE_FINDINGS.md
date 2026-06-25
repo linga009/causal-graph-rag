@@ -141,42 +141,43 @@ ablation, no rate limits.
 
 ## Benchmark 5 — causal-graph RAG vs a STRONG flat baseline (`eval_value.py`)
 
-**RETRACTION + the real result.** A first pass with n=7 *hand-written* questions
-showed causal winning (fact +0.12, multihop +0.24, rootcause +0.36, "root-cause
-~2x"). That did **not replicate** — it was **question-selection bias**: questions
-I wrote whose answers happened to sit in the causal chains.
+The full arc — claim, retract, diagnose, fix, confirm:
 
-Re-run with **n~20 independent, LLM-generated questions** (paired design, so
-question quality cancels in the delta), 2 domains, Haiku gen, Sonnet judge:
+**(a) n=7 hand-written questions:** causal "wins" (rootcause ~2x). **Retracted** —
+question-selection bias (questions whose answers sat in the chains).
+
+**(b) n~20 independent LLM-generated questions, PURE-GRAPH design:** causal
+**loses badly** — fact -0.73 (p<0.001), multihop -0.18, rootcause -0.13.
+*Diagnosis (by inspecting answers):* the system answered ONLY from causal-chain
+provenance — a biased subset — so standalone facts and many multi-hop answers
+were missing and it returned "I cannot answer." We had **replaced** coverage with
+structure instead of **adding** it.
+
+**(c) The fix — HYBRID retrieval** (MS GraphRAG local search; NVIDIA/BlackRock
+HybridRAG): retrieve the top-k relevant SENTENCES (coverage, like vector RAG)
+AND the causal chains, feed both. Now a superset of flat RAG.
+
+**(d) Re-measured, n=54, hybrid, temp 0, paired Wilcoxon + bootstrap CI:**
 
 | qtype | flat | causal | delta (causal-flat) | 95% CI | Wilcoxon p |
 |---|---|---|---|---|---|
-| fact (n=20) | 0.98 | 0.25 | **-0.73** | [-0.90, -0.53] | **0.000** |
-| multihop (n=15) | 0.42 | 0.25 | -0.18 | [-0.38, +0.04] | 0.158 |
-| rootcause (n=19) | 0.35 | 0.23 | -0.13 | [-0.26, -0.01] | 0.088 |
+| fact (n=20) | 0.98 | 0.96 | -0.02 | [-0.08, +0.03] | 0.465 |
+| multihop (n=15) | 0.43 | **0.57** | **+0.15** | [+0.07, +0.22] | **0.005** |
+| rootcause (n=19) | 0.36 | **0.47** | **+0.11** | [+0.02, +0.21] | **0.035** |
 
-**Causal-graph RAG LOSES to strong flat RAG as a QA system** — decisively on fact
-lookups (p<0.001), and it does not win on multi-hop/root-cause either (worse to
-tie).
+**Result (statistically significant):** the causal structure, added on top of
+coverage, **matches flat RAG on fact lookups (tie) and significantly beats it on
+multi-hop (+0.15, p=0.005) and root-cause (+0.11, p=0.035)** — the question types
+causality is for. CIs exclude zero; p<0.05 is real significance, not the
+power-starved n=7 situation.
 
-**Mechanism (confirmed by inspecting answers, not speculation):** the causal
-system answers from **causal-chain provenance** — a biased subset of the
-document. Standalone facts (statistics, dates, definitions) and many multi-hop
-answers are not in those chains, so it repeatedly returns "I cannot answer." A
-strong flat dense retriever returns the top-k most relevant sentences and
-answers them. Example (multi-hop, SEC net-capital-rule): flat answered correctly;
-causal said "I cannot answer ... the evidence does not contain ...".
-
-**This is an architectural limitation, not a bug:** the graph indexes
-causally-connected content, so it is *not* a general retrieval substrate. As a
-QA box it underperforms flat RAG.
-
-**Honest bottom line:** the causal-graph approach, as implemented, does **not**
-beat strong flat RAG on question answering — including multi-hop and root-cause
-QA. Any unique value lives only in the **direct graph-analysis queries**
-(`rootcause` / `impact` / `path` — structured cause-effect outputs flat RAG
-cannot produce at all), not in QA answer correctness. The honest verdict from the
-whole investigation: a niche analysis tool, not a better RAG.
+**Honest bottom line:** done correctly (structure *additive*, not a replacement),
+causal-graph RAG = strong flat RAG + causal chains: no regression on facts, a
+real and statistically significant gain on causal-reasoning questions. The
+earlier "it loses" was a coverage *bug*, now fixed; the earlier "it wins big" was
+bias. The truth, measured: a genuine, specialized improvement for multi-hop and
+root-cause QA, plus the direct graph-analysis queries (`rootcause`/`impact`/`path`)
+flat RAG cannot do at all.
 
 ## Literature grounding
 
