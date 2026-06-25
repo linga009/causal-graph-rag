@@ -152,6 +152,10 @@ class SentenceTransformerDense:
 
     def index(self, node_docs: Dict[str, str]) -> None:
         self._nodes = list(node_docs.keys())
+        if not self._nodes:                       # zero-edge document -> empty index
+            self.vecs = {}
+            self._matrix = None
+            return
         texts = [node_docs[n] for n in self._nodes]
         embs = self._model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
         self.vecs = {n: embs[i] for i, n in enumerate(self._nodes)}
@@ -283,6 +287,10 @@ class PathSignatureRetriever:
     # -- public API ---------------------------------------------------------- #
     def index(self, node_docs: Dict[str, str]) -> None:
         self._nodes = list(node_docs.keys())
+        if not self._nodes:                       # zero-edge document -> empty index
+            self._node_sents = {}
+            self._sig_matrix = None
+            return
         self._node_sents = {n: self._split(node_docs[n]) or [node_docs[n]]
                             for n in self._nodes}
         sigs = []

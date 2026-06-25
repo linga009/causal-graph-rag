@@ -44,16 +44,17 @@ def _load_env(path: str = ".env") -> None:
 
 
 def _build_llm():
-    """Pick an LLM from whatever key is present; None if no key (spaCy-only)."""
+    """Pick an LLM from whatever key is present; None if none (spaCy-only).
+    Resilient: if a key is set but its SDK isn't installed, skip to the next
+    provider instead of crashing."""
     from llm_adapters import GroqLLM, GeminiLLM, AnthropicLLM, OpenAILLM
-    if os.environ.get("GROQ_API_KEY"):
-        return GroqLLM()
-    if os.environ.get("GEMINI_API_KEY"):
-        return GeminiLLM()
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return AnthropicLLM()
-    if os.environ.get("OPENAI_API_KEY"):
-        return OpenAILLM()
+    for env, cls in (("GROQ_API_KEY", GroqLLM), ("GEMINI_API_KEY", GeminiLLM),
+                     ("ANTHROPIC_API_KEY", AnthropicLLM), ("OPENAI_API_KEY", OpenAILLM)):
+        if os.environ.get(env):
+            try:
+                return cls()
+            except ImportError:
+                continue   # key set but SDK not installed -> try the next one
     return None
 
 

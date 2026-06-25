@@ -77,15 +77,15 @@ app.add_middleware(
 # --------------------------------------------------------------------------- #
 
 def _build_llm():
-    """Pick an LLM from whatever API key is present (Groq → Gemini → Anthropic → OpenAI)."""
-    if os.environ.get("GROQ_API_KEY"):
-        return GroqLLM()
-    if os.environ.get("GEMINI_API_KEY"):
-        return GeminiLLM()
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return AnthropicLLM()
-    if os.environ.get("OPENAI_API_KEY"):
-        return OpenAILLM()
+    """Pick an LLM from whatever API key is present (Groq → Gemini → Anthropic →
+    OpenAI). Resilient: a key set without its SDK installed is skipped, not fatal."""
+    for env, cls in (("GROQ_API_KEY", GroqLLM), ("GEMINI_API_KEY", GeminiLLM),
+                     ("ANTHROPIC_API_KEY", AnthropicLLM), ("OPENAI_API_KEY", OpenAILLM)):
+        if os.environ.get(env):
+            try:
+                return cls()
+            except ImportError:
+                continue
     return None
 
 _llm = _build_llm()

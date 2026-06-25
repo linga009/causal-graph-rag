@@ -23,13 +23,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install dependencies
+      - name: Install package (core deps) + pytest
         run: |
           python -m pip install --upgrade pip
-          pip install numpy sentence-transformers pytest
+          pip install -e .
+          pip install pytest
 
       - name: Compile all modules
         run: python -m compileall -q *.py
 
       - name: Run tests
         run: pytest tests/ -q
+        # Tests run on the minimal documented install (no spaCy/LLM SDKs):
+        # extraction falls back to rules, the LLM to MockLLM, dense to hashing —
+        # proving the tool degrades gracefully, never crashes.
