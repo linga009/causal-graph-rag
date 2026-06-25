@@ -48,7 +48,7 @@ class CausalGraph(GraphBackend):
     MAX_PATHS = 500
     # Max times a single node may appear as the START of a path in results.
     # Prevents a densely connected hub node from flooding the result set.
-    _NODE_CAP = 3
+    _NODE_CAP = 5
 
     def __init__(self, lex: Lexicon):
         self.lex = lex

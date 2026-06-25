@@ -463,8 +463,8 @@ def _implicit_edges(sents: List[str], explicit_pairs: set) -> List[CausalEdge]:
         if not has_state_change and not has_temporal:
             continue
 
-        # Look back up to 2 sentences for a cause
-        for lookback in (1, 2):
+        # Look back up to 4 sentences; confidence decays with distance.
+        for lookback, conf in ((1, 0.50), (2, 0.50), (3, 0.45), (4, 0.40)):
             j = i - lookback
             if j < 0:
                 continue
@@ -484,9 +484,9 @@ def _implicit_edges(sents: List[str], explicit_pairs: set) -> List[CausalEdge]:
             edges.append(CausalEdge(
                 prev_head, "implicit_trigger", curr_head, pol,
                 f"{s_prev} {s_curr}",
-                confidence=0.50, extraction_method="implicit",
+                confidence=conf, extraction_method="implicit",
             ))
-            break  # prefer the nearest cause; don't add both lookbacks
+            break  # prefer nearest cause; don't add both lookbacks
 
     return edges
 
@@ -494,6 +494,102 @@ def _implicit_edges(sents: List[str], explicit_pairs: set) -> List[CausalEdge]:
 # --------------------------------------------------------------------------- #
 #  Main entry point
 # --------------------------------------------------------------------------- #
+
+# Organizational causality: captures governance and information-flow failures
+# that spaCy/rules miss ("proceeded without oversight", "failed to notify", etc.)
+_ORG_WITHOUT = re.compile(
+    r"([\w][\w\s]{2,35}?)\s+without\s+"
+    r"(?:proper\s+|required\s+|adequate\s+|formal\s+|explicit\s+|prior\s+)?"
+    r"(approval|authorization|oversight|notification|clearance|consent|review|supervision|knowledge)",
+    re.I,
+)
+_ORG_FAILED = re.compile(
+    r"([\w][\w\s]{1,25}?)\s+failed\s+to\s+([\w][\w\s]{1,30})",
+    re.I,
+)
+_ORG_UNAWARE = re.compile(
+    r"([\w][\w\s]{1,25}?)\s+(?:was|were)\s+(?:not\s+)?(?:unaware|informed|notified|told)\s+"
+    r"(?:of\s+|about\s+)([\w][\w\s]{1,30})",
+    re.I,
+)
+_ORG_DESPITE = re.compile(
+    r"([\w][\w\s]{1,25}?)\s+(?:proceeded|continued|persisted|went\s+ahead|was\s+conducted|was\s+carried\s+out)\s+"
+    r"despite\s+([\w][\w\s]{1,40})",
+    re.I,
+)
+_ORG_PRESSURE = re.compile(
+    r"(?:under\s+)?(?:[\w\s]{0,15})\bpressure\b\s+to\s+([\w][\w\s]{1,30})",
+    re.I,
+)
+
+
+def _org_edges(sents: List[str]) -> List[CausalEdge]:
+    """Extract organizational/procedural causality missed by dependency parsing:
+    governance gaps, information failures, override of safety protocols."""
+    edges: List[CausalEdge] = []
+
+    for sent in sents:
+        # "X proceeded/was done without [required] oversight/approval"
+        # -> (lack of oversight) enabled X
+        for m in _ORG_WITHOUT.finditer(sent):
+            action = m.group(1).strip()
+            prereq = m.group(2).strip().lower()
+            cause_node = f"lack of {prereq}"
+            if action not in _PRONOUN_NODES and len(action) > 3:
+                edges.append(CausalEdge(
+                    cause_node, "enabled", action, -1, sent,
+                    confidence=0.60, extraction_method="org_rule",
+                ))
+
+        # "[actor] failed to [verb+object]"
+        # -> (actor, failure_to, action)
+        m = _ORG_FAILED.search(sent)
+        if m:
+            actor = m.group(1).strip().lower()
+            action = m.group(2).strip().lower().rstrip(".,:;")
+            if actor not in _PRONOUN_NODES and len(actor) > 2 and len(action) > 2:
+                edges.append(CausalEdge(
+                    actor, "failed_to", action, -1, sent,
+                    confidence=0.60, extraction_method="org_rule",
+                ))
+
+        # "[X] was unaware of / not informed about [Y]"
+        # -> (lack of Y awareness, affected, X)
+        m = _ORG_UNAWARE.search(sent)
+        if m:
+            actor = m.group(1).strip().lower()
+            thing = m.group(2).strip().lower().rstrip(".,:;")
+            if actor not in _PRONOUN_NODES and len(actor) > 2 and len(thing) > 2:
+                edges.append(CausalEdge(
+                    f"lack of {thing} awareness", "affected", actor, -1, sent,
+                    confidence=0.55, extraction_method="org_rule",
+                ))
+
+        # "[X] proceeded/continued despite [concern/warning]"
+        # -> (concern, led_to, X risk)
+        m = _ORG_DESPITE.search(sent)
+        if m:
+            actor = m.group(1).strip().lower()
+            obstacle = m.group(2).strip().lower().rstrip(".,:;")
+            if actor not in _PRONOUN_NODES and len(actor) > 2 and len(obstacle) > 3:
+                edges.append(CausalEdge(
+                    obstacle, "ignored_by", actor, -1, sent,
+                    confidence=0.55, extraction_method="org_rule",
+                ))
+
+        # "under pressure to [action]"
+        # -> (pressure, led_to, action)
+        m = _ORG_PRESSURE.search(sent)
+        if m:
+            action = m.group(1).strip().lower().rstrip(".,:;")
+            if len(action) > 3:
+                edges.append(CausalEdge(
+                    "schedule pressure", "led_to", action, -1, sent,
+                    confidence=0.50, extraction_method="org_rule",
+                ))
+
+    return [e for e in edges if _validate_edge(e)]
+
 
 def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEdge]:
     """
@@ -551,6 +647,12 @@ def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEd
     # Implicit causation pass: adjacency + state-change + temporal heuristics
     explicit_pairs = {(e.cause, e.effect) for e in edges}
     edges.extend(_implicit_edges(sents, explicit_pairs))
+
+    # Organizational causality: governance gaps, information failures, protocol
+    # overrides — patterns that dependency parsing systematically misses.
+    org = _org_edges(sents)
+    org_pairs = {(e.cause, e.effect) for e in edges}
+    edges.extend(e for e in org if (e.cause, e.effect) not in org_pairs)
 
     # Validate all edges (remove pronouns, empty strings, self-loops, >80 char names)
     edges = [e for e in edges if _validate_edge(e)]

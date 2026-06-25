@@ -189,6 +189,8 @@ class GraphRAG:
         # Tracks (cause, relation, effect) tuples already in the graph to
         # prevent duplicate edges across multiple ingest() calls.
         self._edge_set: set = set()
+        # Sentence position index (populated in _ensure_indexed)
+        self._sent_idx: Dict[str, int] = {}
         self._dirty = False
         # Sentence-level coverage index (HYBRID retrieval). The graph alone only
         # surfaces causally-connected content; standalone facts fall through.
@@ -396,15 +398,18 @@ class GraphRAG:
                                            normalize_embeddings=True)
         else:
             self._sent_vecs = None
+        # O(1) sentence-position lookup for provenance expansion
+        self._sent_idx: Dict[str, int] = {s: i for i, s in enumerate(self._sentences)}
         self._dirty = False
         elapsed = time.monotonic() - t0
         log.info("rebuilt retrieval indices: %d nodes, %d sentences in %.2fs",
                  len(self._node_docs), len(self._sentences), elapsed)
 
-    def _retrieve_sentences(self, question: str, k: int = 6) -> List[str]:
+    def _retrieve_sentences(self, question: str, k: int = 6,
+                            chain_nodes: Optional[set] = None) -> List[str]:
         """Top-k most relevant raw sentences by dense cosine with MMR diversity.
-        MMR avoids returning near-duplicate sentences from the same paragraph.
-        Empty if no dense model (hashing fallback)."""
+        chain_nodes: if supplied, sentences mentioning chain nodes get a small
+        relevance bonus — keeps coverage grounded in the retrieved causal context."""
         self._ensure_indexed()
         if self._sent_vecs is None or not self._sentences:
             return []
@@ -412,10 +417,24 @@ class GraphRAG:
         q = model.encode([question], convert_to_numpy=True, normalize_embeddings=True)[0]
         sims = self._sent_vecs @ q
 
+        # Build chain-node term set for coverage bonus
+        chain_terms: set = set()
+        if chain_nodes:
+            for node in chain_nodes:
+                chain_terms.update(tokenize(node))
+
         # Retrieve a larger candidate pool, then apply MMR
         pool_size = min(k * 4, len(self._sentences))
         pool_idx = np.argsort(-sims)[:pool_size]
-        pool_sims = sims[pool_idx]
+        pool_sims = sims[pool_idx].copy().astype(float)
+
+        # Apply chain-node relevance bonus before MMR
+        if chain_terms:
+            for i, idx in enumerate(pool_idx):
+                sent_words = set(tokenize(self._sentences[idx]))
+                overlap = len(chain_terms & sent_words) / max(1, len(chain_terms))
+                pool_sims[i] += 0.15 * overlap   # up to +0.15 for full node overlap
+
         pool_vecs = self._sent_vecs[pool_idx]
 
         # MMR: lam=0.7 (relevance-weighted), iteratively select diverse sentences
@@ -498,12 +517,21 @@ class GraphRAG:
         return f"[{hp}] {sentence}" if hp else sentence
 
     # -- entry-node selection (three-channel fusion) ------------------------- #
-    def _entry_nodes(self, question: str, top_n: int = 4) -> List[Tuple[float, str]]:
+    def _entry_nodes(self, question: str, top_n: int = 4,
+                     direction: str = "forward") -> List[Tuple[float, str]]:
         from retrievers import tokenize
         q_terms = set(tokenize(question))
 
         # Channel 0: direct node-name match via inverted index — O(|q_terms|).
-        # The query usually names the event ("budget CUTS" -> node 'cuts').
+        # Direction-aware scoring: rootcause queries prefer effect-heavy nodes
+        # (high in-degree); forward/impact queries prefer cause-heavy nodes.
+        degree_bonus: dict = {}
+        for e in self.graph.edges:
+            if direction == "backward":
+                degree_bonus[e.effect] = degree_bonus.get(e.effect, 0) + 1
+            else:
+                degree_bonus[e.cause] = degree_bonus.get(e.cause, 0) + 1
+
         direct: List[Tuple[float, str]] = []
         widx = self.graph.word_index()
         seen_direct: set = set()
@@ -511,7 +539,9 @@ class GraphRAG:
             for node in widx.get(term, []):
                 if node not in seen_direct:
                     seen_direct.add(node)
-                    direct.append((1.0, node))
+                    d = degree_bonus.get(node, 0)
+                    score = 1.0 + min(0.5, d * 0.1)   # up to +0.5 for high-degree nodes
+                    direct.append((score, node))
 
         # VSA channel: structural/directional entry points.
         vsa_ranked: List[Tuple[float, str]] = []
@@ -532,7 +562,7 @@ class GraphRAG:
         sig_ranked = self.sig.score(question, bm25_context=bm25_context)
 
         fused = rrf_fuse([direct, vsa_ranked, bm25_ranked, dense_ranked, sig_ranked],
-                         weights=[2.0, 1.2, 1.0, 1.0, 0.8])
+                         weights=[1.5, 2.0, 1.0, 1.0, 1.2])
         result = fused[:top_n]
         log.debug("entry nodes for %r: %s", question[:50],
                   [(n, round(s, 3)) for s, n in result])
@@ -544,6 +574,22 @@ class GraphRAG:
         if any(p in low for p in _BACKWARD_Q):
             return "backward"
         return "forward"
+
+    # -- query-adaptive traversal depth ------------------------------------- #
+    _DEEP_Q  = ("trace", "chain of", "step by step", "series of", "sequence of",
+                "propagat", "ultimately", "eventually")
+    _SHALLOW_Q = ("what is", "how many", "how much", "when was", "when did",
+                  "who ", "which year", "what year", "what date", "how old")
+
+    def _adaptive_depth(self, question: str) -> int:
+        """Return BFS max_depth tuned to question complexity.
+        'Trace how X ultimately led to Y' needs longer chains than 'What is X?'."""
+        low = question.lower()
+        if any(w in low for w in self._DEEP_Q):
+            return min(self.max_depth + 2, 10)   # deep chains for trace questions
+        if any(w in low for w in self._SHALLOW_Q):
+            return max(self.max_depth - 2, 3)    # shallow for fact lookups
+        return self.max_depth
 
     # -- rerank chains ------------------------------------------------------- #
     def _rerank(self, question: str, chains: List[ChainResult]) -> None:
@@ -568,14 +614,14 @@ class GraphRAG:
             overlap = len(q_terms & chain_terms)
             score = overlap + 0.25 * len(c.chain)
 
-            # Direction-aware endpoint bonus
+            # Direction-aware endpoint bonus (strong signal: chain anchors on query)
             if c.chain:
                 head = set(tokenize(c.chain[0].cause))
                 tail = set(tokenize(c.chain[-1].effect))
                 if c.direction == "backward" and (tail & q_terms):
-                    score += 2.0
+                    score += 5.0
                 if c.direction == "forward" and (head & q_terms):
-                    score += 2.0
+                    score += 5.0
 
             # Semantic similarity: mean of pre-fetched node embeddings
             if q_emb is not None and node_embs:
@@ -589,11 +635,11 @@ class GraphRAG:
                     score += float(q_emb @ chain_emb) * 3.0
 
             # Confidence weighting: geometric mean of edge confidences.
-            # High-confidence chains (LLM-extracted) score up to 10% higher.
+            # Scaled [0.75, 1.0] so high-confidence chains score meaningfully higher.
             if c.chain:
                 confs = [getattr(e, "confidence", 0.85) for e in c.chain]
                 chain_conf = float(np.prod(confs) ** (1.0 / len(confs)))
-                score *= (0.9 + 0.1 * chain_conf)  # scales in [0.9, 1.0]
+                score *= (0.75 + 0.25 * chain_conf)  # scales in [0.75, 1.0]
 
             c.rerank_score = score
 
@@ -626,6 +672,10 @@ class GraphRAG:
         rel = {id(c): (c.rerank_score - lo) / rng for c in chains}
         nodesets = {id(c): self._chain_nodes(c) for c in chains}
 
+        # Track (relation, effect) pairs used by selected chains to penalise
+        # chains that repeat the same causal mechanism.
+        used_mechanisms: set = set()
+
         selected: List[ChainResult] = []
         pool = list(chains)
         while pool and len(selected) < top_k:
@@ -633,11 +683,16 @@ class GraphRAG:
                 best = max(pool, key=lambda c: rel[id(c)])
             else:
                 def mmr(c: ChainResult) -> float:
-                    red = max(self._jaccard(nodesets[id(c)], nodesets[id(s)])
-                              for s in selected)
+                    node_red = max(self._jaccard(nodesets[id(c)], nodesets[id(s)])
+                                   for s in selected)
+                    # Extra penalty if this chain reuses an already-selected mechanism
+                    chain_mechs = {(e.relation, e.effect) for e in c.chain}
+                    mech_overlap = len(chain_mechs & used_mechanisms) / max(1, len(chain_mechs))
+                    red = node_red + 0.3 * mech_overlap
                     return lam * rel[id(c)] - (1 - lam) * red
                 best = max(pool, key=mmr)
             selected.append(best)
+            used_mechanisms.update((e.relation, e.effect) for e in best.chain)
             pool.remove(best)
         return selected
 
@@ -646,29 +701,58 @@ class GraphRAG:
                  diversify: bool = True) -> List[ChainResult]:
         self._ensure_indexed()
         direction = self._direction(question)
-        # Pull more candidate entry nodes than top_k so MMR has room to cover
-        # different parts of the document.
-        entries = self._entry_nodes(question, top_n=max(4, top_k * 2))
-        results: List[ChainResult] = []
-        for rrf_score, node in entries:
-            if node not in self.graph.nodes():
-                continue
-            if direction == "backward":
-                paths = self.graph.backward_chain(node, self.max_depth)
-            else:
-                paths = self.graph.forward_chain(node, self.max_depth)
+        depth = self._adaptive_depth(question)
+        entries = self._entry_nodes(question, top_n=max(4, top_k * 2),
+                                    direction=direction)
+        graph_nodes = self.graph.nodes()
+
+        def _bfs_from(node: str, rrf: float) -> None:
+            if node not in graph_nodes:
+                return
+            paths = (self.graph.backward_chain(node, depth)
+                     if direction == "backward"
+                     else self.graph.forward_chain(node, depth))
             for path in paths:
                 if path:
-                    results.append(ChainResult(path, node, rrf_score, 0.0, direction))
-        # dedupe identical chains
-        seen, uniq = set(), []
+                    results.append(ChainResult(path, node, rrf, 0.0, direction))
+
+        results: List[ChainResult] = []
+        for rrf_score, node in entries:
+            _bfs_from(node, rrf_score)
+
+        # Dedup
+        seen: set = set()
+        uniq: List[ChainResult] = []
         for r in results:
             key = tuple((e.cause, e.relation, e.effect) for e in r.chain)
             if key not in seen:
                 seen.add(key)
                 uniq.append(r)
+
         self._rerank(question, uniq)
         uniq.sort(key=lambda r: (-r.rerank_score, -r.rrf_score))
+
+        # Bridge-evidence 2nd pass: if the tails of the top chains don't overlap
+        # with query terms, the traversal stopped short. Reseed from those tails
+        # to extend chains one more hop toward the answer.
+        q_terms = set(tokenize(question))
+        top_chains = uniq[:3]
+        tail_nodes = {c.chain[-1].effect for c in top_chains if c.chain}
+        tail_terms = {t for n in tail_nodes for t in tokenize(n)}
+        if tail_nodes and not (q_terms & tail_terms):
+            extra: List[ChainResult] = []
+            for node in tail_nodes:
+                _bfs_from(node, 0.3)   # lower rrf score for 2nd-pass seeds
+            for r in results[len(uniq):]:   # only newly appended results
+                key = tuple((e.cause, e.relation, e.effect) for e in r.chain)
+                if key not in seen:
+                    seen.add(key)
+                    uniq.append(r)
+            if uniq[len(top_chains):]:     # re-rank only if new chains were added
+                self._rerank(question, uniq)
+                uniq.sort(key=lambda r: (-r.rerank_score, -r.rrf_score))
+                log.debug("bridge 2nd pass added %d chains", len(uniq) - len(top_chains))
+
         if diversify:
             return self._mmr_select(uniq, top_k)
         return uniq[:top_k]
@@ -781,6 +865,30 @@ class GraphRAG:
             parts.append(f"which {e.relation.replace('_', ' ')} {e.effect}")
         return ", ".join(parts)
 
+    def _expand_provenance(self, provenance: List[str], cap: int = 4) -> List[str]:
+        """Return up to `cap` document-adjacent sentences that follow each
+        provenance sentence in document order. Adds narrative context around
+        each chain hop without extra encoding calls — helps multi-hop questions
+        where the source sentence alone doesn't explain the mechanism."""
+        if not self._sentences or not provenance or not self._sent_idx:
+            return []
+        extras: List[str] = []
+        added: set = set(provenance)
+        for sent in provenance:
+            if len(extras) >= cap:
+                break
+            idx = self._sent_idx.get(sent)
+            if idx is None:
+                continue
+            # Take the immediately following sentence (forward context is most useful)
+            nxt = idx + 1
+            if nxt < len(self._sentences):
+                neighbor = self._sentences[nxt]
+                if neighbor not in added and neighbor.strip():
+                    extras.append(neighbor)
+                    added.add(neighbor)
+        return extras
+
     def _build_context(self, chains: List[ChainResult], structured: bool,
                        contextual: bool = True, prose_chains: bool = False,
                        coverage_sentences: Optional[List[str]] = None) -> str:
@@ -796,7 +904,12 @@ class GraphRAG:
         contextual : annotate evidence with its document location ([Section > ...]).
         """
         evidence_sents = list(coverage_sentences or [])
-        for s in self._dedup_provenance(chains):          # add chain provenance not already covered
+        chain_prov = self._dedup_provenance(chains)
+        for s in chain_prov:                              # add chain provenance not already covered
+            if s not in evidence_sents:
+                evidence_sents.append(s)
+        # Add one document-adjacent sentence per provenance hop (richer per-hop context)
+        for s in self._expand_provenance(chain_prov):
             if s not in evidence_sents:
                 evidence_sents.append(s)
         evidence = "\n".join((self._annotate(s) if contextual else s)
@@ -831,8 +944,20 @@ class GraphRAG:
                      for the legacy sentence-only context (used for A/B tests).
         """
         chains = self.retrieve(question, top_k=top_k)
-        # Hybrid: also pull the top-k most relevant sentences for coverage.
-        coverage = self._retrieve_sentences(question, k=max(6, top_k * 2))
+        # Score gate: if no chain is meaningfully relevant, skip chain context
+        # and fall back to coverage sentences only. Prevents irrelevant graph
+        # traversal from polluting purely factual or poorly-covered queries.
+        _CHAIN_GATE = 2.0
+        if chains and max(c.rerank_score for c in chains) < _CHAIN_GATE:
+            log.debug("chain gate: best score %.2f < %.2f; coverage-only mode",
+                      max(c.rerank_score for c in chains), _CHAIN_GATE)
+            chains = []
+        # Hybrid: pull the top-k most relevant sentences, boosting those that
+        # mention nodes in the selected chains (chain-aware coverage).
+        chain_nodes = {n for c in chains for e in c.chain
+                       for n in (e.cause, e.effect)}
+        coverage = self._retrieve_sentences(question, k=max(6, top_k * 2),
+                                            chain_nodes=chain_nodes or None)
         return self.generate(question, chains, summarize=summarize,
                              structured=structured, contextual=contextual,
                              prose_chains=prose_chains,
