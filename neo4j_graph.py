@@ -26,15 +26,24 @@ Usage
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Dict, List, Optional, Set, Tuple
+import re as _re
 import numpy as np
 
+from graph_backend import GraphBackend
 from causal_extractor import CausalEdge
 from causal_graph import GraphEdge
 from vsa_core import Lexicon, Triple, encode_triple
 
+_TOK = _re.compile(r"[a-z0-9]+")
 
-class Neo4jCausalGraph:
+
+def _tokenize(s: str) -> List[str]:
+    return _TOK.findall(s.lower())
+
+
+class Neo4jCausalGraph(GraphBackend):
     """
     Persistent causal graph backed by Neo4j.
 
@@ -97,9 +106,12 @@ class Neo4jCausalGraph:
         if clear_on_init:
             self._clear_all()
 
-        # Cache for VSA matrix (rebuilt when edges change)
+        # Cache for VSA matrix and adjacency (rebuilt when edges change)
         self._edge_matrix_cache: Optional[np.ndarray] = None
         self._edge_cache: Optional[List[GraphEdge]] = None
+        self._out_adj_cache: Optional[Dict[str, List[int]]] = None
+        self._in_adj_cache: Optional[Dict[str, List[int]]] = None
+        self._word_idx_cache: Optional[Dict[str, List[str]]] = None
 
         # Monotonic edge-id counter. Seeded once from the DB so ids stay unique
         # across restarts; incremented in-memory thereafter. This avoids a
@@ -148,9 +160,12 @@ class Neo4jCausalGraph:
             self._invalidate_cache()
 
     def _invalidate_cache(self) -> None:
-        """Invalidate cached edge matrix (call after any mutation)."""
+        """Invalidate all caches after any mutation."""
         self._edge_matrix_cache = None
         self._edge_cache = None
+        self._out_adj_cache = None
+        self._in_adj_cache = None
+        self._word_idx_cache = None
 
     # -- Build --------------------------------------------------------------- #
 
@@ -240,6 +255,43 @@ class Neo4jCausalGraph:
             result = session.run("MATCH (n:Node) RETURN n.name AS name")
             return {record["name"] for record in result}
 
+    # -- GraphBackend: edges property ---------------------------------------- #
+
+    @property
+    def edges(self) -> List[GraphEdge]:
+        """All edges currently stored (via cached fetch)."""
+        return self._get_edges()
+
+    # -- Word inverted index ------------------------------------------------- #
+
+    def word_index(self) -> Dict[str, List[str]]:
+        """Inverted index token -> [node_names]. Built from the edge cache."""
+        if self._word_idx_cache is not None:
+            return self._word_idx_cache
+        idx: Dict[str, List[str]] = defaultdict(list)
+        seen: set = set()
+        for e in self._get_edges():
+            for node in (e.cause, e.effect):
+                if node in seen:
+                    continue
+                seen.add(node)
+                for tok in _tokenize(node):
+                    idx[tok].append(node)
+        self._word_idx_cache = dict(idx)
+        return self._word_idx_cache
+
+    # -- Cached adjacency ---------------------------------------------------- #
+
+    def _get_out_adj(self) -> Dict[str, List[int]]:
+        if self._out_adj_cache is None:
+            self._out_adj_cache = self._build_adjacency("out", self._get_edges())
+        return self._out_adj_cache
+
+    def _get_in_adj(self) -> Dict[str, List[int]]:
+        if self._in_adj_cache is None:
+            self._in_adj_cache = self._build_adjacency("in", self._get_edges())
+        return self._in_adj_cache
+
     # -- VSA scoring --------------------------------------------------------- #
 
     def _serialize_vector(self, v: np.ndarray) -> str:
@@ -314,39 +366,13 @@ class Neo4jCausalGraph:
     def forward_chain(
         self, start: str, max_depth: int = 6
     ) -> List[List[GraphEdge]]:
-        """All chains flowing OUT of start (what it ultimately causes)."""
+        """All chains flowing OUT of start. Uses cached adjacency — no DB fetch per call."""
         edges = self._get_edges()
         if not edges:
             return []
-
         edge_map = {e.edge_id: e for e in edges}
-        out_adj = self._build_adjacency("out", edges)
-        paths = []
-
-        def dfs(node, path, visited, depth):
-            edge_ids = out_adj.get(node, [])
-            if not edge_ids or depth >= max_depth:
-                if path:
-                    paths.append([edge_map[eid] for eid in path])
-                return
-
-            extended = False
-            for eid in edge_ids:
-                e = edge_map[eid]
-                if e.effect in visited:
-                    continue
-                extended = True
-                path.append(eid)
-                visited.add(e.effect)
-                dfs(e.effect, path, visited, depth + 1)
-                path.pop()
-                visited.discard(e.effect)
-
-            if not extended and path:
-                paths.append([edge_map[eid] for eid in path])
-
-        dfs(start, [], {start}, 0)
-        return paths
+        out_adj = self._get_out_adj()
+        return self._bfs(start, out_adj, edge_map, forward=True, max_depth=max_depth)
 
     def backward_chain(
         self, start: str, max_depth: int = 6
@@ -355,34 +381,49 @@ class Neo4jCausalGraph:
         edges = self._get_edges()
         if not edges:
             return []
-
         edge_map = {e.edge_id: e for e in edges}
-        in_adj = self._build_adjacency("in", edges)
-        paths = []
+        in_adj = self._get_in_adj()
+        raw = self._bfs(start, in_adj, edge_map, forward=False, max_depth=max_depth)
+        return [list(reversed(p)) for p in raw]
 
-        def dfs(node, path, visited, depth):
-            edge_ids = in_adj.get(node, [])
-            if not edge_ids or depth >= max_depth:
+    def _bfs(self, start: str, adj: Dict[str, List[int]],
+             edge_map: Dict[int, GraphEdge], forward: bool,
+             max_depth: int) -> List[List[GraphEdge]]:
+        """BFS traversal shared by forward/backward chain. MAX_PATHS=500."""
+        MAX_PATHS = 500
+        NODE_CAP = 3
+        paths: List[List[GraphEdge]] = []
+        node_count: Dict[str, int] = defaultdict(int)
+
+        from collections import deque
+        queue = deque([(start, [], frozenset({start}))])
+
+        while queue and len(paths) < MAX_PATHS:
+            node, path, visited = queue.popleft()
+            edge_ids = adj.get(node, [])
+
+            if not edge_ids or len(path) >= max_depth:
                 if path:
-                    paths.append([edge_map[eid] for eid in reversed(path)])
-                return
+                    paths.append(list(path))
+                continue
 
             extended = False
             for eid in edge_ids:
+                if len(paths) >= MAX_PATHS:
+                    break
                 e = edge_map[eid]
-                if e.cause in visited:
+                nxt = e.effect if forward else e.cause
+                if nxt in visited:
+                    continue
+                if node_count[nxt] >= NODE_CAP:
                     continue
                 extended = True
-                path.append(eid)
-                visited.add(e.cause)
-                dfs(e.cause, path, visited, depth + 1)
-                path.pop()
-                visited.discard(e.cause)
+                node_count[nxt] += 1
+                queue.append((nxt, path + [e], visited | {nxt}))
 
             if not extended and path:
-                paths.append([edge_map[eid] for eid in reversed(path)])
+                paths.append(list(path))
 
-        dfs(start, [], {start}, 0)
         return paths
 
     def path_between(
@@ -392,32 +433,26 @@ class Neo4jCausalGraph:
         edges = self._get_edges()
         if not edges:
             return None
-
-        nodes = self.nodes()
-        if src not in nodes or dst not in nodes:
+        if src not in self.nodes() or dst not in self.nodes():
             return None
-
         edge_map = {e.edge_id: e for e in edges}
-        out_adj = self._build_adjacency("out", edges)
+        out_adj = self._get_out_adj()
 
         from collections import deque
-
         queue = deque([(src, [])])
         visited = {src}
 
         while queue:
             node, path = queue.popleft()
             if node == dst and path:
-                return [edge_map[eid] for eid in path]
+                return path
             if len(path) >= max_depth:
                 continue
-
             for eid in out_adj.get(node, []):
                 e = edge_map[eid]
                 if e.effect not in visited:
                     visited.add(e.effect)
-                    queue.append((e.effect, path + [eid]))
-
+                    queue.append((e.effect, path + [e]))
         return None
 
     # -- Helpers -------------------------------------------------------------- #

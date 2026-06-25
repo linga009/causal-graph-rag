@@ -186,6 +186,9 @@ class GraphRAG:
         # Separated index/query pipelines: ingest() only accumulates and marks
         # the indices dirty; they are (re)built lazily on the next retrieve().
         # Keeps repeated ingest() O(total) instead of O(docs x nodes).
+        # Tracks (cause, relation, effect) tuples already in the graph to
+        # prevent duplicate edges across multiple ingest() calls.
+        self._edge_set: set = set()
         self._dirty = False
         # Sentence-level coverage index (HYBRID retrieval). The graph alone only
         # surfaces causally-connected content; standalone facts fall through.
@@ -226,10 +229,14 @@ class GraphRAG:
         # heading lines ("## Impact") never leak into edges or provenance.
         clean_text = " ".join(s.text for s in ds.sentences()) or text
 
-        if llm_extractor is not None:
-            edges = extract_edges_hybrid(clean_text, llm_extractor, mode=llm_mode)
-        else:
-            edges = extract_edges(clean_text)
+        try:
+            if llm_extractor is not None:
+                edges = extract_edges_hybrid(clean_text, llm_extractor, mode=llm_mode)
+            else:
+                edges = extract_edges(clean_text)
+        except Exception as exc:
+            log.warning("edge extraction failed, ingesting 0 edges: %s", exc)
+            edges = []
 
         # Canonicalize node names so the same event ("pump"/"cooling pump") is one
         # node — longer connected chains instead of fragments.
@@ -242,6 +249,14 @@ class GraphRAG:
         self._sentences.extend(s.text for s in ds.sentences())
 
         for e in edges:
+            key = (e.cause, e.relation, e.effect)
+            if key in self._edge_set:
+                # Duplicate edge: merge source sentence into existing node docs
+                for node in (e.cause, e.effect):
+                    if node in self._node_docs and e.source_sent not in self._node_docs[node]:
+                        self._node_docs[node] += " " + e.source_sent
+                continue
+            self._edge_set.add(key)
             self.graph.add_edge(e)
             for node in (e.cause, e.effect):
                 self._node_docs.setdefault(node, "")
@@ -296,13 +311,75 @@ class GraphRAG:
             for e in edges:
                 e.cause = cmap.get(e.cause, e.cause)
                 e.effect = cmap.get(e.effect, e.effect)
+
+        # Pass 3: semantic similarity clustering (only when dense model available).
+        # Embeds all entity names, merges pairs with cosine > 0.88 that don't have
+        # conflicting token sets. Catches synonyms the subset rule misses:
+        # "emergency shutdown" / "scram", "reactor cooling" / "cooling system".
+        edges = self._semantic_entity_merge(edges)
+
         return [e for e in edges if e.cause != e.effect]   # drop self-loops
+
+    def _semantic_entity_merge(self, edges):
+        """Merge semantically near-identical entity names using dense embeddings.
+        Only runs when a real sentence-transformer model is available."""
+        model = getattr(self.dense, "_model", None)
+        if model is None or not edges:
+            return edges
+
+        names = sorted({n for e in edges for n in (e.cause, e.effect)}
+                       | set(self.graph.nodes()))
+        if len(names) < 2:
+            return edges
+
+        try:
+            embs = model.encode(names, convert_to_numpy=True, normalize_embeddings=True)
+        except Exception:
+            return edges
+
+        # Build similarity matrix and find pairs cosine > 0.88
+        sim = embs @ embs.T
+        merge_map: dict = {}
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                if sim[i, j] < 0.88:
+                    continue
+                a, b = names[i], names[j]
+                # Don't merge if they share no content tokens (fully distinct concepts)
+                ta, tb = _entity_tokens(a), _entity_tokens(b)
+                if ta and tb and not (ta & tb):
+                    continue
+                # Representative = the longer (more specific) name
+                rep = b if len(b) >= len(a) else a
+                sub = a if rep == b else b
+                # Chain through any existing mapping
+                while merge_map.get(rep, rep) != rep:
+                    rep = merge_map[rep]
+                merge_map[sub] = rep
+
+        if not merge_map:
+            return edges
+
+        def resolve_sem(x):
+            seen: set = set()
+            while x in merge_map and x not in seen:
+                seen.add(x)
+                x = merge_map[x]
+            return x
+
+        for e in edges:
+            e.cause = resolve_sem(e.cause)
+            e.effect = resolve_sem(e.effect)
+        log.debug("semantic entity merge: %d merges applied", len(merge_map))
+        return edges
 
     def _ensure_indexed(self) -> None:
         """(Re)build BM25/dense/path-signature indices if ingest marked them
         dirty. Called by retrieve(); idempotent and cheap when clean."""
         if not self._dirty:
             return
+        import time
+        t0 = time.monotonic()
         # Contextual Retrieval: index context-enriched node docs (heading path
         # folded in) for BM25 + dense; path signatures keep raw sentence order.
         enriched = {
@@ -320,20 +397,51 @@ class GraphRAG:
         else:
             self._sent_vecs = None
         self._dirty = False
-        log.info("rebuilt retrieval indices over %d nodes, %d sentences",
-                 len(self._node_docs), len(self._sentences))
+        elapsed = time.monotonic() - t0
+        log.info("rebuilt retrieval indices: %d nodes, %d sentences in %.2fs",
+                 len(self._node_docs), len(self._sentences), elapsed)
 
     def _retrieve_sentences(self, question: str, k: int = 6) -> List[str]:
-        """Top-k most relevant raw sentences by dense cosine — the coverage
-        channel a pure graph misses. Empty if no dense model (hashing fallback)."""
+        """Top-k most relevant raw sentences by dense cosine with MMR diversity.
+        MMR avoids returning near-duplicate sentences from the same paragraph.
+        Empty if no dense model (hashing fallback)."""
         self._ensure_indexed()
         if self._sent_vecs is None or not self._sentences:
             return []
         model = self.dense._model
         q = model.encode([question], convert_to_numpy=True, normalize_embeddings=True)[0]
         sims = self._sent_vecs @ q
-        idx = np.argsort(-sims)[:k]
-        return [self._sentences[i] for i in idx]
+
+        # Retrieve a larger candidate pool, then apply MMR
+        pool_size = min(k * 4, len(self._sentences))
+        pool_idx = np.argsort(-sims)[:pool_size]
+        pool_sims = sims[pool_idx]
+        pool_vecs = self._sent_vecs[pool_idx]
+
+        # MMR: lam=0.7 (relevance-weighted), iteratively select diverse sentences
+        lam = 0.7
+        selected_idx: List[int] = []
+        selected_vecs: List[np.ndarray] = []
+
+        while len(selected_idx) < k and len(selected_idx) < len(pool_idx):
+            best_i, best_score = -1, float("-inf")
+            for i in range(len(pool_idx)):
+                if i in selected_idx:
+                    continue
+                rel = float(pool_sims[i])
+                if selected_vecs:
+                    red = max(float(pool_vecs[i] @ sv) for sv in selected_vecs)
+                else:
+                    red = 0.0
+                score = lam * rel - (1 - lam) * red
+                if score > best_score:
+                    best_score, best_i = score, i
+            if best_i < 0:
+                break
+            selected_idx.append(best_i)
+            selected_vecs.append(pool_vecs[best_i])
+
+        return [self._sentences[pool_idx[i]] for i in selected_idx]
 
     # -- document structure index (Phase 2) ---------------------------------- #
     def _embed_fn(self):
@@ -394,14 +502,16 @@ class GraphRAG:
         from retrievers import tokenize
         q_terms = set(tokenize(question))
 
-        # Channel 0: direct node-name match. The query usually names the event
-        # it is about ("what did budget CUTS lead to" -> node 'cuts'). This is
-        # the strongest, most literal signal and anchors traversal correctly.
+        # Channel 0: direct node-name match via inverted index — O(|q_terms|).
+        # The query usually names the event ("budget CUTS" -> node 'cuts').
         direct: List[Tuple[float, str]] = []
-        for node in self.graph.nodes():
-            nt = set(tokenize(node))
-            if nt & q_terms:
-                direct.append((1.0, node))
+        widx = self.graph.word_index()
+        seen_direct: set = set()
+        for term in q_terms:
+            for node in widx.get(term, []):
+                if node not in seen_direct:
+                    seen_direct.add(node)
+                    direct.append((1.0, node))
 
         # VSA channel: structural/directional entry points.
         vsa_ranked: List[Tuple[float, str]] = []
@@ -423,7 +533,10 @@ class GraphRAG:
 
         fused = rrf_fuse([direct, vsa_ranked, bm25_ranked, dense_ranked, sig_ranked],
                          weights=[2.0, 1.2, 1.0, 1.0, 0.8])
-        return fused[:top_n]
+        result = fused[:top_n]
+        log.debug("entry nodes for %r: %s", question[:50],
+                  [(n, round(s, 3)) for s, n in result])
+        return result
 
     # -- query direction ----------------------------------------------------- #
     def _direction(self, question: str) -> str:
@@ -436,13 +549,17 @@ class GraphRAG:
     def _rerank(self, question: str, chains: List[ChainResult]) -> None:
         q_terms = set(tokenize(question))
 
-        # Semantic similarity: encode query once and compare against the
-        # average of the per-node embeddings already stored in the dense index.
-        # Falls back to zero when HashingDense is active (no _model attribute).
+        # Encode query once; build a node->embedding lookup from the dense index.
         q_emb = None
+        node_embs: dict = {}
         if hasattr(self.dense, '_model') and getattr(self.dense, 'vecs', None):
             q_emb = self.dense._model.encode(
                 [question], convert_to_numpy=True, normalize_embeddings=True)[0]
+            # Pre-collect all unique nodes across ALL chains in one pass (batch)
+            all_nodes = {n for c in chains for e in c.chain
+                         for n in (e.cause, e.effect)}
+            node_embs = {n: self.dense.vecs[n] for n in all_nodes
+                         if n in self.dense.vecs}
 
         for c in chains:
             chain_terms = set()
@@ -450,9 +567,8 @@ class GraphRAG:
                 chain_terms |= set(tokenize(f"{e.cause} {e.relation} {e.effect}"))
             overlap = len(q_terms & chain_terms)
             score = overlap + 0.25 * len(c.chain)
-            # direction-aware bonus: a backward (why/root-cause) query wants the
-            # chain to TERMINATE at the queried event; a forward query wants it
-            # to ORIGINATE there. Reward the matching endpoint.
+
+            # Direction-aware endpoint bonus
             if c.chain:
                 head = set(tokenize(c.chain[0].cause))
                 tail = set(tokenize(c.chain[-1].effect))
@@ -460,21 +576,25 @@ class GraphRAG:
                     score += 2.0
                 if c.direction == "forward" and (head & q_terms):
                     score += 2.0
-            # Semantic similarity via dense encoder (3× weight so it is
-            # competitive with the lexical overlap score on short chains)
-            if q_emb is not None:
-                node_embs = [
-                    self.dense.vecs[n]
-                    for e in c.chain
-                    for n in (e.cause, e.effect)
-                    if n in self.dense.vecs
-                ]
-                if node_embs:
-                    chain_emb = np.mean(node_embs, axis=0)
+
+            # Semantic similarity: mean of pre-fetched node embeddings
+            if q_emb is not None and node_embs:
+                vecs = [node_embs[n] for e in c.chain
+                        for n in (e.cause, e.effect) if n in node_embs]
+                if vecs:
+                    chain_emb = np.mean(vecs, axis=0)
                     norm = np.linalg.norm(chain_emb)
                     if norm:
                         chain_emb /= norm
                     score += float(q_emb @ chain_emb) * 3.0
+
+            # Confidence weighting: geometric mean of edge confidences.
+            # High-confidence chains (LLM-extracted) score up to 10% higher.
+            if c.chain:
+                confs = [getattr(e, "confidence", 0.85) for e in c.chain]
+                chain_conf = float(np.prod(confs) ** (1.0 / len(confs)))
+                score *= (0.9 + 0.1 * chain_conf)  # scales in [0.9, 1.0]
+
             c.rerank_score = score
 
     # -- diversity selection (MMR) ------------------------------------------ #
@@ -773,7 +893,8 @@ class GraphRAG:
             "semantic_weight": self.lex.semantic_weight,
             "max_depth": self.max_depth,
             "edges": [(e.cause, e.relation, e.effect, e.polarity,
-                       e.source_sent, e.hv, e.edge_id) for e in self.graph.edges],
+                       e.source_sent, e.hv, e.edge_id,
+                       getattr(e, "confidence", 0.85)) for e in self.graph.edges],
             "node_docs": self._node_docs,
             "node_context": self._node_context,
             "struct_index": self._struct_index,
@@ -783,7 +904,7 @@ class GraphRAG:
         with open(path, "wb") as f:
             pickle.dump(state, f, protocol=pickle.HIGHEST_PROTOCOL)
         log.info("saved graph (%d edges, %d nodes) to %s",
-                 len(self.graph.edges), len(self._node_docs), path)
+                 len(list(self.graph.edges)), len(self._node_docs), path)
 
     @classmethod
     def load(cls, path: str, llm: Optional[object] = None) -> "GraphRAG":
@@ -796,11 +917,16 @@ class GraphRAG:
                 f"(expected {_SAVE_VERSION}); re-ingest with this build.")
         rag = cls(dim=state["dim"], semantic_weight=state["semantic_weight"],
                   llm=llm, max_depth=state["max_depth"])
-        for cause, rel, eff, pol, src, hv, eid in state["edges"]:
-            ge = GraphEdge(cause, rel, eff, pol, src, hv, eid)
+        for row in state["edges"]:
+            if len(row) == 8:
+                cause, rel, eff, pol, src, hv, eid, conf = row
+            else:
+                cause, rel, eff, pol, src, hv, eid = row
+                conf = 0.85
+            ge = GraphEdge(cause, rel, eff, pol, src, hv, eid, conf)
             rag.graph.out_adj[cause].append(eid)
             rag.graph.in_adj[eff].append(eid)
-            rag.graph.edges.append(ge)
+            rag.graph._edges.append(ge)
         rag.graph._edge_matrix = None
         rag._node_docs = state["node_docs"]
         rag._node_context = state["node_context"]

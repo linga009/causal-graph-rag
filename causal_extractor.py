@@ -132,6 +132,8 @@ class CausalEdge:
     effect: str
     polarity: int          # +1 promotes, -1 suppresses
     source_sent: str       # plaintext provenance for the LLM context
+    confidence: float = 0.85     # extraction confidence in [0, 1]
+    extraction_method: str = "spacy"  # "spacy" | "rule" | "llm" | "rebel" | "implicit"
 
     def text(self) -> str:
         arrow = "==>" if self.polarity > 0 else "=/=>"
@@ -148,6 +150,52 @@ _SKIP_HEAD = {"the", "a", "an", "this", "that", "these", "those", "its",
               "their", "his", "her", "our", "your", "my", "some", "any",
               "emergency", "coolant", "power", "main", "first", "second",
               "subsequent", "resulting", "following", "entire", "whole"}
+
+# Pronoun words that must never appear as cause/effect nodes.
+_PRONOUN_NODES = frozenset(
+    "it this that these those they he she we i you them him her us "
+    "its their his her our your my itself themselves ourselves".split()
+)
+
+# Words in an effect clause that signal the edge is suppressive (polarity -1).
+_SUPPRESS_WORDS = frozenset(
+    "not no never fail fails failed loss lose loses reduce reduces reduced "
+    "prevent prevents prevented block blocks blocked inhibit inhibits "
+    "decrease decreases decreased damage damages damaged deteriorate "
+    "worsen worsens worsened collapse collapses collapsed crash crashes crashed "
+    "disrupt disrupts disrupted impair impairs impaired degrade degrades degraded".split()
+)
+
+# Temporal / discourse scope markers that imply causality (weaker signal than
+# explicit connectives, but reliable when combined with state-change verbs).
+TEMPORAL_CONNECTIVES = [
+    "as a result of", "in response to", "due to the",
+    "following the", "after the", "prior to the",
+    "during the", "in the wake of", "upon the",
+    "once the", "when the", "as the",
+]
+
+
+def _validate_edge(e: CausalEdge) -> bool:
+    """Return True iff the edge is well-formed and should enter the graph.
+    Rejects pronouns, empty strings, self-loops, and overly long entity names."""
+    c, eff = e.cause.strip(), e.effect.strip()
+    if not c or not eff or not e.relation:
+        return False
+    if c in _PRONOUN_NODES or eff in _PRONOUN_NODES:
+        return False
+    if len(c) > 80 or len(eff) > 80:
+        return False
+    if c == eff:
+        return False
+    return True
+
+
+def _infer_polarity(effect_sentence: str) -> int:
+    """Infer polarity from the effect clause. Returns -1 if suppression words
+    are present, +1 otherwise. Used for implicit edges where polarity is unknown."""
+    words = set(effect_sentence.lower().split())
+    return -1 if words & _SUPPRESS_WORDS else +1
 
 
 # --------------------------------------------------------------------------- #
@@ -272,7 +320,8 @@ def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
                 if child.dep_ in ("npadvmod", "nsubj"):
                     cause_txt = _compound_span(child)
                     if cause_txt and effect_txt and cause_txt != effect_txt:
-                        edges.append(CausalEdge(cause_txt, rel, effect_txt, pol, sent))
+                        edges.append(CausalEdge(cause_txt, rel, effect_txt, pol, sent,
+                                                confidence=0.85, extraction_method="spacy"))
             continue  # don't also try patterns 1/2 for the same token
 
         # Find syntactic subject — filter pronouns that coreference resolution
@@ -301,7 +350,8 @@ def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
                         e_txt = _compound_span(eff)
                         c_txt = _compound_span(cau)
                         if e_txt and c_txt and e_txt != c_txt:
-                            edges.append(CausalEdge(c_txt, rel, e_txt, pol, sent))
+                            edges.append(CausalEdge(c_txt, rel, e_txt, pol, sent,
+                                                    confidence=0.85, extraction_method="spacy"))
         else:
             # Pattern 1: "X caused Y"
             for subj in subjects:
@@ -309,7 +359,8 @@ def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
                     s_txt = _compound_span(subj)
                     o_txt = _compound_span(obj)
                     if s_txt and o_txt and s_txt != o_txt:
-                        edges.append(CausalEdge(s_txt, rel, o_txt, pol, sent))
+                        edges.append(CausalEdge(s_txt, rel, o_txt, pol, sent,
+                                                confidence=0.85, extraction_method="spacy"))
 
     return edges
 
@@ -324,7 +375,8 @@ def _intra_rule(sent: str) -> List[CausalEdge]:
         verb = tr.action.lower()
         if verb in CAUSAL_VERBS and tr.agent.lower() not in _PRONOUNS:
             rel, pol = CAUSAL_VERBS[verb]
-            edges.append(CausalEdge(tr.agent, rel, tr.patient, pol, sent))
+            edges.append(CausalEdge(tr.agent, rel, tr.patient, pol, sent,
+                                    confidence=0.65, extraction_method="rule"))
     return edges
 
 
@@ -383,36 +435,59 @@ def _sentences(text: str) -> List[str]:
 # --------------------------------------------------------------------------- #
 
 def _implicit_edges(sents: List[str], explicit_pairs: set) -> List[CausalEdge]:
-    """Create weak implicit_trigger edges for consecutive sentences where:
-      - sentence N+1 contains a state-change verb
-      - no explicit causal or backward connective is present in sentence N+1
+    """Create weak implicit_trigger edges for sentences where:
+      - sentence N+1 (or N+2) contains a state-change verb
+      - no explicit causal or backward connective is present
       - the (cause_head, effect_head) pair is not already captured explicitly
 
-    This catches "the bridge was wet. Cars skidded." — causation implied by
-    adjacency and the state-change nature of the second event.
+    Also detects temporal scope markers ("during the ...", "following the ...")
+    as implicit causation signals.
+
+    Polarity is inferred from suppression words in the effect sentence rather
+    than hardcoded to +1.
     """
     edges: List[CausalEdge] = []
+    seen_pairs: set = set()
+
     for i in range(1, len(sents)):
-        s_prev = sents[i - 1]
         s_curr = sents[i]
         low = s_curr.lower()
 
         if any(c in low for c in FORWARD_CONNECTIVES + BACKWARD_CONNECTIVES):
             continue
 
+        # Check for state-change verbs OR temporal connectives
         words = [w.rstrip(".,;:!?") for w in low.split()]
-        if not any(w in STATE_CHANGE_VERBS for w in words):
+        has_state_change = any(w in STATE_CHANGE_VERBS for w in words)
+        has_temporal = any(tc in low for tc in TEMPORAL_CONNECTIVES)
+        if not has_state_change and not has_temporal:
             continue
 
-        prev_head = _event_head(s_prev)
-        curr_head = _event_head(s_curr)
+        # Look back up to 2 sentences for a cause
+        for lookback in (1, 2):
+            j = i - lookback
+            if j < 0:
+                continue
+            s_prev = sents[j]
+            prev_head = _event_head(s_prev)
+            curr_head = _event_head(s_curr)
 
-        if (prev_head and curr_head and prev_head != curr_head
-                and (prev_head, curr_head) not in explicit_pairs):
+            if not prev_head or not curr_head or prev_head == curr_head:
+                continue
+            if (prev_head, curr_head) in explicit_pairs:
+                continue
+            if (prev_head, curr_head) in seen_pairs:
+                continue
+
+            pol = _infer_polarity(s_curr)
+            seen_pairs.add((prev_head, curr_head))
             edges.append(CausalEdge(
-                prev_head, "implicit_trigger", curr_head, +1,
+                prev_head, "implicit_trigger", curr_head, pol,
                 f"{s_prev} {s_curr}",
+                confidence=0.50, extraction_method="implicit",
             ))
+            break  # prefer the nearest cause; don't add both lookbacks
+
     return edges
 
 
@@ -458,7 +533,8 @@ def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEd
                         rel, pol = r, p
                         break
                 edges.append(CausalEdge(prev_event, rel, this_event, pol,
-                                        f"{sents[idx-1]} {sent}"))
+                                        f"{sents[idx-1]} {sent}",
+                                        confidence=0.80, extraction_method="rule"))
 
         # (B') backward connectives inside one sentence: "Y happened because of X"
         bwd_hit = next((c for c in BACKWARD_CONNECTIVES if c in low), None)
@@ -469,11 +545,15 @@ def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEd
                 cause_head = _event_head(parts[1])
                 if cause_head and effect_head and cause_head != effect_head:
                     edges.append(CausalEdge(cause_head, "lead_to", effect_head,
-                                            +1, sent))
+                                            +1, sent,
+                                            confidence=0.80, extraction_method="rule"))
 
-    # Implicit causation pass: adjacency + state-change heuristic
+    # Implicit causation pass: adjacency + state-change + temporal heuristics
     explicit_pairs = {(e.cause, e.effect) for e in edges}
     edges.extend(_implicit_edges(sents, explicit_pairs))
+
+    # Validate all edges (remove pronouns, empty strings, self-loops, >80 char names)
+    edges = [e for e in edges if _validate_edge(e)]
 
     # de-duplicate identical edges
     seen = set()
@@ -562,7 +642,10 @@ class LLMEdgeExtractor:
                 continue
             # Look up polarity from known verbs, default +1
             pol = CAUSAL_VERBS.get(relation, ("", +1))[1]
-            edges.append(CausalEdge(cause, relation, effect, pol, source_sent))
+            e = CausalEdge(cause, relation, effect, pol, source_sent,
+                           confidence=0.92, extraction_method="llm")
+            if _validate_edge(e):
+                edges.append(e)
         return edges
 
     def extract_sentence(self, sentence: str) -> List[CausalEdge]:
@@ -677,7 +760,10 @@ class REBELRelationExtractor:
                 # Infer polarity: if it's in CAUSAL_VERBS, use that; else default +1
                 pol = CAUSAL_VERBS.get(rel, ("", +1))[1]
 
-                edges.append(CausalEdge(cause_txt, rel, effect_txt, pol, source_sent))
+                e = CausalEdge(cause_txt, rel, effect_txt, pol, source_sent,
+                               confidence=0.78, extraction_method="rebel")
+                if _validate_edge(e):
+                    edges.append(e)
 
         return edges
 
@@ -788,4 +874,5 @@ def extract_edges_hybrid(
             seen.add(key)
             merged.append(e)
 
-    return merged
+    # Final validation pass (covers edges from all extraction paths)
+    return [e for e in merged if _validate_edge(e)]

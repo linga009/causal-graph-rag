@@ -156,9 +156,10 @@ def shared_st_model(model_name: str = "all-MiniLM-L6-v2"):
 class SentenceTransformerDense:
     """Cosine similarity over sentence-transformer embeddings.
     Uses all-MiniLM-L6-v2 by default: 384-dim, ~80 MB, no API key required.
+    Accepts an optional pre-loaded model to share across retrievers.
     """
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        self._model = shared_st_model(model_name)   # shared, loaded once per process
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2", model=None):
+        self._model = model if model is not None else shared_st_model(model_name)
         self.vecs: Dict[str, np.ndarray] = {}
         self._nodes: List[str] = []
         self._matrix: np.ndarray | None = None
@@ -211,12 +212,13 @@ class PathSignatureRetriever:
     for cosine inner-product search, yet encoding genuine sequential structure.
     """
 
-    def __init__(self, embed_dim: int = 384, proj_dim: int = 16, level: int = 3):
+    def __init__(self, embed_dim: int = 384, proj_dim: int = 16, level: int = 3,
+                 model=None):
         self.embed_dim = embed_dim
         self.proj_dim = proj_dim
         self.level = level
         self._proj: np.ndarray | None = None      # (embed_dim, proj_dim)
-        self._model = None
+        self._model = model   # injected model or None (lazy-loaded on first use)
         self._nodes: List[str] = []
         self._sig_matrix: np.ndarray | None = None  # (N_nodes, sig_dim)
         self._node_sents: Dict[str, List[str]] = {}  # for BM25 context injection
@@ -231,23 +233,22 @@ class PathSignatureRetriever:
             self._proj = P
         return self._proj
 
-    # -- sentence encoder ---------------------------------------------------- #
+    # -- sentence encoder (used only for query path in score()) -------------- #
     def _encode(self, sentences: List[str]) -> np.ndarray:
-        """Return projected embeddings, shape (N, proj_dim)."""
+        """Return projected embeddings, shape (N, proj_dim). Used for queries."""
         if not sentences:
             return np.zeros((0, self.proj_dim), dtype=np.float32)
         if self._model is None:
             try:
-                self._model = shared_st_model("all-MiniLM-L6-v2")  # shared instance
+                self._model = shared_st_model("all-MiniLM-L6-v2")
             except Exception:
-                # Fallback: random projections so the class still works
                 self._model = "random"
         if self._model == "random":
             rng = np.random.default_rng(_stable_hash(sentences[0]) % (2**31))
             return rng.standard_normal((len(sentences), self.proj_dim)).astype(np.float32)
         embs = self._model.encode(sentences, convert_to_numpy=True,
-                                  normalize_embeddings=True)  # (N, embed_dim)
-        return (embs @ self._projection()).astype(np.float32)  # (N, proj_dim)
+                                  normalize_embeddings=True)
+        return (embs @ self._projection()).astype(np.float32)
 
     # -- path signature ------------------------------------------------------ #
     @staticmethod
@@ -305,11 +306,39 @@ class PathSignatureRetriever:
             return
         self._node_sents = {n: self._split(node_docs[n]) or [node_docs[n]]
                             for n in self._nodes}
-        sigs = []
+
+        # Batch-encode all sentences from all nodes in ONE model.encode() call
+        # instead of N separate calls. Dramatically faster for large corpora.
+        all_sents: List[str] = []
+        offsets: List[int] = [0]
         for node in self._nodes:
-            sents = self._node_sents[node]
-            path = self._encode(sents)
-            sigs.append(self._signature(path, self.level))
+            all_sents.extend(self._node_sents[node])
+            offsets.append(len(all_sents))
+
+        if all_sents:
+            # Encode the full batch at once, then project
+            if self._model is None:
+                try:
+                    self._model = shared_st_model("all-MiniLM-L6-v2")
+                except Exception:
+                    self._model = "random"
+            if self._model == "random":
+                rng = np.random.default_rng(_stable_hash(all_sents[0]) % (2**31))
+                all_embs_raw = rng.standard_normal(
+                    (len(all_sents), self.embed_dim)).astype(np.float32)
+            else:
+                all_embs_raw = self._model.encode(
+                    all_sents, convert_to_numpy=True,
+                    normalize_embeddings=True).astype(np.float32)
+            proj = self._projection()
+            all_embs = all_embs_raw @ proj   # (total_sents, proj_dim)
+        else:
+            all_embs = np.zeros((0, self.proj_dim), dtype=np.float32)
+
+        sigs = []
+        for i, node in enumerate(self._nodes):
+            node_embs = all_embs[offsets[i]:offsets[i + 1]]
+            sigs.append(self._signature(node_embs, self.level))
         self._sig_matrix = np.stack(sigs).astype(np.float32)  # (N, sig_dim)
 
     def score(self, query: str,
