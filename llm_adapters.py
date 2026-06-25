@@ -133,3 +133,25 @@ class AnthropicLLM:
             messages=[{"role": "user", "content": prompt}],
         ))
         return "".join(b.text for b in r.content if b.type == "text")
+
+
+# --------------------------------------------------------------------------- #
+#  Shared factory — import this instead of duplicating the priority logic
+# --------------------------------------------------------------------------- #
+
+def build_llm():
+    """Return the first available LLM based on env keys (Groq → Gemini →
+    Anthropic → OpenAI). Returns None if no key is set or no SDK is installed.
+    Import from here so api.py and cli.py share one implementation."""
+    for env, cls in (
+        ("GROQ_API_KEY",      GroqLLM),
+        ("GEMINI_API_KEY",    GeminiLLM),
+        ("ANTHROPIC_API_KEY", AnthropicLLM),
+        ("OPENAI_API_KEY",    OpenAILLM),
+    ):
+        if os.environ.get(env):
+            try:
+                return cls()
+            except ImportError:
+                continue
+    return None
