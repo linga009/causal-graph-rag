@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "causal-graph-rag"
+version = "0.2.0"
+description = "RAG that traverses cause-effect chains and preserves document structure, instead of returning similarity-matched chunks."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "linga009" }]
+keywords = ["rag", "retrieval", "causal", "knowledge-graph", "vsa", "llm", "langchain"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Minimal core: in-memory graph, spaCy-free rule extraction, hashing dense.
+dependencies = [
+    "numpy>=1.24",
+    "sentence-transformers>=3.0",
+]
+
+[project.optional-dependencies]
+# Stronger causal extraction (dependency parse, passive voice, compounds).
+spacy = ["spacy>=3.7"]
+# LLM backends — install the one(s) matching your API key.
+groq = ["groq"]
+gemini = ["google-genai"]
+anthropic = ["anthropic"]
+openai = ["openai"]
+# REST API.
+api = ["fastapi", "uvicorn"]
+# LangChain integration.
+langchain = ["langchain-core>=1.0", "langchain>=1.0", "langchain-groq>=1.0"]
+# Persistent graph backend for >1M nodes.
+neo4j = ["neo4j>=5.0"]
+# Everything for development + tests.
+dev = ["pytest", "fastapi", "uvicorn", "groq", "google-genai", "neo4j>=5.0"]
+
+[project.urls]
+Homepage = "https://github.com/linga009/causal-graph-rag"
+Repository = "https://github.com/linga009/causal-graph-rag"
+
+[project.scripts]
+causal-rag = "cli:main"
+
+# Flat-layout single-package modules (no src/ dir).
+[tool.setuptools]
+py-modules = [
+    "cli", "api", "graph_rag", "doc_structure", "causal_extractor",
+    "causal_graph", "neo4j_graph", "langchain_integration", "llm_adapters",
+    "vsa_core", "retrievers", "parser", "pipeline",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

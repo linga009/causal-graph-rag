@@ -21,6 +21,7 @@ Polarity: +1 promotes/produces, -1 prevents/reduces.
 
 from __future__ import annotations
 import json
+import logging
 import re
 import textwrap
 from dataclasses import dataclass
@@ -28,6 +29,8 @@ from typing import Any, List, Optional
 
 from parser import parse_triples, _clean, _split_clauses
 from vsa_core import Triple
+
+log = logging.getLogger("causal_rag")
 
 
 # --- verb -> (canonical relation, polarity) -------------------------------- #
@@ -703,7 +706,7 @@ class REBELRelationExtractor:
                     outputs[0], skip_special_tokens=True
                 )
         except Exception as e:
-            print(f"REBEL extraction failed: {e}")
+            log.warning("REBEL extraction failed: %s", e)
             return []
 
         return self._parse_rebel_output(output_text, sentence)

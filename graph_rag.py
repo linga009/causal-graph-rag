@@ -16,6 +16,8 @@ consequential structure between chunks: chains are first-class retrieval units.
 """
 
 from __future__ import annotations
+import logging
+import pickle
 import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Dict
@@ -28,6 +30,16 @@ from causal_graph import CausalGraph, GraphEdge
 from retrievers import BM25, HashingDense, make_dense, PathSignatureRetriever, rrf_fuse, tokenize
 from parser import parse_triples
 from pipeline import MockLLM
+
+log = logging.getLogger("causal_rag")
+
+# On-disk format version for save()/load(). Bump on any incompatible change.
+_SAVE_VERSION = 1
+
+
+def _norm_sent(s: str) -> str:
+    """Normalized key for fast exact sentence lookup (whitespace/case-insensitive)."""
+    return " ".join(s.lower().split())
 
 
 @dataclass
@@ -133,6 +145,14 @@ class GraphRAG:
         # (optional) discourse role. Used to annotate evidence with WHERE it
         # came from, the domain-agnostic "contextual retrieval" signal.
         self._struct_index: List[Tuple[set, dict, str]] = []
+        # Fast exact-match lookup (normalized sentence -> meta) so _locate is
+        # O(1) on the common path; the Jaccard scan is only a fallback for
+        # coref-rewritten sentences.
+        self._sent_meta: Dict[str, dict] = {}
+        # Separated index/query pipelines: ingest() only accumulates and marks
+        # the indices dirty; they are (re)built lazily on the next retrieve().
+        # Keeps repeated ingest() O(total) instead of O(docs x nodes).
+        self._dirty = False
 
     # -- ingest -------------------------------------------------------------- #
     def ingest(self, text: str, doc_id: str = "doc",
@@ -184,9 +204,20 @@ class GraphRAG:
                         self._node_context.setdefault(node, set()).add(
                             " ".join(meta["heading_path"]))
 
-        # Contextual Retrieval: index on context-enriched node docs (heading
-        # path prepended) for BM25 + dense so section topic words are matchable.
-        # Path signatures keep the raw sentence order.
+        # Defer index building to the next retrieve() so repeated ingest() calls
+        # don't each pay a full re-index (separated index/query pipelines).
+        self._dirty = True
+        log.info("ingested %d edges (%d nodes total); indices marked dirty",
+                 len(edges), len(self._node_docs))
+        return len(edges)
+
+    def _ensure_indexed(self) -> None:
+        """(Re)build BM25/dense/path-signature indices if ingest marked them
+        dirty. Called by retrieve(); idempotent and cheap when clean."""
+        if not self._dirty:
+            return
+        # Contextual Retrieval: index context-enriched node docs (heading path
+        # folded in) for BM25 + dense; path signatures keep raw sentence order.
         enriched = {
             n: (" ".join(self._node_context.get(n, ())) + " " + d).strip()
             for n, d in self._node_docs.items()
@@ -194,7 +225,8 @@ class GraphRAG:
         self.bm25.index(enriched)
         self.dense.index(enriched)
         self.sig.index(self._node_docs)
-        return len(edges)
+        self._dirty = False
+        log.info("rebuilt retrieval indices over %d nodes", len(self._node_docs))
 
     # -- document structure index (Phase 2) ---------------------------------- #
     def _embed_fn(self):
@@ -218,12 +250,17 @@ class GraphRAG:
                 "synthesis": syn.get(sec.block_id, 0.0) if sec else 0.0,
             }
             self._struct_index.append((set(_content_words(s.text)), meta, s.text))
+            self._sent_meta[_norm_sent(s.text)] = meta   # O(1) exact-match path
 
     def _locate(self, sentence: str) -> Optional[dict]:
-        """Best-matching structural location for a (possibly coref-rewritten)
-        sentence, by content-word Jaccard. None if nothing matches well."""
-        if not self._struct_index:
+        """Structural location for a sentence. O(1) exact match on the common
+        path; falls back to a content-word Jaccard scan only for coref-rewritten
+        sentences that don't match a stored sentence verbatim."""
+        if not self._sent_meta:
             return None
+        exact = self._sent_meta.get(_norm_sent(sentence))
+        if exact is not None:
+            return exact
         from doc_structure import _content_words
         q = set(_content_words(sentence))
         if not q:
@@ -380,6 +417,7 @@ class GraphRAG:
     # -- retrieve ------------------------------------------------------------ #
     def retrieve(self, question: str, top_k: int = 3,
                  diversify: bool = True) -> List[ChainResult]:
+        self._ensure_indexed()
         direction = self._direction(question)
         # Pull more candidate entry nodes than top_k so MMR has room to cover
         # different parts of the document.
@@ -512,8 +550,21 @@ class GraphRAG:
                      for the legacy sentence-only context (used for A/B tests).
         """
         chains = self.retrieve(question, top_k=top_k)
+        return self.generate(question, chains, summarize=summarize,
+                             structured=structured, contextual=contextual,
+                             prose_chains=prose_chains), chains
+
+    def generate(self, question: str, chains: List[ChainResult],
+                 summarize: bool = False, structured: bool = True,
+                 contextual: bool = True, prose_chains: bool = False) -> str:
+        """Generate an answer from already-retrieved chains (the LLM step only).
+
+        Split out from answer() so a server can retrieve under a lock and then
+        run the (stateless) LLM call WITHOUT holding it — letting queries run
+        concurrently while only retrieval is serialized.
+        """
         if not chains:
-            return ("No causal structure matching the query was found.", [])
+            return "No causal structure matching the query was found."
 
         if summarize:
             # Two-step generation: compress first, then answer
@@ -542,7 +593,58 @@ class GraphRAG:
                 f"{causal_ctx}\n\nQuestion: {question}\n\nAnswer:"
             )
 
-        return self.llm.generate(prompt), chains
+        return self.llm.generate(prompt)
+
+    # -- persistence (warm startup without a database) ----------------------- #
+    def save(self, path: str) -> None:
+        """Persist an in-memory graph + structure to disk so it can be reloaded
+        without re-ingesting (warm startup). The sentence-transformer model is
+        NOT pickled — retrieval indices are rebuilt lazily on first query after
+        load(). Not for the Neo4j backend (the database is the persistence)."""
+        if getattr(self, "using_neo4j", False):
+            raise RuntimeError("Neo4j-backed graphs persist in the database; save() is for in-memory only.")
+        state = {
+            "version": _SAVE_VERSION,
+            "dim": self.lex.dim,
+            "semantic_weight": self.lex.semantic_weight,
+            "max_depth": self.max_depth,
+            "edges": [(e.cause, e.relation, e.effect, e.polarity,
+                       e.source_sent, e.hv, e.edge_id) for e in self.graph.edges],
+            "node_docs": self._node_docs,
+            "node_context": self._node_context,
+            "struct_index": self._struct_index,
+            "sent_meta": self._sent_meta,
+        }
+        with open(path, "wb") as f:
+            pickle.dump(state, f, protocol=pickle.HIGHEST_PROTOCOL)
+        log.info("saved graph (%d edges, %d nodes) to %s",
+                 len(self.graph.edges), len(self._node_docs), path)
+
+    @classmethod
+    def load(cls, path: str, llm: Optional[object] = None) -> "GraphRAG":
+        """Load a graph saved with save(). Retrieval indices rebuild on first query."""
+        with open(path, "rb") as f:
+            state = pickle.load(f)
+        if state.get("version") != _SAVE_VERSION:
+            raise ValueError(
+                f"incompatible save version {state.get('version')} "
+                f"(expected {_SAVE_VERSION}); re-ingest with this build.")
+        rag = cls(dim=state["dim"], semantic_weight=state["semantic_weight"],
+                  llm=llm, max_depth=state["max_depth"])
+        for cause, rel, eff, pol, src, hv, eid in state["edges"]:
+            ge = GraphEdge(cause, rel, eff, pol, src, hv, eid)
+            rag.graph.out_adj[cause].append(eid)
+            rag.graph.in_adj[eff].append(eid)
+            rag.graph.edges.append(ge)
+        rag.graph._edge_matrix = None
+        rag._node_docs = state["node_docs"]
+        rag._node_context = state["node_context"]
+        rag._struct_index = state["struct_index"]
+        rag._sent_meta = state["sent_meta"]
+        rag._dirty = True   # rebuild BM25/dense/sig on first retrieve()
+        log.info("loaded graph (%d edges, %d nodes) from %s",
+                 len(rag.graph.edges), len(rag._node_docs), path)
+        return rag
 
     def close(self) -> None:
         """Close database connections (for Neo4j backend). Idempotent."""

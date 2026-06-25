@@ -243,10 +243,13 @@ def query(req: QueryRequest):
                    "ANTHROPIC_API_KEY, or OPENAI_API_KEY.",
         )
 
+    # Retrieve under the lock (touches shared indices); run the stateless LLM
+    # generation OUTSIDE the lock so concurrent queries don't serialize on it.
     with _rag_lock:
         if not _rag.graph.nodes():
             raise HTTPException(status_code=400, detail="Graph is empty. POST to /ingest first.")
-        answer, chains = _rag.answer(req.question, top_k=req.top_k, summarize=req.summarize)
+        chains = _rag.retrieve(req.question, top_k=req.top_k)
+    answer = _rag.generate(req.question, chains, summarize=req.summarize)
 
     chain_out = [
         CausalChain(

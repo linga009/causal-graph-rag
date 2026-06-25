@@ -32,6 +32,7 @@ def test_contextual_indexing_populates_node_context():
 def test_contextual_index_matches_section_topic():
     rag = GraphRAG(dim=10000)
     rag.ingest(DOC, schema="general")
+    rag._ensure_indexed()   # indices build lazily; flush before poking BM25
     # a query using a section topic word should surface that section's nodes,
     # even though the sentence text may not repeat the heading verbatim
     scored = rag.bm25.score("financial markets")

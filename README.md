@@ -83,11 +83,40 @@ Evidence handed to the LLM is annotated with its location, e.g. `[Causes > Secur
 
 ---
 
+## Install
+
+```bash
+# From source (editable), with the extras you need:
+pip install -e ".[groq,api]"          # core + Groq + REST API
+pip install -e ".[spacy,gemini]"      # + spaCy extraction + Gemini
+pip install -e ".[dev]"               # everything for development + tests
+```
+
+Set an API key in `.env` (`GROQ_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY`). spaCy-only ingestion works with no key.
+
+## CLI
+
+Installing exposes a `causal-rag` command (turns the engine into a tool — no Python required):
+
+```bash
+# Build a graph from a document and save it (warm startup, no re-ingest)
+causal-rag ingest report.md --save graph.pkl --schema auto --llm-mode augment
+
+# Query a saved graph
+causal-rag query graph.pkl "What was the root cause of the outage?" --chains
+
+# One-shot: ingest + ask without saving
+causal-rag ask report.md "What did the fire ultimately disrupt?"
+
+# Inspect a saved graph, or serve the REST API
+causal-rag info graph.pkl
+causal-rag serve --port 8000
+```
+
 ## Quick start
 
 ```bash
-pip install numpy sentence-transformers
-pip install groq   # set GROQ_API_KEY in .env
+pip install numpy sentence-transformers groq   # or: pip install -e ".[groq]"
 ```
 
 ```python
@@ -118,6 +147,14 @@ rag = GraphRAG()
 rag.ingest(text)  # spaCy extraction — no API calls
 answer, chains = rag.answer("What caused the shutdown?")
 ```
+
+**Persistence (warm startup, no database):** build once, reload without re-ingesting.
+```python
+rag.save("graph.pkl")                 # serialize graph + structure
+rag = GraphRAG.load("graph.pkl", llm=GroqLLM())
+answer, chains = rag.answer("What caused the outage?")   # indices rebuild on first query
+```
+Indexing is **deferred**: repeated `ingest()` calls accumulate and the BM25/dense indices are (re)built once on the next `retrieve()` — so bulk ingestion isn't O(n²). For >1M nodes, use the [Neo4j backend](#production-neo4j-for-large-graphs).
 
 ---
 
@@ -340,7 +377,8 @@ Related paper: [CausalRAG (ACL 2025)](https://arxiv.org/abs/2503.19878)
 
 | File | Purpose |
 |---|---|
-| `graph_rag.py` | Orchestrating engine: ingest → retrieve → MMR → generate; contextual indexing, structure annotation |
+| `cli.py` | `causal-rag` command — ingest / query / ask / info / serve |
+| `graph_rag.py` | Orchestrating engine: ingest → retrieve → MMR → generate; persistence (save/load), lazy indexing, contextual indexing |
 | `doc_structure.py` | Structure-preserving parser (headings→sections→sentences), schema presets, synthesis score |
 | `causal_extractor.py` | spaCy, LLM, REBEL, and coreference-based edge extraction |
 | `causal_graph.py` | In-memory VSA-encoded directed graph + BFS traversal |
