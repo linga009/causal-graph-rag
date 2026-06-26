@@ -18,16 +18,15 @@ def test_semantic_weight_similarity_robustness():
     lex1 = Lexicon(dim=1000, semantic_weight=1)
     lex2 = Lexicon(dim=1000, semantic_weight=4)
 
-    # Use word pairs with strong trigram overlap (employment/unemployment share "employ")
-    t1 = Triple("employment", "causes", "employment_gains")
-    t2 = Triple("unemployment", "causes", "unemployment_crisis")
+    t_unemp = Triple("unemployment", "causes", "social_unrest")
+    t_jobless = Triple("joblessness", "causes", "civil_disorder")
 
-    v1_t1 = encode_triple(t1, lex1)
-    v1_t2 = encode_triple(t2, lex1)
-    sim1 = hamming_similarity(v1_t1, v1_t2)
+    v1_unemp = encode_triple(t_unemp, lex1)
+    v1_jobless = encode_triple(t_jobless, lex1)
+    sim1 = hamming_similarity(v1_unemp, v1_jobless)
 
-    v2_t1 = encode_triple(t1, lex2)
-    v2_t2 = encode_triple(t2, lex2)
-    sim2 = hamming_similarity(v2_t1, v2_t2)
+    v2_unemp = encode_triple(t_unemp, lex2)
+    v2_jobless = encode_triple(t_jobless, lex2)
+    sim2 = hamming_similarity(v2_unemp, v2_jobless)
 
     assert sim2 > sim1, "Higher semantic weight should increase synonym similarity"
