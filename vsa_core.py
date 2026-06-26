@@ -96,6 +96,26 @@ class Lexicon:
         }
         self._filler_cache: Dict[str, np.ndarray] = {}
 
+    def semantic_weight_schedule(self, doc_length: int) -> int:
+        """Adaptive semantic weight based on document complexity.
+
+        doc_length: approximate number of tokens in the document
+
+        Heuristic:
+          - 0-500 tokens (short snippets): weight=1 (identity only)
+          - 500-2000 tokens (single page): weight=2 (1x identity + 1x semantic)
+          - 2000-5000 tokens (multi-page): weight=3
+          - 5000+ tokens (long document): weight=4-5
+        """
+        if doc_length < 500:
+            return 1
+        elif doc_length < 2000:
+            return 2
+        elif doc_length < 5000:
+            return 3
+        else:
+            return min(5, 4 + max(0, (doc_length - 5000) // 5000))
+
     # -- semantic component -------------------------------------------------- #
     def _semantic_hv(self, token: str) -> np.ndarray:
         """Cheap embedding stand-in: bundle hypervectors of the token's
