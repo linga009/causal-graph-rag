@@ -45,16 +45,12 @@ def _load_env(path=os.path.join(ROOT, ".env")):
 
 
 _load_env()
-import vsa_core
 from graph_rag import GraphRAG
 from llm_adapters import AnthropicLLM
 from retrievers import SentenceTransformerDense
 
-# Ship-candidate retrieval config: the two components that survived the free
-# screen (proposition-aware rerank + calibrated channel fusion), on baseline
-# trigram VSA (real-embedding VSA was screened inert). Set globally here.
-vsa_core.USE_REAL_EMBEDDINGS = False
-
+# The two validated retrieval components (proposition-aware rerank + calibrated
+# fusion) are ON by default in GraphRAG — no per-run configuration needed.
 TOP_K = 6
 GEN_MODELS = [
     ("haiku",  "claude-haiku-4-5"),

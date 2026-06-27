@@ -23,7 +23,7 @@ from vsa_core import Lexicon, Triple, encode_triple
 from causal_extractor import CausalEdge
 
 import re as _re
-_TOK = _re.compile(r"[a-z0-9]+")
+_TOK = _re.compile(r"\w+", _re.UNICODE)   # unicode-aware: keeps accented words whole
 
 
 def _tokenize(s: str) -> List[str]:

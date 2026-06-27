@@ -43,7 +43,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 
 
-_TOK = re.compile(r"[a-z0-9]+")
+_TOK = re.compile(r"\w+", re.UNICODE)   # unicode-aware: keeps accented words whole
 
 
 def tokenize(s: str) -> List[str]:

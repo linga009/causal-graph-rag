@@ -30,7 +30,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
-import vsa_core
 from graph_rag import GraphRAG
 
 QTYPES = ["fact", "multihop", "rootcause"]
@@ -38,82 +37,36 @@ TOP_K = 6
 
 
 # --------------------------------------------------------------------------- #
-#  Config = a name + a function that sets flags on a fresh GraphRAG.
-#  Flags default OFF / baseline; each config flips exactly one thing so the
-#  screen attributes any coverage change to that component alone.
+#  Config = a name + a function setting the two retrieval flags on a fresh
+#  GraphRAG. Each config isolates one component's effect on coverage.
 # --------------------------------------------------------------------------- #
+def _set(rag: GraphRAG, *, proposition: bool, calibrated: bool) -> None:
+    rag.flag_proposition = proposition
+    rag.flag_calibrated_fusion = calibrated
+
+
 def cfg_baseline(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = False
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=False)
-
-
-def cfg_vsa_realemb(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = True
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=False)
-
-
-def cfg_logsig(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = True
-    _set_flags(rag, logsig=True, holo=False, beam=False, dpp=False)
-
-
-def cfg_holo(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = True
-    _set_flags(rag, logsig=False, holo=True, beam=False, dpp=False)
-
-
-def cfg_beam(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = True
-    _set_flags(rag, logsig=False, holo=False, beam=True, dpp=False)
-
-
-def cfg_dpp(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = True
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=True)
-
-
-def cfg_ppr(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = False     # baseline VSA (real-emb shown inert)
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=False)
-    rag.flag_ppr = True
+    _set(rag, proposition=False, calibrated=False)
 
 
 def cfg_proposition(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = False
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=False)
-    rag.flag_proposition = True
+    _set(rag, proposition=True, calibrated=False)
 
 
 def cfg_calibrated_fusion(rag: GraphRAG) -> None:
-    vsa_core.USE_REAL_EMBEDDINGS = False
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=False)
-    rag.flag_calibrated_fusion = True
+    _set(rag, proposition=False, calibrated=True)
 
 
 def cfg_combined(rag: GraphRAG) -> None:
-    """The two survivors stacked — the candidate shipping config."""
-    vsa_core.USE_REAL_EMBEDDINGS = False
-    _set_flags(rag, logsig=False, holo=False, beam=False, dpp=False)
-    rag.flag_proposition = True
-    rag.flag_calibrated_fusion = True
-
-
-def _set_flags(rag: GraphRAG, *, logsig, holo, beam, dpp) -> None:
-    rag.flag_logsig = logsig
-    rag.flag_chain_holo = holo
-    rag.flag_beam = beam
-    rag.flag_dpp = dpp
-    # round-2 leads default off; each cfg_* enables exactly one
-    rag.flag_ppr = False
-    rag.flag_proposition = False
-    rag.flag_calibrated_fusion = False
+    """The two survivors stacked — the shipping default."""
+    _set(rag, proposition=True, calibrated=True)
 
 
 CONFIGS: Dict[str, Callable[[GraphRAG], None]] = {
-    "baseline (trigram VSA)": cfg_baseline,
-    "+ proposition_rerank":   cfg_proposition,
-    "+ calibrated_fusion":    cfg_calibrated_fusion,
-    "+ both (ship candidate)": cfg_combined,
+    "baseline (no components)": cfg_baseline,
+    "+ proposition_rerank":     cfg_proposition,
+    "+ calibrated_fusion":      cfg_calibrated_fusion,
+    "+ both (shipping default)": cfg_combined,
 }
 
 
@@ -187,7 +140,7 @@ def main():
     for name, setup in CONFIGS.items():
         results[name] = run_config(name, setup, questions, by_slug)
 
-    base = results["baseline (trigram VSA)"]
+    base = results["baseline (no components)"]
 
     def reasoning(res, metric):
         return res[metric]["multihop"] + res[metric]["rootcause"]
@@ -204,7 +157,7 @@ def main():
     for name, res in results.items():
         f_reason, c_reason = reasoning(res, "full"), reasoning(res, "chain")
         fd, cd = f_reason - bf, c_reason - bc
-        if name == "baseline (trigram VSA)":
+        if name == "baseline (no components)":
             verdict = ""
         else:
             # survives if it improves EITHER the full evidence the generator sees

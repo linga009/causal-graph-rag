@@ -38,50 +38,6 @@ from typing import Dict, List, Tuple, Optional
 
 
 # --------------------------------------------------------------------------- #
-#  Real-embedding semantic backbone (optional, graceful fallback)
-# --------------------------------------------------------------------------- #
-# Embedding dim of the shared sentence-transformer (all-MiniLM-L6-v2 = 384).
-_EMBED_DIM = 384
-# Toggle: real-embedding (SimHash) semantic component vs char-trigram fallback.
-# Flipped by the component screen to measure the real-embedding upgrade in
-# isolation; defaults True (the production path).
-USE_REAL_EMBEDDINGS = True
-# Module-level caches: load the encoder once, memoize per-token embeddings.
-_EMBEDDER: object = "unset"          # "unset" -> not tried; None -> unavailable
-_TOKEN_EMB_CACHE: Dict[str, np.ndarray] = {}
-
-
-def _get_embedder():
-    """Return the shared sentence-transformer, or None if unavailable.
-    Tried once per process; failure is cached so we don't retry the import."""
-    global _EMBEDDER
-    if _EMBEDDER == "unset":
-        try:
-            from retrievers import shared_st_model
-            _EMBEDDER = shared_st_model("all-MiniLM-L6-v2")
-        except Exception:
-            _EMBEDDER = None
-    return _EMBEDDER
-
-
-def _embed_token(token: str) -> Optional[np.ndarray]:
-    """Normalized 384-d embedding for a token/phrase, or None if no model.
-    Cached per token (the graph reuses the same node names constantly)."""
-    token = token.lower().strip()
-    if not token:
-        return None
-    if token in _TOKEN_EMB_CACHE:
-        return _TOKEN_EMB_CACHE[token]
-    model = _get_embedder()
-    if model is None:
-        return None
-    emb = model.encode([token], convert_to_numpy=True,
-                       normalize_embeddings=True)[0].astype(np.float32)
-    _TOKEN_EMB_CACHE[token] = emb
-    return emb
-
-
-# --------------------------------------------------------------------------- #
 #  Low-level bipolar hypervector algebra
 # --------------------------------------------------------------------------- #
 def _seed_from_string(s: str) -> int:
@@ -140,62 +96,17 @@ class Lexicon:
         }
         self._filler_cache: Dict[str, np.ndarray] = {}
 
-    def semantic_weight_schedule(self, doc_length: int) -> int:
-        """Adaptive semantic weight based on document complexity.
-
-        doc_length: approximate number of tokens in the document
-
-        Heuristic:
-          - 0-500 tokens (short snippets): weight=1 (identity only)
-          - 500-2000 tokens (single page): weight=2 (1x identity + 1x semantic)
-          - 2000-5000 tokens (multi-page): weight=3
-          - 5000+ tokens (long document): weight=4-5
-        """
-        if doc_length < 500:
-            return 1
-        elif doc_length < 2000:
-            return 2
-        elif doc_length < 5000:
-            return 3
-        else:
-            return min(5, 4 + max(0, (doc_length - 5000) // 5000))
-
     # -- semantic component -------------------------------------------------- #
     def _semantic_hv(self, token: str) -> np.ndarray:
-        """Semantic filler hypervector.
-
-        Primary path (real embeddings): embed the token with the shared
-        sentence-transformer, then quantize to a bipolar hypervector via a
-        fixed sign-random-projection (SimHash / LSH). Two tokens with high
-        embedding cosine -> highly-correlated bipolar vectors, so true
-        synonyms ("unemployment"/"joblessness") resonate even with zero
-        shared characters. This is the production-grade semantic component
-        the original trigram stand-in only approximated.
-
-        Fallback path (no model): bundle hypervectors of the token's
-        character trigrams — correlated for morphological variants
-        (run/running), but blind to lexical synonymy. Keeps the
-        dependency-free install working and deterministic.
-        """
-        emb = _embed_token(token) if USE_REAL_EMBEDDINGS else None
-        if emb is not None:
-            # sign-random-projection: emb (384,) @ P (384, dim) -> bipolar (dim,)
-            proj = emb @ self._sem_projection()      # (dim,) float
-            return np.where(proj >= 0, 1, -1).astype(np.int8)
-        # --- fallback: character-trigram bundle ---
+        """Semantic filler hypervector: bundle hypervectors of the token's
+        character trigrams. Tokens sharing trigrams (run/running, employ/
+        unemployment) get correlated vectors -> nonzero similarity. Cheap,
+        deterministic, dependency-free. (A real-embedding SimHash variant was
+        screened and found inert — the dense retrieval channel already supplies
+        lexical-synonym matching — so it was removed; see docs/RESEARCH_NOTES.md.)"""
         t = f"#{token.lower()}#"
         grams = [t[i:i + 3] for i in range(len(t) - 2)] or [t]
         return bundle([random_hv(self.dim, f"GRAM::{g}") for g in grams])
-
-    def _sem_projection(self) -> np.ndarray:
-        """Fixed (embed_dim, dim) Gaussian projection for SimHash quantization.
-        Seeded so the same token always maps to the same bipolar vector across
-        processes and Lexicon instances of the same dim."""
-        if getattr(self, "_sem_proj", None) is None:
-            rng = np.random.default_rng(_seed_from_string(f"SEMPROJ::{self.dim}"))
-            self._sem_proj = rng.standard_normal(
-                (_EMBED_DIM, self.dim)).astype(np.float32)
-        return self._sem_proj
 
     # -- public filler accessor --------------------------------------------- #
     def filler(self, token: str) -> np.ndarray:

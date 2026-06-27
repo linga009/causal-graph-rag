@@ -240,3 +240,25 @@ Current 23-doc corpus is English, so this does not affect the reported numbers.
 
 *Note:* P13's failure was a probe-harness error (wrong import name), not a code bug;
 `doc_structure` parses empty/heading-less/malformed markdown fine (schema=auto passed).
+
+---
+
+# Cleanup completed (2026-06-27)
+
+Applied after the multi-field benchmark validated the ship config:
+- **Deleted 6 dropped components** (logsig, chain-holography, beam, DPP, PPR) — methods,
+  flags, and rerank/MMR/retrieve hooks — from `graph_rag.py`.
+- **Reverted real-embedding VSA** (`vsa_core.py`) to trigram-only; removed the
+  `USE_REAL_EMBEDDINGS` toggle, embedder/cache/projection, `semantic_weight_schedule`,
+  and the obsolete `test_vsa_semantic_weight.py`. (Real-emb was screened inert.)
+- **B18 FIXED**: all four tokenizers (`retrievers.py`, `causal_graph.py`,
+  `langchain_integration.py`, `neo4j_graph.py`) now use `\w+` (re.UNICODE) — accented
+  words stay whole ("café", "défaillance", "naïve").
+- Promoted survivors (`flag_proposition`, `flag_calibrated_fusion`) remain default ON.
+
+**Re-screen after cleanup (free):** both survive; shipping default full Δ +0.022,
+chain Δ +0.016 — no regression. **85 tests pass.** The shipped config is behaviorally
+identical to the benchmarked one for English, so the benchmark numbers stand.
+
+Remaining LOW/optional (not blocking): B14 node_docs O(n²) string concat,
+B6/B8 encode caching.

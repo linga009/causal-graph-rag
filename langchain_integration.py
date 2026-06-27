@@ -56,7 +56,7 @@ from __future__ import annotations
 import re as _re
 from typing import Any, Dict, List, Optional
 
-_WORD_TOK = _re.compile(r"[a-z0-9]+")
+_WORD_TOK = _re.compile(r"\w+", _re.UNICODE)   # unicode-aware: keeps accented words whole
 
 
 def _simple_tokenize(s: str) -> List[str]:
