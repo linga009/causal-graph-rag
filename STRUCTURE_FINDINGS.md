@@ -232,3 +232,34 @@ What survives rigorous (temp-0, n=12) measurement:
 The practical reading: **the retrieval graph is what lifts answer quality; the
 in-context structure is a grounding/anti-hallucination layer on top.** Recall
 synergy and capability-scaling claims are retracted pending stronger evidence.
+
+---
+
+## Negative result: the five "extreme" components (2026-06-27)
+
+Five components were proposed to push VSA / rough-path theory / BFS / MMR "to the
+extreme": real-embedding VSA (SimHash of MiniLM), log-signature chain rerank,
+VSA chain holography, best-first (beam) traversal, and DPP selection. Each was
+built flag-gated and screened FREE on the 23-doc / 138-question corpus with a
+no-LLM concept-coverage proxy (chains+coverage `full`, and top-3-chains `chain`).
+
+| component | full Δ | chain Δ | verdict |
+|---|---|---|---|
+| real-embedding VSA | +0.000 | +0.000 | inert |
+| log-signature rerank | +0.000 | −0.027 | hurts ranking |
+| VSA chain holography | +0.000 | −0.027 | hurts ranking |
+| beam (best-first) BFS | +0.000 | +0.005 | noise |
+| DPP selection | −0.005 | −0.038 | hurts |
+
+**None improve the evidence the generator sees.** Key insight: real-embedding VSA
+is inert because the **dense channel already supplies semantic matching** — VSA's
+unique contribution is causal *direction*, not lexical recall, so a semantic
+upgrade to it is redundant. The rerank/selection components (logsig, holo, dpp)
+reorder chains slightly *worse*. The system is at its retrieval ceiling on this
+corpus (full reasoning coverage 1.424/2.0; fact 0.95).
+
+**Decision:** drop all five (flags default OFF, shipped pipeline unchanged).
+Higher-evidence, untried leads recorded in `docs/RESEARCH_NOTES.md` —
+confidence-weighted Personalized PageRank, proposition-aware rerank (use the edge
+`source_sent` we already store), and calibrated channel fusion — are the next
+candidates to screen, per the `improving-causal-rag` skill.

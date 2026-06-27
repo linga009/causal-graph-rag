@@ -166,6 +166,20 @@ class GraphRAG:
         self.bm25 = BM25()
         self.dense = make_dense()
         self.sig = PathSignatureRetriever()
+
+        # Experimental component flags (screened in eval_corpus/screen_components).
+        # Default OFF -> the shipped pipeline is unchanged unless explicitly enabled.
+        # Screened-and-dropped experimental components (kept flag-gated, OFF;
+        # queued for removal in cleanup — all were empirically inert/negative).
+        self.flag_logsig = False      # rough-path log-signature chain rerank channel
+        self.flag_chain_holo = False  # VSA holographic whole-chain rerank channel
+        self.flag_beam = False        # best-first (beam) guided traversal
+        self.flag_dpp = False         # determinantal point process chain selection
+        self.flag_ppr = False         # personalized PageRank chain rerank (HippoRAG)
+        self._logsig_proj: Optional[np.ndarray] = None  # lazy 384->8 projection
+        # SURVIVORS — validated by free screen + Haiku/Sonnet benchmark, default ON:
+        self.flag_proposition = True        # proposition-aware rerank (edge source sentences)
+        self.flag_calibrated_fusion = True  # min-max calibrated channel fusion (vs rank-only RRF)
         self.llm = llm or MockLLM()
         self.max_depth = max_depth
         self.normalize_entities = normalize_entities
@@ -201,6 +215,8 @@ class GraphRAG:
         self._sentences: List[str] = []
         self._sent_vecs = None        # np.ndarray (N, D) once indexed
         self._sent_bm25: Optional[BM25] = None  # sentence-level keyword index
+        self._edge_sent_vec: dict = {}  # edge source_sent -> embedding (proposition rerank)
+        self._q_emb_cache = None        # (question, emb) memo: one query encoded once
 
     # -- ingest -------------------------------------------------------------- #
     def ingest(self, text: str, doc_id: str = "doc",
@@ -406,12 +422,42 @@ class GraphRAG:
             self._sent_bm25.index(sent_docs)
         else:
             self._sent_bm25 = None
+        # Precompute edge source-sentence embeddings ONCE at ingest, so the
+        # proposition-aware rerank is a cached dot product at query time
+        # (not a model.encode() call per query). Keeps query latency low.
+        if model is not None:
+            uniq_src = list({e.source_sent for e in self.graph.edges if e.source_sent})
+            if uniq_src:
+                ev = model.encode(uniq_src, convert_to_numpy=True,
+                                  normalize_embeddings=True)
+                self._edge_sent_vec = {s: ev[i] for i, s in enumerate(uniq_src)}
+            else:
+                self._edge_sent_vec = {}
+        else:
+            self._edge_sent_vec = {}
         # O(1) sentence-position lookup for provenance expansion
         self._sent_idx: Dict[str, int] = {s: i for i, s in enumerate(self._sentences)}
         self._dirty = False
         elapsed = time.monotonic() - t0
         log.info("rebuilt retrieval indices: %d nodes, %d sentences in %.2fs",
                  len(self._node_docs), len(self._sentences), elapsed)
+
+    def _encode_query(self, question: str):
+        """Encode the query once and memoize it for the duration of one query.
+        answer() drives several encoders on the SAME question (_rerank up to
+        twice via the bridge pass, _retrieve_sentences, optional beam) — without
+        this memo each re-encodes on CPU (~tens of ms each). Returns None if no
+        dense model is loaded."""
+        model = getattr(self.dense, "_model", None)
+        if model is None:
+            return None
+        cache = self._q_emb_cache
+        if cache is not None and cache[0] == question:
+            return cache[1]
+        emb = model.encode([question], convert_to_numpy=True,
+                           normalize_embeddings=True)[0]
+        self._q_emb_cache = (question, emb)
+        return emb
 
     def _retrieve_sentences(self, question: str, k: int = 6,
                             chain_nodes: Optional[set] = None) -> List[str]:
@@ -425,8 +471,7 @@ class GraphRAG:
         self._ensure_indexed()
         if self._sent_vecs is None or not self._sentences:
             return []
-        model = self.dense._model
-        q = model.encode([question], convert_to_numpy=True, normalize_embeddings=True)[0]
+        q = self._encode_query(question)
         dense_sims = self._sent_vecs @ q   # shape (N,)
         n = len(self._sentences)
 
@@ -595,8 +640,12 @@ class GraphRAG:
                         for _, node in bm25_ranked[:3] if node in self._node_docs]
         sig_ranked = self.sig.score(question, bm25_context=bm25_context)
 
-        fused = rrf_fuse([direct, vsa_ranked, bm25_ranked, dense_ranked, sig_ranked],
-                         weights=[1.5, 2.0, 1.0, 1.0, 1.2])
+        _channels = [direct, vsa_ranked, bm25_ranked, dense_ranked, sig_ranked]
+        _weights = [1.5, 2.0, 1.0, 1.0, 1.2]
+        if self.flag_calibrated_fusion:
+            fused = self._calibrated_fuse(_channels, _weights)
+        else:
+            fused = rrf_fuse(_channels, weights=_weights)
         result = fused[:top_n]
         log.debug("entry nodes for %r: %s", question[:50],
                   [(n, round(s, 3)) for s, n in result])
@@ -625,21 +674,278 @@ class GraphRAG:
             return max(self.max_depth - 2, 3)    # shallow for fact lookups
         return self.max_depth
 
+    # ===================================================================== #
+    #  Experimental components (flag-gated; screened in eval_corpus)
+    # ===================================================================== #
+    def _logsig_projection(self) -> np.ndarray:
+        """Fixed (384, 8) Johnson-Lindenstrauss projection for chain-trajectory
+        log-signatures. Seeded for determinism across processes."""
+        if self._logsig_proj is None:
+            rng = np.random.default_rng(0x10C516)
+            self._logsig_proj = (rng.standard_normal((384, 8)).astype(np.float32)
+                                 / np.sqrt(8.0))
+        return self._logsig_proj
+
+    def _chain_directedness(self, chain: list, node_embs: dict) -> float:
+        """Rough-path-theory signal: how DIRECT is the chain's trajectory through
+        concept space? A coherent causal explanation moves purposefully from cause
+        to effect (displacement dominates); a spurious chain wanders (large Levy
+        area). Returns ||S1||^2 / (||S1||^2 + |Levy area|) in [0,1] from the
+        level-2, time-augmented log-signature of the node-embedding path."""
+        seq = []
+        if chain:
+            seq.append(chain[0].cause)
+            for e in chain:
+                seq.append(e.effect)
+        vecs = [node_embs[n] for n in seq if n in node_embs]
+        if len(vecs) < 2:
+            return 0.0
+        path = np.stack(vecs).astype(np.float32) @ self._logsig_projection()  # (N,8)
+        N = path.shape[0]
+        t = np.linspace(0.0, 1.0, N, dtype=np.float32).reshape(-1, 1)
+        path = np.concatenate([t, path], axis=1)        # time augmentation -> (N,9)
+        dX = np.diff(path, axis=0)                        # (N-1, 9)
+        S1 = dX.sum(axis=0)                               # displacement
+        S2 = np.zeros((path.shape[1], path.shape[1]), dtype=np.float32)
+        run = np.zeros(path.shape[1], dtype=np.float32)
+        for d in dX:                                      # Chen: S2 = sum run (x) dX
+            S2 += np.outer(run, d)
+            run += d
+        levy = 0.5 * (S2 - S2.T)                          # antisymmetric = Levy area
+        disp2 = float(S1 @ S1)
+        area = float(np.sqrt((levy * levy).sum()))
+        return disp2 / (disp2 + area + 1e-6)
+
+    def _query_holo(self, question: str):
+        """VSA holographic encoding of the query as a permutation-sequenced bundle
+        of its parsed triples (order- and direction-aware)."""
+        from vsa_core import encode_triple, bundle
+        triples = list(parse_triples(question))
+        if not triples:
+            return None
+        parts = [np.roll(encode_triple(t, self.lex), i)
+                 for i, t in enumerate(triples)]
+        return bundle(parts)
+
+    @staticmethod
+    def _chain_holo(chain: list):
+        """Whole-chain hypervector: permutation-bound bundle of the stored
+        per-edge triple hypervectors — encodes the chain's sequence and direction
+        in one vector, comparable to the query's holographic encoding."""
+        from vsa_core import bundle
+        if not chain:
+            return None
+        return bundle([np.roll(e.hv, i) for i, e in enumerate(chain)])
+
+    def _dpp_select(self, chains: List[ChainResult], top_k: int) -> List[ChainResult]:
+        """Determinantal Point Process MAP selection — the principled
+        generalization of MMR. Picks the k chains maximizing det(L_S), where
+        L_ij = q_i q_j S_ij models relevance (quality q) AND diversity (similarity
+        S as volume). Greedy MAP (Chen et al. 2018) with incremental Cholesky."""
+        n = len(chains)
+        if n <= top_k:
+            return chains
+        scores = np.array([c.rerank_score for c in chains], dtype=np.float64)
+        lo, hi = scores.min(), scores.max()
+        rel = (scores - lo) / ((hi - lo) or 1.0)
+        quality = np.exp(rel)                              # q_i > 0
+
+        # Chain embeddings = mean of node embeddings (cosine similarity kernel)
+        embs = []
+        for c in chains:
+            vecs = [self.dense.vecs[n_] for e in c.chain
+                    for n_ in (e.cause, e.effect) if n_ in getattr(self.dense, "vecs", {})]
+            if vecs:
+                v = np.mean(vecs, axis=0)
+                nrm = np.linalg.norm(v)
+                embs.append(v / nrm if nrm else v)
+            else:
+                embs.append(None)
+        dim = next((v.shape[0] for v in embs if v is not None), 0)
+        E = np.array([v if v is not None else np.zeros(dim, dtype=np.float32)
+                      for v in embs], dtype=np.float64)
+        S = E @ E.T if dim else np.eye(n)
+        S = np.clip((S + 1.0) / 2.0, 0.0, 1.0)             # cosine -> [0,1]
+        L = (quality[:, None] * quality[None, :]) * S
+        L += 1e-9 * np.eye(n)
+
+        # Fast greedy MAP-DPP
+        cis = np.zeros((top_k, n))
+        di2 = np.diag(L).copy()
+        selected: List[int] = []
+        for it in range(top_k):
+            j = int(np.argmax(di2))
+            if di2[j] <= 1e-12:
+                break
+            if selected:
+                ei = (L[j, :] - cis[:it, j] @ cis[:it, :]) / np.sqrt(di2[j])
+            else:
+                ei = L[j, :] / np.sqrt(di2[j])
+            cis[it, :] = ei
+            di2 -= ei ** 2
+            di2[j] = -np.inf
+            selected.append(j)
+        return [chains[i] for i in selected]
+
+    def _ppr_scores(self, question: str) -> dict:
+        """Personalized PageRank over the causal graph (HippoRAG-style), seeded on
+        query-matched nodes. Transition matrix is **confidence-weighted** and
+        **direction-aware** (follow effect edges for forward/impact queries, cause
+        edges for backward/root-cause). A node reachable through many paths from the
+        seeds gets high mass — associative multi-hop relevance, no LLM. Returns
+        {node: mass} normalized to max 1."""
+        g = self.graph
+        if not (hasattr(g, "out_adj") and hasattr(g, "in_adj")):
+            return {}
+        nodes = list(g.nodes())
+        if not nodes:
+            return {}
+        idx = {n: i for i, n in enumerate(nodes)}
+        N = len(nodes)
+        direction = self._direction(question)
+        adj = g.in_adj if direction == "backward" else g.out_adj
+        edges = g.edges
+
+        # Column-stochastic transition M[j,i] = P(i -> j), confidence-weighted
+        M = np.zeros((N, N), dtype=np.float64)
+        for n, i in idx.items():
+            for eid in adj.get(n, []):
+                e = edges[eid]
+                nxt = e.cause if direction == "backward" else e.effect
+                j = idx.get(nxt)
+                if j is not None:
+                    M[j, i] += getattr(e, "confidence", 0.85)
+        col = M.sum(axis=0)
+        nz = col > 0
+        M[:, nz] /= col[nz]
+
+        # Seed distribution = query-term node matches (teleport target)
+        widx = g.word_index()
+        seeds = {nn for t in tokenize(question) for nn in widx.get(t, []) if nn in idx}
+        s = np.zeros(N, dtype=np.float64)
+        if seeds:
+            for nn in seeds:
+                s[idx[nn]] = 1.0
+            s /= s.sum()
+        else:
+            s[:] = 1.0 / N
+
+        alpha = 0.85
+        r = s.copy()
+        for _ in range(20):
+            r_new = (1 - alpha) * s + alpha * (M @ r)
+            tot = r_new.sum()
+            if tot > 0:
+                r_new /= tot                 # renormalize (dangling nodes leak mass)
+            if np.allclose(r_new, r, atol=1e-9):
+                r = r_new
+                break
+            r = r_new
+        mx = r.max() or 1.0
+        return {nodes[i]: float(r[i] / mx) for i in range(N)}
+
+    @staticmethod
+    def _calibrated_fuse(lists, weights):
+        """Min-max-calibrated fusion: scale each channel's scores to [0,1], then
+        weighted-sum over the union of nodes. Recovers the score-magnitude signal
+        rank-only RRF discards. Unlike z-norm, a single-element or zero-variance
+        channel maps its node to 1.0 — so the strong exact-name-match (`direct`)
+        channel keeps full weight, and weak presence is a small positive, never a
+        penalty."""
+        agg: dict = {}
+        for lst, w in zip(lists, weights):
+            if not lst:
+                continue
+            scores = np.array([sc for sc, _ in lst], dtype=float)
+            lo, hi = scores.min(), scores.max()
+            rng = hi - lo
+            for sc, node in lst:
+                norm = (sc - lo) / rng if rng > 0 else 1.0
+                agg[node] = agg.get(node, 0.0) + w * norm
+        return sorted(((sc, n) for n, sc in agg.items()), key=lambda x: -x[0])
+
+    def _beam_chains(self, start: str, direction: str, depth: int,
+                     q_emb, beam_width: int = 6) -> Optional[List[ChainResult]]:
+        """Best-first (beam) traversal: instead of blind breadth, expand only the
+        most promising frontier paths, scored by accumulated edge confidence plus
+        the semantic relevance of the frontier node to the query. Concentrates the
+        path budget on chains heading toward the answer. Returns None if the graph
+        backend doesn't expose adjacency (caller falls back to BFS)."""
+        g = self.graph
+        if not (hasattr(g, "out_adj") and hasattr(g, "in_adj")):
+            return None
+        adj = g.in_adj if direction == "backward" else g.out_adj
+        edges = g.edges
+        vecs = getattr(self.dense, "vecs", {})
+
+        frontier = [([], frozenset({start}), start)]    # (path, visited, tail)
+        completed: List[list] = []
+        for _ in range(depth):
+            scored = []
+            for path, visited, tail in frontier:
+                eids = adj.get(tail, [])
+                if not eids:
+                    if path:
+                        completed.append(path)
+                    continue
+                extended = False
+                for eid in eids:
+                    e = edges[eid]
+                    nxt = e.cause if direction == "backward" else e.effect
+                    if nxt in visited:
+                        continue
+                    npath = path + [e]
+                    conf = float(np.mean([getattr(x, "confidence", 0.85) for x in npath]))
+                    rel = float(q_emb @ vecs[nxt]) if (q_emb is not None and nxt in vecs) else 0.0
+                    scored.append((conf + rel, npath, visited | {nxt}, nxt))
+                    extended = True
+                if not extended and path:
+                    completed.append(path)
+            if not scored:
+                break
+            scored.sort(key=lambda x: -x[0])
+            scored = scored[:beam_width]
+            frontier = [(p, v, t) for _, p, v, t in scored]
+            completed.extend(p for _, p, v, t in scored)   # keep intermediate paths
+
+        results: List[ChainResult] = []
+        seen: set = set()
+        for path in completed:
+            if not path:
+                continue
+            chain = list(reversed(path)) if direction == "backward" else path
+            key = tuple((e.cause, e.relation, e.effect) for e in chain)
+            if key in seen:
+                continue
+            seen.add(key)
+            results.append(ChainResult(chain, start, 0.0, 0.0, direction))
+        return results
+
     # -- rerank chains ------------------------------------------------------- #
     def _rerank(self, question: str, chains: List[ChainResult]) -> None:
         q_terms = set(tokenize(question))
 
-        # Encode query once; build a node->embedding lookup from the dense index.
+        # Encode query once (memoized); build a node->embedding lookup from the index.
         q_emb = None
         node_embs: dict = {}
-        if hasattr(self.dense, '_model') and getattr(self.dense, 'vecs', None):
-            q_emb = self.dense._model.encode(
-                [question], convert_to_numpy=True, normalize_embeddings=True)[0]
+        if getattr(self.dense, 'vecs', None):
+            q_emb = self._encode_query(question)
             # Pre-collect all unique nodes across ALL chains in one pass (batch)
             all_nodes = {n for c in chains for e in c.chain
                          for n in (e.cause, e.effect)}
             node_embs = {n: self.dense.vecs[n] for n in all_nodes
                          if n in self.dense.vecs}
+
+        # Query-side holographic encoding (computed once per query) for the
+        # VSA chain-holography channel.
+        q_holo = self._query_holo(question) if self.flag_chain_holo else None
+
+        # [flag] Personalized PageRank node masses (computed once per query)
+        ppr = self._ppr_scores(question) if self.flag_ppr else None
+
+        # [flag] Proposition-aware: use the edge source-sentence embeddings
+        # precomputed at ingest (no query-time model.encode -> microsecond cost).
+        prop_vec = self._edge_sent_vec if (self.flag_proposition and q_emb is not None) else {}
 
         for c in chains:
             chain_terms = set()
@@ -667,6 +973,30 @@ class GraphRAG:
                     if norm:
                         chain_emb /= norm
                     score += float(q_emb @ chain_emb) * 3.0
+
+            # [flag] rough-path log-signature: reward coherent/direct trajectories
+            if self.flag_logsig and node_embs:
+                score += 1.0 * self._chain_directedness(c.chain, node_embs)
+
+            # [flag] VSA chain holography: sequence+direction-aware query match
+            if self.flag_chain_holo and q_holo is not None:
+                ch = self._chain_holo(c.chain)
+                if ch is not None:
+                    from vsa_core import hamming_similarity
+                    score += 2.0 * hamming_similarity(q_holo, ch)
+
+            # [flag] Personalized PageRank: reward chains over well-connected nodes
+            if ppr is not None and c.chain:
+                masses = [ppr.get(n, 0.0) for e in c.chain for n in (e.cause, e.effect)]
+                if masses:
+                    score += 3.0 * (sum(masses) / len(masses))
+
+            # [flag] Proposition-aware: query similarity of the chain's source text
+            if prop_vec and c.chain:
+                sims = [float(q_emb @ prop_vec[e.source_sent])
+                        for e in c.chain if e.source_sent in prop_vec]
+                if sims:
+                    score += 3.0 * (sum(sims) / len(sims))
 
             # Confidence weighting: geometric mean of edge confidences.
             # Scaled [0.75, 1.0] so high-confidence chains score meaningfully higher.
@@ -700,6 +1030,8 @@ class GraphRAG:
         lever for global / multi-hop questions (Vendi-RAG, MMR)."""
         if len(chains) <= top_k:
             return chains
+        if self.flag_dpp:
+            return self._dpp_select(chains, top_k)
         scores = [c.rerank_score for c in chains]
         lo, hi = min(scores), max(scores)
         rng = (hi - lo) or 1.0
@@ -740,9 +1072,21 @@ class GraphRAG:
                                     direction=direction)
         graph_nodes = self.graph.nodes()
 
+        # Query embedding (only needed to guide beam traversal; memoized)
+        beam_q_emb = None
+        if self.flag_beam and getattr(self.dense, "vecs", None):
+            beam_q_emb = self._encode_query(question)
+
         def _bfs_from(node: str, rrf: float) -> None:
             if node not in graph_nodes:
                 return
+            if self.flag_beam:
+                beamed = self._beam_chains(node, direction, depth, beam_q_emb)
+                if beamed is not None:
+                    for c in beamed:
+                        c.rrf_score = rrf
+                        results.append(c)
+                    return
             paths = (self.graph.backward_chain(node, depth)
                      if direction == "backward"
                      else self.graph.forward_chain(node, depth))
@@ -774,18 +1118,19 @@ class GraphRAG:
         tail_nodes = {c.chain[-1].effect for c in top_chains if c.chain}
         tail_terms = {t for n in tail_nodes for t in tokenize(n)}
         if tail_nodes and not (q_terms & tail_terms):
-            extra: List[ChainResult] = []
+            n_results_before = len(results)   # true boundary of pre-2nd-pass results
+            n_uniq_before = len(uniq)
             for node in tail_nodes:
                 _bfs_from(node, 0.3)   # lower rrf score for 2nd-pass seeds
-            for r in results[len(uniq):]:   # only newly appended results
+            for r in results[n_results_before:]:   # only chains appended in the 2nd pass
                 key = tuple((e.cause, e.relation, e.effect) for e in r.chain)
                 if key not in seen:
                     seen.add(key)
                     uniq.append(r)
-            if uniq[len(top_chains):]:     # re-rank only if new chains were added
+            if len(uniq) > n_uniq_before:     # re-rank only if new chains were actually added
                 self._rerank(question, uniq)
                 uniq.sort(key=lambda r: (-r.rerank_score, -r.rrf_score))
-                log.debug("bridge 2nd pass added %d chains", len(uniq) - len(top_chains))
+                log.debug("bridge 2nd pass added %d chains", len(uniq) - n_uniq_before)
 
         if diversify:
             return self._mmr_select(uniq, top_k)
@@ -1092,6 +1437,9 @@ class GraphRAG:
         rag._struct_index = state["struct_index"]
         rag._sent_meta = state["sent_meta"]
         rag._sentences = state.get("sentences", [])
+        # Restore the dedup set so ingest() AFTER load() doesn't re-add duplicate
+        # edges (the set is keyed by (cause, relation, effect)).
+        rag._edge_set = {(e.cause, e.relation, e.effect) for e in rag.graph.edges}
         rag._dirty = True   # rebuild BM25/dense/sig + sentence index on first query
         log.info("loaded graph (%d edges, %d nodes) from %s",
                  len(rag.graph.edges), len(rag._node_docs), path)

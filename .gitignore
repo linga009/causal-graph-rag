@@ -28,3 +28,12 @@ wiki_raw.json
 chern_raw.json
 # Generated eval output
 eval_value_raw.json
+
+# Eval corpus docs are regenerable via eval_corpus/build_corpus.py
+eval_corpus/*.md
+# SDD scratch / ledger
+.superpowers/
+
+# Personal (not for the repo)
+CLAUDE.md
+.claude/

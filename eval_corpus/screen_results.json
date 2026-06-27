@@ -1,0 +1,50 @@
+{
+  "baseline (trigram VSA)": {
+    "full": {
+      "fact": 0.9474637681159419,
+      "multihop": 0.75,
+      "rootcause": 0.6739130434782609
+    },
+    "chain": {
+      "fact": 0.37137681159420294,
+      "multihop": 0.44021739130434784,
+      "rootcause": 0.30434782608695654
+    }
+  },
+  "+ proposition_rerank": {
+    "full": {
+      "fact": 0.9474637681159419,
+      "multihop": 0.75,
+      "rootcause": 0.6739130434782609
+    },
+    "chain": {
+      "fact": 0.3840579710144927,
+      "multihop": 0.47282608695652173,
+      "rootcause": 0.3423913043478261
+    }
+  },
+  "+ calibrated_fusion": {
+    "full": {
+      "fact": 0.9474637681159419,
+      "multihop": 0.75,
+      "rootcause": 0.717391304347826
+    },
+    "chain": {
+      "fact": 0.37862318840579706,
+      "multihop": 0.46195652173913043,
+      "rootcause": 0.3532608695652174
+    }
+  },
+  "+ both (ship candidate)": {
+    "full": {
+      "fact": 0.9474637681159419,
+      "multihop": 0.75,
+      "rootcause": 0.6956521739130435
+    },
+    "chain": {
+      "fact": 0.43115942028985504,
+      "multihop": 0.4891304347826087,
+      "rootcause": 0.33152173913043476
+    }
+  }
+}

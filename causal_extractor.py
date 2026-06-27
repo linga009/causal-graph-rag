@@ -66,7 +66,6 @@ CAUSAL_VERBS = {
     "equip": ("equip", +1), "equips": ("equip", +1), "equipped": ("equip", +1),
     "benefit": ("benefit", +1), "benefits": ("benefit", +1),
     "enhance": ("enhance", +1), "enhances": ("enhance", +1), "enhanced": ("enhance", +1),
-    "improve": ("improve", +1), "improves": ("improve", +1), "improved": ("improve", +1),
     "predict": ("predict", +1), "predicts": ("predict", +1), "predicted": ("predict", +1),
     "integrate": ("integrate", +1), "integrates": ("integrate", +1), "integrated": ("integrate", +1),
     "inform": ("inform", +1), "informs": ("inform", +1), "informed": ("inform", +1),
@@ -193,8 +192,9 @@ def _validate_edge(e: CausalEdge) -> bool:
 
 def _infer_polarity(effect_sentence: str) -> int:
     """Infer polarity from the effect clause. Returns -1 if suppression words
-    are present, +1 otherwise. Used for implicit edges where polarity is unknown."""
-    words = set(effect_sentence.lower().split())
+    are present, +1 otherwise. Used for implicit edges where polarity is unknown.
+    Strips trailing punctuation so 'reduced.' / 'blocked,' still match."""
+    words = {w.strip(".,;:!?\"'()") for w in effect_sentence.lower().split()}
     return -1 if words & _SUPPRESS_WORDS else +1
 
 

@@ -343,13 +343,24 @@ def query(req: QueryRequest):
         raise HTTPException(status_code=422, detail="'question' must be non-empty.")
     _require_llm()
 
-    # Retrieve under lock (touches shared indices); generate outside (stateless + slow)
+    # Retrieve under lock (touches shared indices); generate outside (stateless + slow).
+    # Replicate answer()'s real path: score gate + hybrid coverage sentences.
+    # (Calling generate(q, chains) alone ships degraded chain-only answers and
+    # tanks fact questions — must pass coverage_sentences.)
+    _CHAIN_GATE = 2.0
     with _rag_lock:
         _require_graph()
         chains = _rag.retrieve(req.question, top_k=req.top_k)
+        if chains and max(c.rerank_score for c in chains) < _CHAIN_GATE:
+            chains = []                     # coverage-only fallback (factual queries)
+        chain_nodes = {n for c in chains for e in c.chain
+                       for n in (e.cause, e.effect)}
+        coverage = _rag._retrieve_sentences(
+            req.question, k=max(6, req.top_k * 2), chain_nodes=chain_nodes or None)
 
     try:
-        answer = _rag.generate(req.question, chains, summarize=req.summarize)
+        answer = _rag.generate(req.question, chains, summarize=req.summarize,
+                               coverage_sentences=coverage)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"LLM generation failed: {exc}")
 

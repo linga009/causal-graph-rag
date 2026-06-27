@@ -98,6 +98,29 @@ def cmd_ask(args) -> int:
     return _answer_and_print(rag, args.question, args.top_k, args.chains)
 
 
+def cmd_agent(args) -> int:
+    """Agentic mode: an LLM controller plans a sequence of graph-tool calls
+    (rootcause / impact / path / retrieve) to answer complex or multi-intent
+    questions. Requires an LLM."""
+    from graph_rag import GraphRAG
+    from agentic_rag import AgenticCausalRAG
+    llm = _build_llm()
+    if llm is None or type(llm).__name__ == "MockLLM":
+        print("error: agentic mode requires an LLM. Set GROQ_API_KEY / "
+              "ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY.", file=sys.stderr)
+        return 1
+    rag = GraphRAG.load(args.graph, llm=llm)
+    agent = AgenticCausalRAG(rag, llm=llm, max_steps=args.max_steps)
+    result = agent.run(args.question)
+    if args.trace:
+        print("Reasoning trace:")
+        for s in result.steps:
+            print(f"  {s}")
+        print(f"  ({result.n_llm_calls} LLM calls)\n")
+    print(result.answer)
+    return 0
+
+
 def cmd_info(args) -> int:
     from graph_rag import GraphRAG
     rag = GraphRAG.load(args.graph)
@@ -210,6 +233,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--chains", action="store_true")
     add_common(sp)
     sp.set_defaults(func=cmd_ask)
+
+    sp = sub.add_parser("agent", help="agentic mode: LLM plans multi-step graph-tool calls")
+    sp.add_argument("graph")
+    sp.add_argument("question")
+    sp.add_argument("--max-steps", type=int, default=6)
+    sp.add_argument("--trace", action="store_true", help="print the reasoning trace")
+    sp.set_defaults(func=cmd_agent)
 
     sp = sub.add_parser("info", help="show stats for a saved graph")
     sp.add_argument("graph")

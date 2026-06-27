@@ -1,0 +1,186 @@
+[
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "kind": "local",
+    "ref": "chernobyl.md",
+    "chars": 48000
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Fukushima nuclear accident",
+    "chars": 48000
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Deepwater Horizon explosion",
+    "chars": 29233
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Bhopal disaster",
+    "chars": 48000
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Three Mile Island accident",
+    "chars": 48000
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Hindenburg disaster",
+    "chars": 48000
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Space Shuttle Challenger disaster",
+    "chars": 48000
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Tacoma Narrows Bridge (1940)",
+    "chars": 33080
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "kind": "wiki",
+    "ref": "Boeing 737 MAX groundings",
+    "chars": 40279
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "kind": "local",
+    "ref": "subprime_causes.md",
+    "chars": 48000
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "kind": "wiki",
+    "ref": "2007\u20132008 financial crisis",
+    "chars": 48000
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "kind": "wiki",
+    "ref": "Great Depression",
+    "chars": 48000
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "kind": "wiki",
+    "ref": "Dot-com bubble",
+    "chars": 16493
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2504.09635",
+    "chars": 39047
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2502.10958",
+    "chars": 28209
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2211.07823",
+    "chars": 48000
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2410.11743",
+    "chars": 28704
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2508.13427",
+    "chars": 32943
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2411.01292",
+    "chars": 34683
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2308.07560",
+    "chars": 48000
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2408.16004",
+    "chars": 48000
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "1908.03107",
+    "chars": 31924
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "kind": "arxiv",
+    "ref": "2505.16620",
+    "chars": 24549
+  }
+]

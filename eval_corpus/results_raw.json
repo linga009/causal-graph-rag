@@ -1,0 +1,2486 @@
+[
+  {
+    "model": "haiku",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many backup diesel generators did each of Chernobyl's reactors have, and how long did they take to reach full load?",
+    "causal": 1.0,
+    "flat": 0.9
+  },
+  {
+    "model": "sonnet",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many backup diesel generators did each of Chernobyl's reactors have, and how long did they take to reach full load?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the estimated power equivalent of the second explosion at Chernobyl?",
+    "causal": 0.8,
+    "flat": 0.7
+  },
+  {
+    "model": "sonnet",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the estimated power equivalent of the second explosion at Chernobyl?",
+    "causal": 1.0,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the test delay on April 25, 1986 ultimately lead to the reactor being operated in an extremely dangerous state during the accident?",
+    "causal": 0.3,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the test delay on April 25, 1986 ultimately lead to the reactor being operated in an extremely dangerous state during the accident?",
+    "causal": 0.35,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the positive void coefficient of the RBMK reactor propagated into the catastrophic power excursion during the test execution.",
+    "causal": 0.4,
+    "flat": 0.35
+  },
+  {
+    "model": "sonnet",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the positive void coefficient of the RBMK reactor propagated into the catastrophic power excursion during the test execution.",
+    "causal": 0.55,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying design flaws and operational conditions caused the reactor to become highly sensitive to an uncontrolled power surge just before the test began?",
+    "causal": 0.3,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying design flaws and operational conditions caused the reactor to become highly sensitive to an uncontrolled power surge just before the test began?",
+    "causal": 0.62,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying procedural and institutional failures caused the safety test to proceed without proper regulatory oversight or awareness of reactor-specific risks?",
+    "causal": 0.8,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying procedural and institutional failures caused the safety test to proceed without proper regulatory oversight or awareness of reactor-specific risks?",
+    "causal": 0.8,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the estimated cost of cleaning up the radioactive contamination and compensating victims of the Fukushima nuclear accident, as estimated by Japan's trade ministry in November 2016?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the estimated cost of cleaning up the radioactive contamination and compensating victims of the Fukushima nuclear accident, as estimated by Japan's trade ministry in November 2016?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many residents were at least temporarily or permanently displaced following the Fukushima accident?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many residents were at least temporarily or permanently displaced following the Fukushima accident?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the T\u014dhoku tsunami ultimately lead to hydrogen explosions damaging reactor buildings at Fukushima?",
+    "causal": 0.55,
+    "flat": 0.35
+  },
+  {
+    "model": "sonnet",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the T\u014dhoku tsunami ultimately lead to hydrogen explosions damaging reactor buildings at Fukushima?",
+    "causal": 1.0,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the Fukushima accident propagated into Japan recording its highest fossil fuel import costs and a trade deficit.",
+    "causal": 0.72,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the Fukushima accident propagated into Japan recording its highest fossil fuel import costs and a trade deficit.",
+    "causal": 0.72,
+    "flat": 0.6
+  },
+  {
+    "model": "haiku",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying failures in the plant's design and power infrastructure caused the inability to cool the reactors after shutdown at Fukushima Daiichi?",
+    "causal": 0.7,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying failures in the plant's design and power infrastructure caused the inability to cool the reactors after shutdown at Fukushima Daiichi?",
+    "causal": 0.85,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying conditions primed the evacuation of Fukushima residents to cause at least 51 deaths among hospital patients and elderly?",
+    "causal": 1.0,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "fukushima",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying conditions primed the evacuation of Fukushima residents to cause at least 51 deaths among hospital patients and elderly?",
+    "causal": 1.0,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How much did the Deepwater Horizon platform cost to build, and who built it?",
+    "causal": 0.95,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How much did the Deepwater Horizon platform cost to build, and who built it?",
+    "causal": 1.0,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many workers were killed in the Deepwater Horizon explosion?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many workers were killed in the Deepwater Horizon explosion?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how Transocean's 2007 merger with GlobalSantaFe ultimately propagated into the degraded safety conditions aboard the Deepwater Horizon by April 2010.",
+    "causal": 0.1,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how Transocean's 2007 merger with GlobalSantaFe ultimately propagated into the degraded safety conditions aboard the Deepwater Horizon by April 2010.",
+    "causal": 0.3,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did BP's decision to replace drilling mud with seawater ultimately lead to the catastrophic explosion on April 20, 2010?",
+    "causal": 0.5,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did BP's decision to replace drilling mud with seawater ultimately lead to the catastrophic explosion on April 20, 2010?",
+    "causal": 0.85,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and regulatory conditions caused/primed the Deepwater Horizon blowout preventer to fail as a last line of defense during the April 2010 disaster?",
+    "causal": 0.6,
+    "flat": 0.15
+  },
+  {
+    "model": "sonnet",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and regulatory conditions caused/primed the Deepwater Horizon blowout preventer to fail as a last line of defense during the April 2010 disaster?",
+    "causal": 0.62,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying management and financial pressures caused/primed workers on the Deepwater Horizon to suppress safety concerns and falsify data in the months before the explosion?",
+    "causal": 0.3,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "deepwater",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying management and financial pressures caused/primed workers on the Deepwater Horizon to suppress safety concerns and falsify data in the months before the explosion?",
+    "causal": 0.6,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How much did Union Carbide Corporation pay in 1989 to settle litigation stemming from the Bhopal disaster?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How much did Union Carbide Corporation pay in 1989 to settle litigation stemming from the Bhopal disaster?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What sentence did the seven Indian nationals convicted in June 2010 for causing death by negligence receive?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What sentence did the seven Indian nationals convicted in June 2010 for causing death by negligence receive?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the decision to cut costs at the Bhopal plant ultimately lead to the mass exposure of over 500,000 people to toxic MIC gas?",
+    "causal": 0.78,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the decision to cut costs at the Bhopal plant ultimately lead to the mass exposure of over 500,000 people to toxic MIC gas?",
+    "causal": 0.82,
+    "flat": 0.55
+  },
+  {
+    "model": "haiku",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the accumulation of unused MIC at the Bhopal plant in the early 1980s propagated into the catastrophic gas release of December 1984.",
+    "causal": 0.9,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the accumulation of unused MIC at the Bhopal plant in the early 1980s propagated into the catastrophic gas release of December 1984.",
+    "causal": 0.85,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the Bhopal plant's safety infrastructure caused/primed the runaway exothermic reaction in tank E610 to vent directly into the atmosphere unchecked?",
+    "causal": 0.85,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the Bhopal plant's safety infrastructure caused/primed the runaway exothermic reaction in tank E610 to vent directly into the atmosphere unchecked?",
+    "causal": 0.82,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying corporate and operational factors caused/primed the dangerous accumulation of unused MIC at the Bhopal facility in the period leading up to the disaster?",
+    "causal": 0.6,
+    "flat": 0.35
+  },
+  {
+    "model": "sonnet",
+    "slug": "bhopal",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying corporate and operational factors caused/primed the dangerous accumulation of unused MIC at the Bhopal facility in the period leading up to the disaster?",
+    "causal": 0.6,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the total cleanup cost of the Three Mile Island Unit 2 reactor, and when did cleanup officially end?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "What was the total cleanup cost of the Three Mile Island Unit 2 reactor, and when did cleanup officially end?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "On the International Nuclear Event Scale, what rating was assigned to the TMI-2 reactor accident?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "On the International Nuclear Event Scale, what rating was assigned to the TMI-2 reactor accident?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how a blockage in a condensate polisher filter ultimately led to the partial meltdown of the reactor core at Three Mile Island.",
+    "causal": 0.35,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how a blockage in a condensate polisher filter ultimately led to the partial meltdown of the reactor core at Three Mile Island.",
+    "causal": 0.55,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the stuck-open PORV ultimately lead to the release of radioactive material into the auxiliary building outside the containment boundary?",
+    "causal": 0.85,
+    "flat": 0.72
+  },
+  {
+    "model": "sonnet",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the stuck-open PORV ultimately lead to the release of radioactive material into the auxiliary building outside the containment boundary?",
+    "causal": 0.9,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying training and design deficiencies caused operators to fail to recognize the loss-of-coolant accident for nearly 80 minutes at Three Mile Island?",
+    "causal": 0.6,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying training and design deficiencies caused operators to fail to recognize the loss-of-coolant accident for nearly 80 minutes at Three Mile Island?",
+    "causal": 0.6,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying mechanical and procedural failures primed the initial chain of events that led to the TMI-2 partial meltdown?",
+    "causal": 0.1,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "three_mile",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying mechanical and procedural failures primed the initial chain of events that led to the TMI-2 partial meltdown?",
+    "causal": 0.1,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many fatalities occurred in the Hindenburg disaster, and how were they distributed between passengers and crew?",
+    "causal": 0.95,
+    "flat": 0.95
+  },
+  {
+    "model": "sonnet",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "How many fatalities occurred in the Hindenburg disaster, and how were they distributed between passengers and crew?",
+    "causal": 0.8,
+    "flat": 0.95
+  },
+  {
+    "model": "haiku",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "Who led the American investigation into the Hindenburg disaster?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "fact",
+    "q": "Who led the American investigation into the Hindenburg disaster?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the Hindenburg's delayed landing ultimately lead to the destruction of the airship era of passenger travel?",
+    "causal": 0.3,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "How did the Hindenburg's delayed landing ultimately lead to the destruction of the airship era of passenger travel?",
+    "causal": 0.5,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the Hindenburg's skin being electrically isolated from its duralumin frame ultimately propagated into the catastrophic fire.",
+    "causal": 0.6,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "multihop",
+    "q": "Trace how the Hindenburg's skin being electrically isolated from its duralumin frame ultimately propagated into the catastrophic fire.",
+    "causal": 0.85,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying design and environmental factors caused the fatal electrical spark that ignited the Hindenburg's hydrogen?",
+    "causal": 0.2,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying design and environmental factors caused the fatal electrical spark that ignited the Hindenburg's hydrogen?",
+    "causal": 0.5,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying structural and operational conditions primed the Hindenburg's stern to be the origin point of the disaster?",
+    "causal": 0.4,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "qtype": "rootcause",
+    "q": "What underlying structural and operational conditions primed the Hindenburg's stern to be the origin point of the disaster?",
+    "causal": 0.62,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "How many seconds after launch did Space Shuttle Challenger break apart?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "How many seconds after launch did Space Shuttle Challenger break apart?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "What was the air temperature at the time of Challenger's launch on January 28, 1986?",
+    "causal": 0.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "What was the air temperature at the time of Challenger's launch on January 28, 1986?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "How did record-low temperatures on the morning of the Challenger launch ultimately lead to the complete breakup of the shuttle in flight?",
+    "causal": 0.4,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "How did record-low temperatures on the morning of the Challenger launch ultimately lead to the complete breakup of the shuttle in flight?",
+    "causal": 0.35,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "Trace how NASA's organizational culture of ignoring O-ring warnings after Challenger ultimately propagated into the Columbia disaster.",
+    "causal": 0.72,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "Trace how NASA's organizational culture of ignoring O-ring warnings after Challenger ultimately propagated into the Columbia disaster.",
+    "causal": 0.85,
+    "flat": 0.72
+  },
+  {
+    "model": "haiku",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and technical failures caused NASA managers to proceed with the Challenger launch despite engineers' warnings about O-ring dangers in cold temperatures?",
+    "causal": 0.85,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and technical failures caused NASA managers to proceed with the Challenger launch despite engineers' warnings about O-ring dangers in cold temperatures?",
+    "causal": 0.85,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying material and environmental conditions primed the O-ring seal failure that ultimately caused Challenger to break apart?",
+    "causal": 0.35,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "challenger",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying material and environmental conditions primed the O-ring seal failure that ultimately caused Challenger to break apart?",
+    "causal": 0.5,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "When did the 1940 Tacoma Narrows Bridge open to traffic?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "When did the 1940 Tacoma Narrows Bridge open to traffic?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "What was the total estimated cost of the Tacoma Narrows Bridge construction?",
+    "causal": 0.6,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "What was the total estimated cost of the Tacoma Narrows Bridge construction?",
+    "causal": 0.85,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "How did Leon Moisseiff's cost-saving design decision ultimately lead to the catastrophic collapse of the Tacoma Narrows Bridge?",
+    "causal": 0.72,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "How did Leon Moisseiff's cost-saving design decision ultimately lead to the catastrophic collapse of the Tacoma Narrows Bridge?",
+    "causal": 0.85,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "Trace how the collapse of the Tacoma Narrows Bridge ultimately propagated into changes in suspension bridge design philosophy for decades afterward.",
+    "causal": 0.85,
+    "flat": 0.9
+  },
+  {
+    "model": "sonnet",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "Trace how the collapse of the Tacoma Narrows Bridge ultimately propagated into changes in suspension bridge design philosophy for decades afterward.",
+    "causal": 0.9,
+    "flat": 0.9
+  },
+  {
+    "model": "haiku",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying design choices and theoretical framework caused the Tacoma Narrows Bridge to be insufficiently rigid and vulnerable to wind-induced oscillations?",
+    "causal": 0.3,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying design choices and theoretical framework caused the Tacoma Narrows Bridge to be insufficiently rigid and vulnerable to wind-induced oscillations?",
+    "causal": 0.72,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying aerodynamic mechanism caused the catastrophic torsional collapse of the bridge rather than the previously observed vertical oscillations?",
+    "causal": 0.9,
+    "flat": 0.85
+  },
+  {
+    "model": "sonnet",
+    "slug": "tacoma",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying aerodynamic mechanism caused the catastrophic torsional collapse of the bridge rather than the previously observed vertical oscillations?",
+    "causal": 0.85,
+    "flat": 0.85
+  },
+  {
+    "model": "haiku",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "How many people died in the two Boeing 737 MAX crashes that led to the 2019\u20132020 grounding?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "How many people died in the two Boeing 737 MAX crashes that led to the 2019\u20132020 grounding?",
+    "causal": 0.9,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "What was the total estimated direct cost of the Boeing 737 MAX groundings?",
+    "causal": 0.9,
+    "flat": 0.9
+  },
+  {
+    "model": "sonnet",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "fact",
+    "q": "What was the total estimated direct cost of the Boeing 737 MAX groundings?",
+    "causal": 0.9,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "How did Boeing's decision to remove MCAS from the flight manual ultimately lead to the deaths of 346 people across two crashes?",
+    "causal": 0.85,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "How did Boeing's decision to remove MCAS from the flight manual ultimately lead to the deaths of 346 people across two crashes?",
+    "causal": 0.95,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "Trace how Boeing's desire to certify the 737 MAX as a variant of the existing 737 series propagated into the fatal MCAS design flaw.",
+    "causal": 0.6,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "multihop",
+    "q": "Trace how Boeing's desire to certify the 737 MAX as a variant of the existing 737 series propagated into the fatal MCAS design flaw.",
+    "causal": 0.72,
+    "flat": 0.55
+  },
+  {
+    "model": "haiku",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying design and regulatory decisions caused pilots to be completely unaware of MCAS when the Boeing 737 MAX entered service in 2017?",
+    "causal": 0.7,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying design and regulatory decisions caused pilots to be completely unaware of MCAS when the Boeing 737 MAX entered service in 2017?",
+    "causal": 0.72,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying cost and certification pressures caused Boeing to design a flawed MCAS system that relied on a single angle-of-attack sensor?",
+    "causal": 0.3,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "qtype": "rootcause",
+    "q": "What underlying cost and certification pressures caused Boeing to design a flawed MCAS system that relied on a single angle-of-attack sensor?",
+    "causal": 0.35,
+    "flat": 0.6
+  },
+  {
+    "model": "haiku",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the value of American subprime mortgages estimated at as of March 2007?",
+    "causal": 1.0,
+    "flat": 0.7
+  },
+  {
+    "model": "sonnet",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the value of American subprime mortgages estimated at as of March 2007?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "Between 1997 and 2006, by how much did the price of the typical American house increase?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "Between 1997 and 2006, by how much did the price of the typical American house increase?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the global pool of $70 trillion in fixed income investments ultimately lead to the collapse of mortgage-backed securities and widespread financial losses?",
+    "causal": 0.78,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the global pool of $70 trillion in fixed income investments ultimately lead to the collapse of mortgage-backed securities and widespread financial losses?",
+    "causal": 0.9,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the originate-to-distribute securitization model propagated into a self-reinforcing cycle of foreclosures and declining bank net worth.",
+    "causal": 0.82,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the originate-to-distribute securitization model propagated into a self-reinforcing cycle of foreclosures and declining bank net worth.",
+    "causal": 0.72,
+    "flat": 0.6
+  },
+  {
+    "model": "haiku",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses and market conditions caused/primed the shadow banking system to become a catastrophic point of vulnerability when credit markets were disrupted?",
+    "causal": 0.72,
+    "flat": 0.5
+  },
+  {
+    "model": "sonnet",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses and market conditions caused/primed the shadow banking system to become a catastrophic point of vulnerability when credit markets were disrupted?",
+    "causal": 0.9,
+    "flat": 0.85
+  },
+  {
+    "model": "haiku",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and incentive failures caused/primed mortgage lending standards to collapse so severely between 2004 and 2007?",
+    "causal": 0.72,
+    "flat": 0.5
+  },
+  {
+    "model": "sonnet",
+    "slug": "subprime",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and incentive failures caused/primed mortgage lending standards to collapse so severely between 2004 and 2007?",
+    "causal": 0.62,
+    "flat": 0.62
+  },
+  {
+    "model": "haiku",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the total dollar amount authorized by Congress for the Troubled Asset Relief Program (TARP)?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the total dollar amount authorized by Congress for the Troubled Asset Relief Program (TARP)?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "Who was the only politician convicted as a result of the 2008 financial crisis?",
+    "causal": 0.9,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "Who was the only politician convicted as a result of the 2008 financial crisis?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the Federal Reserve lowering the federal funds rate from 2000 to 2003 ultimately lead to the collapse of mortgage-backed securities and a global liquidity crisis by mid-2007?",
+    "causal": 0.7,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the Federal Reserve lowering the federal funds rate from 2000 to 2003 ultimately lead to the collapse of mortgage-backed securities and a global liquidity crisis by mid-2007?",
+    "causal": 0.78,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the bankruptcy of Lehman Brothers in September 2008 propagated into a freeze of the short-term lending market and threatened corporate payrolls across the United States.",
+    "causal": 0.7,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the bankruptcy of Lehman Brothers in September 2008 propagated into a freeze of the short-term lending market and threatened corporate payrolls across the United States.",
+    "causal": 1.0,
+    "flat": 0.05
+  },
+  {
+    "model": "haiku",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying regulatory and legislative changes primed the financial system to mix high-risk and low-risk operations, enabling the excessive speculation that caused the 2008 financial crisis?",
+    "causal": 0.4,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying regulatory and legislative changes primed the financial system to mix high-risk and low-risk operations, enabling the excessive speculation that caused the 2008 financial crisis?",
+    "causal": 0.4,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the U.S. housing and mortgage markets caused the collapse of mortgage-backed securities values that triggered the broader 2008 financial crisis?",
+    "causal": 0.72,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "gfc2008",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the U.S. housing and mortgage markets caused the collapse of mortgage-backed securities values that triggered the broader 2008 financial crisis?",
+    "causal": 0.72,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the U.S. unemployment rate by 1933 during the Great Depression?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the U.S. unemployment rate by 1933 during the Great Depression?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "On what date did the American stock market crash on Black Thursday?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "On what date did the American stock market crash on Black Thursday?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the Roaring Twenties' loose banking practices ultimately lead to a 25% unemployment rate in the United States by 1933?",
+    "causal": 0.82,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the Roaring Twenties' loose banking practices ultimately lead to a 25% unemployment rate in the United States by 1933?",
+    "causal": 0.85,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how Germany's dependence on U.S. loans propagated into Adolf Hitler's rise to power in 1933.",
+    "causal": 0.7,
+    "flat": 0.7
+  },
+  {
+    "model": "sonnet",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how Germany's dependence on U.S. loans propagated into Adolf Hitler's rise to power in 1933.",
+    "causal": 0.6,
+    "flat": 0.8
+  },
+  {
+    "model": "haiku",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the 1920s caused/primed the U.S. economy to be so vulnerable to collapse when the Wall Street crash occurred in 1929?",
+    "causal": 0.5,
+    "flat": 0.05
+  },
+  {
+    "model": "sonnet",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the 1920s caused/primed the U.S. economy to be so vulnerable to collapse when the Wall Street crash occurred in 1929?",
+    "causal": 0.7,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses caused/primed Germany to experience near 30% unemployment and political extremism during the Great Depression?",
+    "causal": 0.7,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "great_depression",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses caused/primed Germany to experience near 30% unemployment and political extremism during the Great Depression?",
+    "causal": 0.6,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the peak value of the NASDAQ Composite stock market index on March 10, 2000?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "What was the peak value of the NASDAQ Composite stock market index on March 10, 2000?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "How much did the UK's 3G spectrum auctions raise in April 2000?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "fact",
+    "q": "How much did the UK's 3G spectrum auctions raise in April 2000?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the 1993 release of Mosaic ultimately lead to the formation of a stock market bubble?",
+    "causal": 0.8,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "How did the 1993 release of Mosaic ultimately lead to the formation of a stock market bubble?",
+    "causal": 0.85,
+    "flat": 0.55
+  },
+  {
+    "model": "haiku",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the Telecommunications Act of 1996 propagated into widespread telecom company bankruptcies during the dot-com crash.",
+    "causal": 0.7,
+    "flat": 0.4
+  },
+  {
+    "model": "sonnet",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "multihop",
+    "q": "Trace how the Telecommunications Act of 1996 propagated into widespread telecom company bankruptcies during the dot-com crash.",
+    "causal": 0.85,
+    "flat": 0.6
+  },
+  {
+    "model": "haiku",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying economic and regulatory conditions caused/primed investors to abandon traditional valuation metrics like the price-earnings ratio during the dot-com bubble?",
+    "causal": 0.3,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying economic and regulatory conditions caused/primed investors to abandon traditional valuation metrics like the price-earnings ratio during the dot-com bubble?",
+    "causal": 0.55,
+    "flat": 0.15
+  },
+  {
+    "model": "haiku",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural and financial conditions caused/primed telecom companies to face widespread bankruptcies after the dot-com bubble burst?",
+    "causal": 0.75,
+    "flat": 0.75
+  },
+  {
+    "model": "sonnet",
+    "slug": "dotcom",
+    "domain": "finance",
+    "qtype": "rootcause",
+    "q": "What underlying structural and financial conditions caused/primed telecom companies to face widespread bankruptcies after the dot-com bubble burst?",
+    "causal": 0.9,
+    "flat": 0.8
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What dataset does TIM use to estimate the causal effect of high cholesterol on diabetes?",
+    "causal": 0.4,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What dataset does TIM use to estimate the causal effect of high cholesterol on diabetes?",
+    "causal": 0.4,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What CATE value does TIM estimate for the effect of high cholesterol on diabetes?",
+    "causal": 1.0,
+    "flat": 0.9
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What CATE value does TIM estimate for the effect of high cholesterol on diabetes?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "How did the limitation of binary distance metrics ultimately lead to TIM adopting a distribution-aware discrete distance measure that incorporates co-occurrence probabilities?",
+    "causal": 1.0,
+    "flat": 0.85
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "How did the limitation of binary distance metrics ultimately lead to TIM adopting a distribution-aware discrete distance measure that incorporates co-occurrence probabilities?",
+    "causal": 1.0,
+    "flat": 0.85
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "Trace how the curse of dimensionality in exact matching propagated into TIM's weighted CATE estimation approach.",
+    "causal": 0.1,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "Trace how the curse of dimensionality in exact matching propagated into TIM's weighted CATE estimation approach.",
+    "causal": 0.3,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of existing matching methods caused the authors to develop TIM's iterative variable-removal approach with a mixed distance metric?",
+    "causal": 0.5,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of existing matching methods caused the authors to develop TIM's iterative variable-removal approach with a mixed distance metric?",
+    "causal": 0.5,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses of PSM and GEN primed their failure to improve multivariate overlap (L\u221e remaining at 1) in the numerical experiments?",
+    "causal": 0.72,
+    "flat": 0.7
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses of PSM and GEN primed their failure to improve multivariate overlap (L\u221e remaining at 1) in the numerical experiments?",
+    "causal": 0.85,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What Gaussian kernel bandwidth value was used for the proposed kernel-matching estimator in the Monte Carlo simulation study?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What Gaussian kernel bandwidth value was used for the proposed kernel-matching estimator in the Monte Carlo simulation study?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What was the ATT estimate produced by the proposed kernel matching estimator for the experimental control group in the National Supported Work Demonstration analysis?",
+    "causal": 1.0,
+    "flat": 0.9
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What was the ATT estimate produced by the proposed kernel matching estimator for the experimental control group in the National Supported Work Demonstration analysis?",
+    "causal": 1.0,
+    "flat": 0.95
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "How did the curse of dimensionality in covariate matching ultimately lead to the adoption of kernel matching based on propensity scores as the proposed estimator?",
+    "causal": 0.72,
+    "flat": 0.72
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "How did the curse of dimensionality in covariate matching ultimately lead to the adoption of kernel matching based on propensity scores as the proposed estimator?",
+    "causal": 0.85,
+    "flat": 0.75
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "Trace how misspecification of the propensity score model propagated into the motivation for kernel matching's bandwidth parameter as a solution.",
+    "causal": 0.4,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "Trace how misspecification of the propensity score model propagated into the motivation for kernel matching's bandwidth parameter as a solution.",
+    "causal": 0.85,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of traditional matching methods caused the authors to develop the kernel-matching estimator as a more robust alternative?",
+    "causal": 0.4,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of traditional matching methods caused the authors to develop the kernel-matching estimator as a more robust alternative?",
+    "causal": 0.5,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying data characteristics of the CPS-3 non-experimental control group caused the covariate-based and estimated propensity score matching estimators to produce negative ATT estimates with large standard errors?",
+    "causal": 1.0,
+    "flat": 0.9
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying data characteristics of the CPS-3 non-experimental control group caused the covariate-based and estimated propensity score matching estimators to produce negative ATT estimates with large standard errors?",
+    "causal": 0.9,
+    "flat": 0.85
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What bandwidth formula does the paper propose for the network HAC estimator to adjust for estimation error in first-stage machine learners?",
+    "causal": 0.85,
+    "flat": 0.5
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "What bandwidth formula does the paper propose for the network HAC estimator to adjust for estimation error in first-stage machine learners?",
+    "causal": 0.7,
+    "flat": 0.8
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "In the Venmo empirical application, what percentage of users belong to the giant component and what is the average degree of the network?",
+    "causal": 0.5,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "fact",
+    "q": "In the Venmo empirical application, what percentage of users belong to the giant component and what is the average degree of the network?",
+    "causal": 0.5,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "How did the approximate neighborhood interference (ANI) assumption ultimately lead to the justification of shallow GNN architectures for estimation?",
+    "causal": 0.9,
+    "flat": 0.85
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "How did the approximate neighborhood interference (ANI) assumption ultimately lead to the justification of shallow GNN architectures for estimation?",
+    "causal": 1.0,
+    "flat": 0.9
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "Trace how peer effects in treatment selection ultimately propagated into the need for high-dimensional network controls in the doubly robust estimator.",
+    "causal": 0.72,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "multihop",
+    "q": "Trace how peer effects in treatment selection ultimately propagated into the need for high-dimensional network controls in the doubly robust estimator.",
+    "causal": 0.72,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying model assumptions and behavioral mechanisms caused the need for high-dimensional network confounding adjustment rather than low-dimensional network controls in the proposed framework?",
+    "causal": 0.82,
+    "flat": 0.82
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying model assumptions and behavioral mechanisms caused the need for high-dimensional network confounding adjustment rather than low-dimensional network controls in the proposed framework?",
+    "causal": 0.85,
+    "flat": 0.85
+  },
+  {
+    "model": "haiku",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying properties of graph neural network architecture primed shallow GNNs (small depth) to perform well even on wide networks with large average path lengths?",
+    "causal": 0.5,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "qtype": "rootcause",
+    "q": "What underlying properties of graph neural network architecture primed shallow GNNs (small depth) to perform well even on wide networks with large average path lengths?",
+    "causal": 0.6,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What mobility measure was used in the Covid-19 analysis, and how was it defined?",
+    "causal": 1.0,
+    "flat": 0.95
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What mobility measure was used in the Covid-19 analysis, and how was it defined?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "In the Covid-19 observational study, how many of the 30 states showed estimating equation estimates lower than the ML estimates?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "In the Covid-19 observational study, how many of the 30 states showed estimating equation estimates lower than the ML estimates?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "Trace how the presence of phantom variables ultimately leads to falsely rejecting the null hypothesis of no causal effect in epidemic models.",
+    "causal": 0.4,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "Trace how the presence of phantom variables ultimately leads to falsely rejecting the null hypothesis of no causal effect in epidemic models.",
+    "causal": 0.62,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "How did the misspecification of augmented epidemic models as data-generating processes ultimately propagate into biased causal effect estimates in the Covid-19 mobility analysis?",
+    "causal": 0.7,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "How did the misspecification of augmented epidemic models as data-generating processes ultimately propagate into biased causal effect estimates in the Covid-19 mobility analysis?",
+    "causal": 0.62,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying structural properties of epidemic models caused the null paradox, where maximum likelihood estimates show non-zero treatment effects even when the true causal effect is zero?",
+    "causal": 0.35,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying structural properties of epidemic models caused the null paradox, where maximum likelihood estimates show non-zero treatment effects even when the true causal effect is zero?",
+    "causal": 0.5,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying mechanism primed covariates to act as colliders and produce spurious correlations between past interventions and latent variables in epidemic models?",
+    "causal": 0.2,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying mechanism primed covariates to act as colliders and produce spurious correlations between past interventions and latent variables in epidemic models?",
+    "causal": 0.1,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What is the basic reproduction number returned by the contact rate parameter set in the simulation?",
+    "causal": 0.3,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What is the basic reproduction number returned by the contact rate parameter set in the simulation?",
+    "causal": 0.7,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What method does the g-formula use to recover the expected potential outcome under a time-varying intervention?",
+    "causal": 0.95,
+    "flat": 0.85
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What method does the g-formula use to recover the expected potential outcome under a time-varying intervention?",
+    "causal": 0.9,
+    "flat": 0.9
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "How did policymakers' endogenous response to observed infection outcomes ultimately lead to associational models underestimating cumulative infections under no-intervention?",
+    "causal": 0.9,
+    "flat": 0.72
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "How did policymakers' endogenous response to observed infection outcomes ultimately lead to associational models underestimating cumulative infections under no-intervention?",
+    "causal": 0.9,
+    "flat": 0.78
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "Trace how treatment endogeneity in epidemic settings propagated into directional bias that could cause harmful public health decisions.",
+    "causal": 0.5,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "Trace how treatment endogeneity in epidemic settings propagated into directional bias that could cause harmful public health decisions.",
+    "causal": 0.62,
+    "flat": 0.35
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying dynamic between policymakers and disease outcomes caused associational modeling to produce systematically biased (overly optimistic) estimates of cumulative infections under no-intervention scenarios?",
+    "causal": 0.9,
+    "flat": 0.55
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying dynamic between policymakers and disease outcomes caused associational modeling to produce systematically biased (overly optimistic) estimates of cumulative infections under no-intervention scenarios?",
+    "causal": 1.0,
+    "flat": 0.78
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying structural properties of the intervention assignment rule and disease outcome process primed the time-varying confounding bias to accumulate in a strictly negative (downward) direction rather than being random or bidirectional?",
+    "causal": 0.85,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying structural properties of the intervention assignment rule and disease outcome process primed the time-varying confounding bias to accumulate in a strictly negative (downward) direction rather than being random or bidirectional?",
+    "causal": 0.85,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What criterion is used to identify the total effect in a causal DAG, and what formula does it yield when satisfied?",
+    "causal": 0.95,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "What criterion is used to identify the total effect in a causal DAG, and what formula does it yield when satisfied?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "Which funding project supported the work presented in this paper?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "fact",
+    "q": "Which funding project supported the work presented in this paper?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "How did the introduction of difference graphs as a representation tool ultimately lead to the establishment of identifiability conditions for causal changes in observational data?",
+    "causal": 0.72,
+    "flat": 0.6
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "How did the introduction of difference graphs as a representation tool ultimately lead to the establishment of identifiability conditions for causal changes in observational data?",
+    "causal": 0.72,
+    "flat": 0.7
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "Trace how the assumption that two causal DAGs share the same topological ordering propagated into the sufficiency of the back-door criterion for total effect identification in difference graphs.",
+    "causal": 0.5,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "multihop",
+    "q": "Trace how the assumption that two causal DAGs share the same topological ordering propagated into the sufficiency of the back-door criterion for total effect identification in difference graphs.",
+    "causal": 0.35,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying structural property of difference graphs caused the impossibility of directly applying back-door and single-door criteria to difference graphs, even when the difference graph is acyclic?",
+    "causal": 1.0,
+    "flat": 0.7
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying structural property of difference graphs caused the impossibility of directly applying back-door and single-door criteria to difference graphs, even when the difference graph is acyclic?",
+    "causal": 0.9,
+    "flat": 0.9
+  },
+  {
+    "model": "haiku",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in a difference graph primed the non-identifiability of the total effect when a vertex exists with no directed path to or from either endpoint of interest?",
+    "causal": 0.2,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in a difference graph primed the non-identifiability of the total effect when a vertex exists with no directed path to or from either endpoint of interest?",
+    "causal": 0.3,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "How many data points does the Madagascar Drought attribution analysis rely on for fitting the extreme value distribution?",
+    "causal": 0.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "How many data points does the Madagascar Drought attribution analysis rely on for fitting the extreme value distribution?",
+    "causal": 0.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "What global mean surface temperature increase above preindustrial levels had occurred as of the year 2020, according to the IPCC?",
+    "causal": 0.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "What global mean surface temperature increase above preindustrial levels had occurred as of the year 2020, according to the IPCC?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "How did ENSO's influence on regional temperatures ultimately lead to false attribution of extreme events to anthropogenic climate change in the WWAP methodology?",
+    "causal": 0.82,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "How did ENSO's influence on regional temperatures ultimately lead to false attribution of extreme events to anthropogenic climate change in the WWAP methodology?",
+    "causal": 0.95,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "Trace how the short observational record for Madagascar drought propagated into an inability to make meaningful attribution conclusions using the WWAP approach.",
+    "causal": 0.35,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "Trace how the short observational record for Madagascar drought propagated into an inability to make meaningful attribution conclusions using the WWAP approach.",
+    "causal": 0.5,
+    "flat": 0.4
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying climate mechanisms caused the WWAP attribution methodology to falsely detect anthropogenic signals in the CESM preindustrial control simulation (with no CO2 increase)?",
+    "causal": 0.95,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying climate mechanisms caused the WWAP attribution methodology to falsely detect anthropogenic signals in the CESM preindustrial control simulation (with no CO2 increase)?",
+    "causal": 1.0,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying factors primed the Australian Bushfire case to show an implausibly large GMST dependence parameter (alpha ~5.1\u00b0C per \u00b0C of GMST warming) in the preindustrial control simulation?",
+    "causal": 0.1,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying factors primed the Australian Bushfire case to show an implausibly large GMST dependence parameter (alpha ~5.1\u00b0C per \u00b0C of GMST warming) in the preindustrial control simulation?",
+    "causal": 0.35,
+    "flat": 0.5
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "Who originally proposed Granger causality as a framework to detect causality in the late 1960s?",
+    "causal": 0.7,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "Who originally proposed Granger causality as a framework to detect causality in the late 1960s?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "What percentage of variation in global mean surface temperature does the statistical counterfactual model explain in the example analysis?",
+    "causal": 0.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "What percentage of variation in global mean surface temperature does the statistical counterfactual model explain in the example analysis?",
+    "causal": 0.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "How did the limitations of GCMs in simulating regional precipitation ultimately lead to stronger Granger-causal attribution conclusions for U.S. precipitation?",
+    "causal": 0.78,
+    "flat": 0.72
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "How did the limitations of GCMs in simulating regional precipitation ultimately lead to stronger Granger-causal attribution conclusions for U.S. precipitation?",
+    "causal": 0.85,
+    "flat": 0.72
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "Trace how anthropogenic greenhouse gas forcing propagated into a statistically significant attribution conclusion about global mean surface temperature in the statistical counterfactual example.",
+    "causal": 0.3,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "Trace how anthropogenic greenhouse gas forcing propagated into a statistically significant attribution conclusion about global mean surface temperature in the statistical counterfactual example.",
+    "causal": 0.3,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and characteristics of Granger causality caused/primed it to be considered a weaker form of causal inference compared to Pearl causality for climate change attribution?",
+    "causal": 0.78,
+    "flat": 0.05
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and characteristics of Granger causality caused/primed it to be considered a weaker form of causal inference compared to Pearl causality for climate change attribution?",
+    "causal": 0.78,
+    "flat": 0.15
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of General Circulation Models caused/primed researchers to develop the hybrid Granger-Pearl approach for regional precipitation attribution in the continental United States?",
+    "causal": 0.7,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_granger",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of General Circulation Models caused/primed researchers to develop the hybrid Granger-Pearl approach for regional precipitation attribution in the continental United States?",
+    "causal": 0.8,
+    "flat": 0.8
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "Which French climate model and CMIP experiment are used in the precipitation analysis?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "Which French climate model and CMIP experiment are used in the precipitation analysis?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "What geographic region is used for the weekly winter maxima precipitation analysis?",
+    "causal": 0.9,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "fact",
+    "q": "What geographic region is used for the weekly winter maxima precipitation analysis?",
+    "causal": 1.0,
+    "flat": 0.85
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "How did the assumption of spatial independence in univariate EEA studies ultimately lead to underestimation of causal evidence for extreme precipitation events?",
+    "causal": 0.5,
+    "flat": 0.2
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "How did the assumption of spatial independence in univariate EEA studies ultimately lead to underestimation of causal evidence for extreme precipitation events?",
+    "causal": 0.6,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "Trace how the choice of equal versus optimal weights in linear projection propagated into differences in causal attribution confidence for the CNRM precipitation analysis.",
+    "causal": 0.7,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "multihop",
+    "q": "Trace how the choice of equal versus optimal weights in linear projection propagated into differences in causal attribution confidence for the CNRM precipitation analysis.",
+    "causal": 0.82,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying statistical and structural assumptions primed the multivariate GPD framework to potentially underestimate or overestimate causation probabilities when applied to spatial climate data?",
+    "causal": 0.6,
+    "flat": 0.3
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying statistical and structural assumptions primed the multivariate GPD framework to potentially underestimate or overestimate causation probabilities when applied to spatial climate data?",
+    "causal": 0.7,
+    "flat": 0.3
+  },
+  {
+    "model": "haiku",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying properties of GPD-distributed variables caused the probability of necessary and sufficient causation (PNS) to remain near zero across all threshold values, making causal evidencing more difficult than in the Gaussian case?",
+    "causal": 0.2,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "qtype": "rootcause",
+    "q": "What underlying properties of GPD-distributed variables caused the probability of necessary and sufficient causation (PNS) to remain near zero across all threshold values, making causal evidencing more difficult than in the Gaussian case?",
+    "causal": 0.72,
+    "flat": 0.2
+  },
+  {
+    "model": "haiku",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "fact",
+    "q": "How many total graphs does CausalDynamics contain across all tiers?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "fact",
+    "q": "How many total graphs does CausalDynamics contain across all tiers?",
+    "causal": 1.0,
+    "flat": 0.0
+  },
+  {
+    "model": "haiku",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "fact",
+    "q": "Which benchmark enabled the development of AlphaFold, awarded the 2024 Nobel Prize in Chemistry?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "fact",
+    "q": "Which benchmark enabled the development of AlphaFold, awarded the 2024 Nobel Prize in Chemistry?",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "multihop",
+    "q": "Trace how the absence of a standardized benchmark for nonlinear dynamical systems ultimately propagated into the inability to isolate algorithmic limitations from dataset characteristics.",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "sonnet",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "multihop",
+    "q": "Trace how the absence of a standardized benchmark for nonlinear dynamical systems ultimately propagated into the inability to isolate algorithmic limitations from dataset characteristics.",
+    "causal": 1.0,
+    "flat": 1.0
+  },
+  {
+    "model": "haiku",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "multihop",
+    "q": "How did the CASP13 benchmark ultimately lead to a Nobel Prize in Chemistry?",
+    "causal": 0.7,
+    "flat": 0.8
+  },
+  {
+    "model": "sonnet",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "multihop",
+    "q": "How did the CASP13 benchmark ultimately lead to a Nobel Prize in Chemistry?",
+    "causal": 0.9,
+    "flat": 0.9
+  },
+  {
+    "model": "haiku",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "rootcause",
+    "q": "What underlying gaps in existing benchmarks caused/primed the need to develop CausalDynamics as a new framework?",
+    "causal": 0.6,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "rootcause",
+    "q": "What underlying gaps in existing benchmarks caused/primed the need to develop CausalDynamics as a new framework?",
+    "causal": 0.72,
+    "flat": 0.1
+  },
+  {
+    "model": "haiku",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "rootcause",
+    "q": "What underlying algorithmic properties caused/primed non-DL-based methods to outperform deep learning-based causal discovery algorithms on CausalDynamics benchmarks?",
+    "causal": 0.8,
+    "flat": 0.1
+  },
+  {
+    "model": "sonnet",
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "qtype": "rootcause",
+    "q": "What underlying algorithmic properties caused/primed non-DL-based methods to outperform deep learning-based causal discovery algorithms on CausalDynamics benchmarks?",
+    "causal": 0.9,
+    "flat": 0.2
+  }
+]

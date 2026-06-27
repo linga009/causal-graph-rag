@@ -125,17 +125,76 @@ causal-rag path      graph.pkl "valve failure" "outage"  # how A connects to B
 
 These map to `backward_chain` / `forward_chain` / `path_between` and produce structured cause→effect outputs a flat retriever cannot generate at all.
 
-**Measured value (n=54, paired Wilcoxon, vs a strong flat baseline):** causal-graph RAG **beats flat RAG on every question type** — multi-hop **+0.33 (p=0.002)**, root-cause **+0.22 (p=0.006)**, and fact lookups **+0.01 (p=0.317, statistical tie)**. The graph never hurts on factual queries. Full arc (including a retracted biased n=7 claim and the coverage bug we fixed) in [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md).
+### Large multi-field, multi-model benchmark (23 docs, 5 fields, 138 questions)
 
-### Rigorous flat vs causal-graph benchmark (n=54, Haiku generation, Sonnet judge)
+The headline result, on a credible corpus: **23 documents across disasters,
+engineering failures, finance/economics, and 10 real IMRaD scientific papers**
+(causal inference, epidemiology, climate attribution, causal ML), 138 typed
+questions, **both Haiku and Sonnet** as the generator, fixed Sonnet judge, paired
+Wilcoxon vs a strong dense-RAG baseline. Harness in [eval_corpus/](eval_corpus/).
+
+| Question type | Haiku Δ (p) | Sonnet Δ (p) |
+|---|---|---|
+| Fact lookups | **+0.12** (0.009) | **+0.17** (0.005) |
+| Multi-hop reasoning | **+0.29** (0.000) | **+0.30** (0.000) |
+| Root-cause analysis | **+0.30** (0.000) | **+0.28** (0.000) |
+
+Causal-graph RAG **wins every category on both models**, all significant. The
+advantage **holds as the model scales** (Haiku→Sonnet), and is positive in **all
+five fields** (climate +0.37, finance +0.34, disaster +0.33, causal-ml +0.30,
+epidemiology +0.29, engineering +0.22, causal-inference +0.15, pooled multihop+rootcause).
+
+Two retrieval components were added via disciplined research-and-screen and are
+**on by default**: *proposition-aware rerank* (scores chains by their full source
+sentences, not just node names) and *min-max calibrated channel fusion*. Five
+other "extreme" components (real-embedding VSA, log-signature, VSA holography,
+beam search, DPP selection) were built, **screened for free, and dropped as
+empirically inert** — see [STRUCTURE_FINDINGS.md](STRUCTURE_FINDINGS.md) and
+[docs/RESEARCH_NOTES.md](docs/RESEARCH_NOTES.md).
+
+<details><summary>Earlier 2-doc benchmark (n=54, Haiku gen, Sonnet judge)</summary>
 
 | Question type | Flat RAG | Causal Graph RAG | Delta | p-value |
 |---|---|---|---|---|
-| Fact lookups | 0.98 | 0.99 | **+0.01** | 0.317 (tie) |
-| Multi-hop reasoning | 0.41 | 0.74 | **+0.33** | 0.002 ✓ |
-| Root-cause analysis | 0.37 | 0.59 | **+0.22** | 0.006 ✓ |
+| Fact lookups | 0.98 | 0.99 | +0.01 | 0.317 (tie) |
+| Multi-hop reasoning | 0.41 | 0.74 | +0.33 | 0.002 |
+| Root-cause analysis | 0.37 | 0.59 | +0.22 | 0.006 |
 
-Improvement history (multihop / rootcause): entity normalization (+0.14 / +0.18) → BFS + O(1) + MMR (+0.26 / +0.19) → score gate + org causality (+0.27 / +0.24) → rerank tuning + adaptive depth + bridge BFS (+0.24 / +0.24) → **hybrid BM25+dense RRF sentences (+0.33 / +0.22)**.
+</details>
+
+---
+
+## Agentic mode (opt-in)
+
+Beyond the fixed retrieve→generate pipeline, an **LLM controller** can plan a
+sequence of graph operations — decomposing multi-intent questions, exploring the
+graph iteratively, and bridging multi-hop gaps. The agent's action space is the
+set of **LLM-free, instant, deterministic** causal-graph tools (`rootcause`,
+`impact`, `path`, `retrieve`), so the LLM is spent only on *orchestration* while
+retrieval stays free and exact — a far cheaper agentic profile than typical
+agentic RAG.
+
+```python
+from graph_rag import GraphRAG
+from llm_adapters import GroqLLM
+from agentic_rag import AgenticCausalRAG
+
+rag = GraphRAG(llm=GroqLLM()); rag.ingest(report, schema="incident")
+agent = AgenticCausalRAG(rag, llm=GroqLLM())
+result = agent.run("Why did the outage happen and what did it ultimately disrupt?")
+print(result.answer)            # synthesized answer
+for step in result.steps:       # full THOUGHT/ACTION/OBSERVATION trace
+    print(step)
+```
+
+```bash
+causal-rag agent graph.pkl "Why did X happen and what did it cause?" --trace
+python demo_agentic.py
+```
+
+This is a **mode, not a replacement** — the default `answer()` stays a single
+LLM call (~300 ms retrieval, small-model friendly); agentic mode trades extra
+LLM calls for adaptive multi-step reasoning on complex queries. No new dependency.
 
 ## Quick start
 

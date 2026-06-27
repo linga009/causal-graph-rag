@@ -1,0 +1,1915 @@
+[
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How many backup diesel generators did each of Chernobyl's reactors have, and how long did they take to reach full load?",
+    "reference": "Each reactor had three backup diesel generators, which took 60\u201375 seconds to reach full load and generate 5.5 MW needed to run one main pump.",
+    "concepts": [
+      "backup diesel generators",
+      "60-75 seconds",
+      "full load"
+    ]
+  },
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What was the estimated power equivalent of the second explosion at Chernobyl?",
+    "reference": "The second explosion was estimated to have had the power equivalent of 225 tons of TNT.",
+    "concepts": [
+      "second explosion",
+      "225 tons",
+      "tnt"
+    ]
+  },
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did the test delay on April 25, 1986 ultimately lead to the reactor being operated in an extremely dangerous state during the accident?",
+    "reference": "The Kiev grid controller's request to postpone the shutdown caused a shift change, leaving the night shift with limited preparation time; the ECCS remained disabled during the delay; when the test resumed, an unexpected xenon-135 buildup caused a near-shutdown power drop; operators removed nearly all control rods to compensate; adding extra pumps further reduced power and required more rod removal; this left almost all 211 control rods withdrawn and the reactor in a highly unstable positive void coefficient state.",
+    "concepts": [
+      "xenon poisoning",
+      "control rods",
+      "shift change",
+      "void coefficient"
+    ]
+  },
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how the positive void coefficient of the RBMK reactor propagated into the catastrophic power excursion during the test execution.",
+    "reference": "As the turbine coasted down, pump power decreased, reducing coolant flow; reduced flow increased steam void formation in fuel channels; because the RBMK had a positive void coefficient, more voids increased reactivity rather than reducing it; increased reactivity caused more boiling and more voids in a positive feedback loop; when the AZ-5 scram was initiated, graphite-tipped control rods initially displaced neutron-absorbing water with neutron-moderating graphite, further spiking power; the reactor output surged to over 30,000 MW thermal, causing fuel rod fracture, steam explosion, and destruction of the reactor.",
+    "concepts": [
+      "positive void coefficient",
+      "steam voids",
+      "scram",
+      "power excursion"
+    ]
+  },
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying design flaws and operational conditions caused the reactor to become highly sensitive to an uncontrolled power surge just before the test began?",
+    "reference": "The RBMK's positive void coefficient meant boiling increased reactivity; nearly all 211 control rods had been withdrawn; excessive coolant flow caused water to re-enter the core near boiling point; the inserted control rod equivalent fell below the required 15-rod minimum; operators had no real-time instruments to calculate this value.",
+    "concepts": [
+      "positive void coefficient",
+      "control rods",
+      "coolant",
+      "unstable"
+    ]
+  },
+  {
+    "slug": "chernobyl",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying procedural and institutional failures caused the safety test to proceed without proper regulatory oversight or awareness of reactor-specific risks?",
+    "reference": "The test was classified as purely an electrical test, so it did not require approval from reactor design authority NIKIET or the nuclear safety regulator; test authors were unaware of unusual RBMK-1000 behaviour under planned operating conditions; only site chief engineer approval was required under existing regulations.",
+    "concepts": [
+      "electrical test",
+      "nikiet",
+      "regulatory",
+      "rbmk"
+    ]
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What was the estimated cost of cleaning up the radioactive contamination and compensating victims of the Fukushima nuclear accident, as estimated by Japan's trade ministry in November 2016?",
+    "reference": "20 trillion yen, equivalent to 180 billion US dollars",
+    "concepts": [
+      "20 trillion yen",
+      "180 billion",
+      "trade ministry"
+    ]
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How many residents were at least temporarily or permanently displaced following the Fukushima accident?",
+    "reference": "At least 164,000 residents were permanently or temporarily displaced",
+    "concepts": [
+      "164",
+      "000",
+      "residents",
+      "displaced"
+    ]
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did the T\u014dhoku tsunami ultimately lead to hydrogen explosions damaging reactor buildings at Fukushima?",
+    "reference": "Tsunami damaged/destroyed most emergency diesel generators and flooded DC batteries \u2192 loss of AC and DC power \u2192 cooling systems (IC, RCIC) failed \u2192 reactor cores overheated \u2192 zircaloy cladding oxidized by steam above 1,200\u00b0C producing hydrogen gas \u2192 hydrogen accumulated and exploded in reactor buildings (e.g., Unit 1 at 15:36 on 12 March).",
+    "concepts": [
+      "hydrogen",
+      "cooling",
+      "diesel generators",
+      "zircaloy"
+    ]
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how the Fukushima accident propagated into Japan recording its highest fossil fuel import costs and a trade deficit.",
+    "reference": "Accident caused public fear and policy shift \u2192 all nuclear reactors shut down by 2013 \u2192 nuclear share dropped to less than 1% of electricity generation \u2192 fossil fuel use rose to ~94% by 2015 \u2192 massive increase in fossil fuel imports (~3.6 trillion JPY more than 2010) \u2192 trade deficit for first time in decades.",
+    "concepts": [
+      "nuclear shutdown",
+      "fossil fuel",
+      "trade deficit",
+      "imports"
+    ]
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying failures in the plant's design and power infrastructure caused the inability to cool the reactors after shutdown at Fukushima Daiichi?",
+    "reference": "The tsunami destroyed 10 of 13 emergency diesel generators (water-cooled units in basements), flooded DC batteries for units 1, 2, and 4, and damaged switching stations for hillside EDGs. This left units 1\u20135 without AC power and units 1, 2, and 4 without DC power, disabling the electrically dependent cooling and isolation valve systems.",
+    "concepts": [
+      "emergency diesel generators",
+      "tsunami",
+      "dc power",
+      "cooling"
+    ]
+  },
+  {
+    "slug": "fukushima",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying conditions primed the evacuation of Fukushima residents to cause at least 51 deaths among hospital patients and elderly?",
+    "reference": "The lack of medical support before, during, and after the evacuation was the major reason for fatalities. Hypothermia, deterioration of underlying medical conditions, and dehydration were the suspected causes of death among the approximately 2,220 patients and elderly within the 20 km evacuation zone.",
+    "concepts": [
+      "medical support",
+      "evacuation",
+      "hypothermia",
+      "dehydration"
+    ]
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How much did the Deepwater Horizon platform cost to build, and who built it?",
+    "reference": "The platform cost $560 million and was built by Hyundai Heavy Industries in South Korea, completed in 2001.",
+    "concepts": [
+      "$560 million",
+      "hyundai heavy industries",
+      "south korea"
+    ]
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How many workers were killed in the Deepwater Horizon explosion?",
+    "reference": "11 workers were killed in the explosion and subsequent fire.",
+    "concepts": [
+      "11 workers",
+      "deaths",
+      "killed"
+    ]
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how Transocean's 2007 merger with GlobalSantaFe ultimately propagated into the degraded safety conditions aboard the Deepwater Horizon by April 2010.",
+    "reference": "The merger with GlobalSantaFe in November 2007 led to declining job quality and overall satisfaction rankings (last and second-to-last among deep-water drillers in 2008-2009), which contributed to poor equipment reliability, workers entering fake safety data, and a distorted perception of rig safety, creating the degraded safety environment present at the time of the explosion.",
+    "concepts": [
+      "merger",
+      "globalsantafe",
+      "equipment reliability",
+      "safety"
+    ]
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did BP's decision to replace drilling mud with seawater ultimately lead to the catastrophic explosion on April 20, 2010?",
+    "reference": "A BP official directed replacement of heavy drilling mud with lighter seawater (over the chief driller's protest), removing the pressure barrier holding down reservoir gases; methane gas then bubbled into the well, rose up the drill column, expanded rapidly, burst through seals and barriers, and ignited, causing the explosion.",
+    "concepts": [
+      "drilling mud",
+      "seawater",
+      "methane",
+      "blowout"
+    ]
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and regulatory conditions caused/primed the Deepwater Horizon blowout preventer to fail as a last line of defense during the April 2010 disaster?",
+    "reference": "The BOP lacked remote-control or acoustically activated triggers (not required by U.S. regulators despite Norway and Brazil mandating them); it had been last inspected in 2005; Transocean had made modifications that increased BOP failure risk despite contractor warnings; it had a flat battery and defective switch; and Transocean had a prior history of BOP problems in 2006.",
+    "concepts": [
+      "blowout preventer",
+      "acoustic",
+      "modifications",
+      "battery"
+    ]
+  },
+  {
+    "slug": "deepwater",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying management and financial pressures caused/primed workers on the Deepwater Horizon to suppress safety concerns and falsify data in the months before the explosion?",
+    "reference": "BP manager David Rainey pressured staff to finish the over-budget Macondo well and move to the next prospect; workers understood they could be fired for raising safety concerns that might delay drilling; a confidential Transocean survey found workers feared reprisals for reporting mistakes, and many entered fake data to circumvent the system, distorting the company's perception of rig safety.",
+    "concepts": [
+      "rainey",
+      "reprisals",
+      "fake data",
+      "drilling priorities"
+    ]
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How much did Union Carbide Corporation pay in 1989 to settle litigation stemming from the Bhopal disaster?",
+    "reference": "$470 million (equivalent to $1.03 billion in 2024)",
+    "concepts": [
+      "union carbide",
+      "settlement",
+      "470 million",
+      "1989"
+    ]
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What sentence did the seven Indian nationals convicted in June 2010 for causing death by negligence receive?",
+    "reference": "Two years' imprisonment and a fine of about $2,000 each (\u20b9100,000)",
+    "concepts": [
+      "two years",
+      "imprisonment",
+      "fine",
+      "convicted"
+    ]
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did the decision to cut costs at the Bhopal plant ultimately lead to the mass exposure of over 500,000 people to toxic MIC gas?",
+    "reference": "Cost-cutting led to shutdown of MIC refrigeration system (Jan 1982) and removal of freon (June 1984), causing elevated tank temperatures; flare tower was taken offline for maintenance and was undersized; vent gas scrubbers were deactivated; these malfunctioning safety systems meant that when water entered tank E610 triggering a runaway exothermic reaction, no safety device could contain the release, allowing ~30-40 tonnes of MIC to vent directly into the atmosphere over Bhopal.",
+    "concepts": [
+      "refrigeration",
+      "safety systems",
+      "exothermic reaction",
+      "atmospheric"
+    ]
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how the accumulation of unused MIC at the Bhopal plant in the early 1980s propagated into the catastrophic gas release of December 1984.",
+    "reference": "Falling pesticide demand in early 1980s meant production continued despite reduced need, causing MIC to accumulate in storage tanks; tank E610 lost nitrogen pressure in late October 1984, trapping 42 tons of MIC that could not be pumped out; with the flare tower offline for maintenance, the overfilled tank sat inoperable; water entered the tank on 2 December triggering a runaway exothermic reaction in the large MIC volume; all safety systems were malfunctioning, resulting in ~30-40 tonnes of toxic gas venting into Bhopal.",
+    "concepts": [
+      "accumulation",
+      "tank e610",
+      "nitrogen pressure",
+      "runaway reaction"
+    ]
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the Bhopal plant's safety infrastructure caused/primed the runaway exothermic reaction in tank E610 to vent directly into the atmosphere unchecked?",
+    "reference": "Multiple safety systems were malfunctioning or disabled: refrigeration system shut down since January 1982 with freon removed June 1984; flare tower offline for pipe maintenance with a connecting pipe removed; vent gas scrubber deactivated in standby mode with insufficient caustic soda; high temperature alarm disconnected; MIC tank alarms non-functional for four years.",
+    "concepts": [
+      "refrigeration",
+      "flare tower",
+      "scrubber",
+      "malfunctioning"
+    ]
+  },
+  {
+    "slug": "bhopal",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying corporate and operational factors caused/primed the dangerous accumulation of unused MIC at the Bhopal facility in the period leading up to the disaster?",
+    "reference": "Demand for pesticides had fallen in the early 1980s, yet production continued, leading to accumulation of unused MIC. Additionally, tank E610 lost nitrogen pressure in late October 1984, making it impossible to pump out its 42 tons of MIC, and MIC production was halted while parts of the plant were shut down for maintenance.",
+    "concepts": [
+      "demand",
+      "accumulation",
+      "nitrogen pressure",
+      "production"
+    ]
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What was the total cleanup cost of the Three Mile Island Unit 2 reactor, and when did cleanup officially end?",
+    "reference": "Cleanup cost about $1 billion, officially ended in December 1993",
+    "concepts": [
+      "cleanup",
+      "billion",
+      "december 1993"
+    ]
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "On the International Nuclear Event Scale, what rating was assigned to the TMI-2 reactor accident?",
+    "reference": "Level 5, described as \"Accident with Wider Consequences\" on the seven-point logarithmic scale",
+    "concepts": [
+      "level 5",
+      "international nuclear event scale",
+      "wider consequences"
+    ]
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how a blockage in a condensate polisher filter ultimately led to the partial meltdown of the reactor core at Three Mile Island.",
+    "reference": "Operators used compressed air and water to clear the blockage, forcing water past a stuck check valve into an instrument air line \u2192 feedwater, condensate booster, and condensate pumps shut off \u2192 turbine trip occurred \u2192 steam generators stopped receiving feedwater, reducing heat transfer \u2192 RCS temperature and pressure rose \u2192 PORV opened and stuck open \u2192 coolant loss (LOCA) began \u2192 operators misread pressurizer level indicators and shut off emergency core cooling pumps \u2192 water stopped circulating, steam formed \u2192 top of reactor core was exposed \u2192 intense heat caused steam-zircaloy reaction, melting fuel rod cladding and damaging fuel pellets (partial meltdown).",
+    "concepts": [
+      "condensate polisher",
+      "feedwater",
+      "porv",
+      "meltdown"
+    ]
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did the stuck-open PORV ultimately lead to the release of radioactive material into the auxiliary building outside the containment boundary?",
+    "reference": "PORV stuck open \u2192 coolant continuously drained from primary loop (LOCA) \u2192 pressurizer relief tank overfilled \u2192 relief diaphragm of pressurizer relief tank ruptured at 4:15 a.m. \u2192 radioactive coolant leaked into containment building \u2192 sump pumps transferred contaminated coolant to the auxiliary building, which was outside the containment boundary \u2192 fission products released from damaged fuel cladding were carried in the coolant to the auxiliary building.",
+    "concepts": [
+      "porv",
+      "pressurizer relief tank",
+      "auxiliary building",
+      "containment"
+    ]
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying training and design deficiencies caused operators to fail to recognize the loss-of-coolant accident for nearly 80 minutes at Three Mile Island?",
+    "reference": "Operators were not trained to handle situations where pressurizer level and RCS pressure moved in opposite directions; the PORV indicator light only showed solenoid power status, not actual valve position; no direct valve position indicator existed; operators were trained to never let the system \"go solid,\" causing confusion over rising pressurizer levels; downstream temperature indicator was not safety-grade and operators were untrained to use it.",
+    "concepts": [
+      "porv",
+      "pressurizer",
+      "training",
+      "loss-of-coolant"
+    ]
+  },
+  {
+    "slug": "three_mile",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying mechanical and procedural failures primed the initial chain of events that led to the TMI-2 partial meltdown?",
+    "reference": "Operators attempting to clear a condensate polisher blockage forced compressed air into water, causing water to pass a stuck-open check valve into an instrument air line; this caused feedwater, condensate booster, and condensate pumps to trip, leading to a turbine trip; additionally, block valves in emergency feedwater lines had been left closed from a surveillance test two days earlier, preventing emergency cooling.",
+    "concepts": [
+      "condensate polisher",
+      "check valve",
+      "block valve",
+      "feedwater"
+    ]
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How many fatalities occurred in the Hindenburg disaster, and how were they distributed between passengers and crew?",
+    "reference": "35 total fatalities: 13 passengers and 22 crewmen among the 97 people on board, plus one additional ground fatality",
+    "concepts": [
+      "fatalities",
+      "passengers",
+      "crewmen",
+      "35"
+    ]
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "Who led the American investigation into the Hindenburg disaster?",
+    "reference": "Colonel South Trimble Jr. headed the investigation by the US Commerce Department",
+    "concepts": [
+      "colonel",
+      "south trimble",
+      "commerce department",
+      "investigation"
+    ]
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did the Hindenburg's delayed landing ultimately lead to the destruction of the airship era of passenger travel?",
+    "reference": "The delay caused Captain Pruss to rush the landing approach -> the rushed approach required sharp turns that stressed the airframe and complicated the mooring procedure -> during the final approach, hydrogen leaked and ignited (via static electricity or structural failure) -> the resulting fire was captured extensively by newsreel crews and Herbert Morrison's radio broadcast -> the massive publicity shattered public confidence in airships and marked the end of giant passenger-carrying rigid airships.",
+    "concepts": [
+      "publicity",
+      "confidence",
+      "hydrogen",
+      "airship era"
+    ]
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how the Hindenburg's skin being electrically isolated from its duralumin frame ultimately propagated into the catastrophic fire.",
+    "reference": "Non-conductive ramie cords separated the skin from the frame -> when mooring ropes touched the ground, the frame was grounded but the skin retained its charge -> the voltage difference between skin and frame grew dramatically -> sparks jumped between skin and frame near a hydrogen leak -> the hydrogen ignited, causing the fire that destroyed the airship.",
+    "concepts": [
+      "static electricity",
+      "ramie cords",
+      "spark",
+      "hydrogen"
+    ]
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying design and environmental factors caused the fatal electrical spark that ignited the Hindenburg's hydrogen?",
+    "reference": "The airship's outer skin was electrically isolated from its duralumin frame by non-conductive ramie cords, creating a potential difference between skin and frame. When landing ropes grounded the frame, the skin retained its charge. Stormy weather and high humidity, combined with rain making the skin more conductive, allowed charge to build until sparks jumped between skin and frame near a hydrogen leak.",
+    "concepts": [
+      "skin",
+      "frame",
+      "static",
+      "isolated"
+    ]
+  },
+  {
+    "slug": "hindenburg",
+    "domain": "disaster",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying structural and operational conditions primed the Hindenburg's stern to be the origin point of the disaster?",
+    "reference": "The airship had accumulated around 170,000 miles of operation with possible undetected stress, had suffered prior fin damage in March 1936, and underwent a sharp final-turn maneuver imposing high stress on the aft section. Witnesses observed fluttering fabric and a structural collapse in the upper port stern before ignition, and investigators found pulled rivets and broken radial wires near the stern, suggesting accumulated structural fatigue caused hydrogen cell rupture.",
+    "concepts": [
+      "stern",
+      "structural",
+      "stress",
+      "hydrogen"
+    ]
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How many seconds after launch did Space Shuttle Challenger break apart?",
+    "reference": "73 seconds into its flight",
+    "concepts": [
+      "seconds",
+      "challenger",
+      "broke apart",
+      "flight"
+    ]
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What was the air temperature at the time of Challenger's launch on January 28, 1986?",
+    "reference": "36 \u00b0F (2 \u00b0C)",
+    "concepts": [
+      "temperature",
+      "launch",
+      "36",
+      "fahrenheit"
+    ]
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did record-low temperatures on the morning of the Challenger launch ultimately lead to the complete breakup of the shuttle in flight?",
+    "reference": "Record-low temperatures stiffened the rubber O-rings, reducing their ability to seal the SRB field joints; shortly after liftoff the seals were breached, allowing hot pressurized gas to leak through the joint and burn through the aft attachment strut connecting the SRB to the external tank; the flame then burned into the ET, causing the LH2 tank to collapse and ignite in a BLEVE; the resulting explosion and structural failure propelled the shuttle stack into aerodynamic forces at Mach 1.92 that tore the orbiter apart.",
+    "concepts": [
+      "o-rings",
+      "seal",
+      "external tank",
+      "breakup"
+    ]
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how NASA's organizational culture of ignoring O-ring warnings after Challenger ultimately propagated into the Columbia disaster.",
+    "reference": "NASA's organizational culture dismissed engineers' warnings about O-ring dangers before Challenger; the Rogers Commission criticized this culture and recommended safety reforms; however, the Columbia Accident Investigation Board found NASA had failed to implement truly independent safety oversight and had not fixed the institutional failures from Challenger; this same culture led NASA to similarly dismiss foam strike risks on Columbia, resulting in the second fatal accident during STS-107 reentry in 2003.",
+    "concepts": [
+      "organizational culture",
+      "safety",
+      "foam",
+      "columbia"
+    ]
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying organizational and technical failures caused NASA managers to proceed with the Challenger launch despite engineers' warnings about O-ring dangers in cold temperatures?",
+    "reference": "Test data since 1977 showed catastrophic O-ring flaws never addressed; NASA's safety culture and decision-making processes were flawed; pressure to meet launch schedules led managers to disregard engineer warnings; Morton Thiokol management reversed their no-launch recommendation under pressure from NASA's Lawrence Mulloy; negative media coverage of repeated delays pressured officials to ignore O-ring concerns.",
+    "concepts": [
+      "organizational culture",
+      "o-ring",
+      "schedule pressure",
+      "decision-making"
+    ]
+  },
+  {
+    "slug": "challenger",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying material and environmental conditions primed the O-ring seal failure that ultimately caused Challenger to break apart?",
+    "reference": "Record-low temperatures stiffened the rubber O-rings, reducing their elasticity and sealing ability; the right SRB's O-ring temperature was as low as 8\u00b0F (-13\u00b0C); prior test data from 1977 showed joint rotation reduced O-ring compression; rainfall had accumulated in the field joint further compromising sealing; the O-rings had been known since 1977 to be extruded from their seats rather than compressed under wide tolerances.",
+    "concepts": [
+      "temperature",
+      "elasticity",
+      "joint rotation",
+      "seal"
+    ]
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "When did the 1940 Tacoma Narrows Bridge open to traffic?",
+    "reference": "July 1, 1940",
+    "concepts": [
+      "opened",
+      "traffic",
+      "july",
+      "1940"
+    ]
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What was the total estimated cost of the Tacoma Narrows Bridge construction?",
+    "reference": "$8 million total, with nearly $6 million from PWA grant and $1.6 million from tolls",
+    "concepts": [
+      "cost",
+      "million",
+      "pw\u0430",
+      "tolls"
+    ]
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did Leon Moisseiff's cost-saving design decision ultimately lead to the catastrophic collapse of the Tacoma Narrows Bridge?",
+    "reference": "Moisseiff replaced the proposed 25-foot-deep trusses with 8-foot-deep plate girders to reduce costs -> the shallow girders made the deck insufficiently rigid -> winds produced aeroelastic flutter (torsional oscillation) that was self-exciting and unbounded -> suspender cables failed in sequence until the central deck collapsed into Puget Sound.",
+    "concepts": [
+      "plate girders",
+      "aeroelastic flutter",
+      "torsional",
+      "cables"
+    ]
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how the collapse of the Tacoma Narrows Bridge ultimately propagated into changes in suspension bridge design philosophy for decades afterward.",
+    "reference": "Bridge collapsed due to aeroelastic flutter from shallow plate girders -> collapse boosted research into bridge aerodynamics-aeroelastics -> engineers incorporated aerodynamics into designs and wind tunnel testing became mandatory -> suspension bridges reverted to deeper, heavier truss designs until the 1960s development of box girder bridges with airfoil shapes (e.g., Severn Bridge) that provided stiffness with reduced torsional forces.",
+    "concepts": [
+      "aerodynamics",
+      "wind tunnel",
+      "truss",
+      "box girder"
+    ]
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying design choices and theoretical framework caused the Tacoma Narrows Bridge to be insufficiently rigid and vulnerable to wind-induced oscillations?",
+    "reference": "Leon Moisseiff's elastic distribution theory led to replacing 25-foot-deep trusses with 8-foot-deep plate girders, creating a shallow, narrow deck that was easily moved by wind; the solid plate girders also diverted wind above and below rather than allowing it to pass through, contributing to aeroelastic flutter.",
+    "concepts": [
+      "plate girders",
+      "moisseiff",
+      "trusses",
+      "elastic distribution"
+    ]
+  },
+  {
+    "slug": "tacoma",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying aerodynamic mechanism caused the catastrophic torsional collapse of the bridge rather than the previously observed vertical oscillations?",
+    "reference": "Aeroelastic flutter caused the torsional vibration mode, where the left and right sides of the roadway twisted in opposite directions; this self-exciting, unbounded oscillation had a negative damping factor meaning it grew without limit at sustained wind speeds above ~35 mph, unlike the earlier transverse vertical motion which was considered manageable.",
+    "concepts": [
+      "aeroelastic flutter",
+      "torsional",
+      "negative damping",
+      "self-exciting"
+    ]
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "How many people died in the two Boeing 737 MAX crashes that led to the 2019\u20132020 grounding?",
+    "reference": "346 people died in two crashes within less than five months",
+    "concepts": [
+      "346",
+      "died",
+      "crashes",
+      "grounding"
+    ]
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "fact",
+    "q": "What was the total estimated direct cost of the Boeing 737 MAX groundings?",
+    "reference": "US$20 billion in direct costs, with indirect costs over US$60 billion",
+    "concepts": [
+      "20 billion",
+      "direct costs",
+      "groundings"
+    ]
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "How did Boeing's decision to remove MCAS from the flight manual ultimately lead to the deaths of 346 people across two crashes?",
+    "reference": "Boeing convinced FAA to remove MCAS references from the flight manual in 2016 -> pilots were unaware of MCAS existence when the MAX entered service -> when faulty AoA sensors triggered repeated automated nose-down commands, crews had no knowledge of the system causing it -> pilots could not effectively counter MCAS activation -> both Lion Air Flight 610 and Ethiopian Airlines Flight 302 crashed, killing 346 people.",
+    "concepts": [
+      "mcas",
+      "flight manual",
+      "angle of attack",
+      "crashes"
+    ]
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "multihop",
+    "q": "Trace how Boeing's desire to certify the 737 MAX as a variant of the existing 737 series propagated into the fatal MCAS design flaw.",
+    "reference": "Boeing wanted FAA certification as an existing 737 variant to limit pilot retraining costs -> larger, repositioned engines caused nose-up pitch tendency during certain maneuvers -> Boeing added MCAS to make the MAX handle like earlier 737s and maintain fleet commonality -> MCAS relied on a single AoA sensor and could repeatedly activate -> faulty sensor data triggered uncontrolled nose-down commands that crews were unaware of -> both crashes resulted from uncommanded MCAS activation.",
+    "concepts": [
+      "engines",
+      "commonality",
+      "mcas",
+      "certification"
+    ]
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying design and regulatory decisions caused pilots to be completely unaware of MCAS when the Boeing 737 MAX entered service in 2017?",
+    "reference": "Boeing requested and received FAA permission in 2016 to remove all references to MCAS from the flight crew operations manual (FCOM), shortly after approving a redesign that expanded MCAS authority. FAA officials who authorized the removal were unaware of the redesign. Boeing also withheld knowledge that the AoA malfunction warning system did not work as advertised.",
+    "concepts": [
+      "flight manual",
+      "mcas",
+      "removed",
+      "faa"
+    ]
+  },
+  {
+    "slug": "boeing737max",
+    "domain": "engineering",
+    "schema": "incident",
+    "qtype": "rootcause",
+    "q": "What underlying cost and certification pressures caused Boeing to design a flawed MCAS system that relied on a single angle-of-attack sensor?",
+    "reference": "Boeing wanted the MAX certified as a variant of the existing 737 to avoid costly new pilot training and simulator requirements for airline customers. When larger engines caused nose-up tendency, Boeing added MCAS to maintain fleet commonality. Boeing convinced the FAA that MCAS could not fail hazardously, and the MAX was exempted from certain newer safety requirements, saving billions in development costs. Cost-saving priorities led Boeing and the FAA to favor flawed design solutions over robust safety measures.",
+    "concepts": [
+      "certification",
+      "training",
+      "commonality",
+      "cost"
+    ]
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "What was the value of American subprime mortgages estimated at as of March 2007?",
+    "reference": "$1.3 trillion (approximately $1.89 trillion in 2024), with over 7.5 million first-lien subprime mortgages outstanding",
+    "concepts": [
+      "subprime mortgages",
+      "trillion",
+      "march 2007",
+      "outstanding"
+    ]
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "Between 1997 and 2006, by how much did the price of the typical American house increase?",
+    "reference": "124%",
+    "concepts": [
+      "housing prices",
+      "124%",
+      "increased",
+      "1997"
+    ]
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "How did the global pool of $70 trillion in fixed income investments ultimately lead to the collapse of mortgage-backed securities and widespread financial losses?",
+    "reference": "The $70 trillion pool sought higher yields than Treasury bonds -> Wall Street created MBS and CDOs to meet demand -> demand for these securities drove lenders to loosen underwriting standards to generate more mortgages -> when housing prices fell, MBS values plummeted, causing massive financial losses across institutions.",
+    "concepts": [
+      "mortgage-backed securities",
+      "lending standards",
+      "housing prices",
+      "yields"
+    ]
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "Trace how the originate-to-distribute securitization model propagated into a self-reinforcing cycle of foreclosures and declining bank net worth.",
+    "reference": "Securitization removed loans from bank books, eliminating incentive to ensure credit quality -> lenders issued riskier mortgages to subprime borrowers with adjustable rates -> borrowers defaulted when rates reset and refinancing became impossible due to falling home prices -> foreclosures increased housing supply, further depressing prices -> declining mortgage payments reduced MBS values, eroding banks' net worth and financial health.",
+    "concepts": [
+      "securitization",
+      "foreclosures",
+      "adjustable-rate",
+      "net worth"
+    ]
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses and market conditions caused/primed the shadow banking system to become a catastrophic point of vulnerability when credit markets were disrupted?",
+    "reference": "The shadow banking system grew to rival traditional banking but lacked regulatory safeguards; entities borrowed short-term in liquid markets to purchase long-term, illiquid, risky assets; it was not subject to deposit insurance or Federal Reserve protections; repo lending and off-balance-sheet entities were opaque and hidden from regulatory view.",
+    "concepts": [
+      "shadow banking",
+      "regulatory",
+      "short-term",
+      "repo"
+    ]
+  },
+  {
+    "slug": "subprime",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and incentive failures caused/primed mortgage lending standards to collapse so severely between 2004 and 2007?",
+    "reference": "A $70 trillion global pool of money seeking higher yields drove insatiable demand for MBS and CDOs; the originate-to-distribute model removed lenders' incentive to ensure credit quality; faulty financial models assumed housing prices would not fall; private label securitizers gained dominance over GSEs; automated underwriting bypassed proper documentation review; mortgage brokers received incentives to push subprime ARMs.",
+    "concepts": [
+      "lending standards",
+      "securitization",
+      "originate-to-distribute",
+      "incentives"
+    ]
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "What was the total dollar amount authorized by Congress for the Troubled Asset Relief Program (TARP)?",
+    "reference": "$700 billion",
+    "concepts": [
+      "troubled asset relief program",
+      "700 billion",
+      "tarp"
+    ]
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "Who was the only politician convicted as a result of the 2008 financial crisis?",
+    "reference": "Geir Haarde of Iceland, convicted in April 2012",
+    "concepts": [
+      "geir haarde",
+      "iceland",
+      "convicted"
+    ]
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "How did the Federal Reserve lowering the federal funds rate from 2000 to 2003 ultimately lead to the collapse of mortgage-backed securities and a global liquidity crisis by mid-2007?",
+    "reference": "Low rates encouraged institutions to target low-income/minority homebuyers with high-risk loans -> subprime mortgage lending expanded with lax standards -> as rates rose 2004-2006, mortgage costs rose and borrowers began defaulting -> MBS tied to these mortgages collapsed in value -> liquidity crisis spread to global institutions by mid-2007.",
+    "concepts": [
+      "subprime",
+      "mortgage-backed securities",
+      "liquidity",
+      "default"
+    ]
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "Trace how the bankruptcy of Lehman Brothers in September 2008 propagated into a freeze of the short-term lending market and threatened corporate payrolls across the United States.",
+    "reference": "Lehman's bankruptcy exposed the Reserve Primary Fund to Lehman securities -> the fund \"broke the buck\" -> investors withdrew $144 billion from money market funds in a bank-run equivalent -> money market funds, which invest in commercial paper used by corporations for operations and payrolls, froze -> short-term lending market seized up, interrupting corporations' ability to roll over short-term debt.",
+    "concepts": [
+      "lehman",
+      "money market",
+      "commercial paper",
+      "withdrawal"
+    ]
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying regulatory and legislative changes primed the financial system to mix high-risk and low-risk operations, enabling the excessive speculation that caused the 2008 financial crisis?",
+    "reference": "The 1999 partial repeal of the Glass-Steagall Act (via Gramm-Leach-Bliley Act) removed separation between investment and depository banks; the 2004 federal override of anti-predatory state laws; and the 2004 SEC exemption for the five largest investment banks from the Net Capital Rule all allowed institutions to take on excessive risk.",
+    "concepts": [
+      "glass-steagall",
+      "deregulation",
+      "investment banks",
+      "repeal"
+    ]
+  },
+  {
+    "slug": "gfc2008",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the U.S. housing and mortgage markets caused the collapse of mortgage-backed securities values that triggered the broader 2008 financial crisis?",
+    "reference": "Excessive speculation on property values, predatory subprime lending, lax underwriting standards (one-third of 2006 mortgages were subprime or no-documentation loans), and rising interest rates from 2004\u20132006 led to mass defaults and foreclosures, which caused MBS and related derivatives to collapse in value.",
+    "concepts": [
+      "subprime",
+      "mortgage-backed securities",
+      "defaults",
+      "underwriting"
+    ]
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "What was the U.S. unemployment rate by 1933 during the Great Depression?",
+    "reference": "By 1933, the U.S. unemployment rate had risen to 25%.",
+    "concepts": [
+      "unemployment",
+      "1933",
+      "25%"
+    ]
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "On what date did the American stock market crash on Black Thursday?",
+    "reference": "On 24 October (Black Thursday), the American stock market crashed 11% at the opening bell.",
+    "concepts": [
+      "black thursday",
+      "october",
+      "11%"
+    ]
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "How did the Roaring Twenties' loose banking practices ultimately lead to a 25% unemployment rate in the United States by 1933?",
+    "reference": "Minimal bank regulation \u2192 loose lending and widespread debt \u2192 stock market speculation and crash of 1929 \u2192 loss of confidence and bank failures (9,000 banks closed) \u2192 monetary contraction \u2192 businesses unable to get loans, investment halted \u2192 unemployment rose to 25% by 1933.",
+    "concepts": [
+      "bank failures",
+      "monetary contraction",
+      "speculation",
+      "unemployment"
+    ]
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "Trace how Germany's dependence on U.S. loans propagated into Adolf Hitler's rise to power in 1933.",
+    "reference": "Germany depended heavily on U.S. loans \u2192 Wall Street crash caused U.S. economic crisis \u2192 loans withdrawn, investor confidence collapsed \u2192 German unemployment rose to nearly 30% \u2192 economic crisis fueled political extremism \u2192 Nazi Party gained support \u2192 Hitler rose to power in 1933.",
+    "concepts": [
+      "unemployment",
+      "political extremism",
+      "nazi party",
+      "loans"
+    ]
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in the 1920s caused/primed the U.S. economy to be so vulnerable to collapse when the Wall Street crash occurred in 1929?",
+    "reference": "Minimal bank regulation led to loose lending and widespread debt; much profit was invested in speculation/stock market; growing wealth inequality; declining spending had already led to reduced manufacturing output and rising unemployment before the crash.",
+    "concepts": [
+      "speculation",
+      "loose lending",
+      "wealth inequality",
+      "debt"
+    ]
+  },
+  {
+    "slug": "great_depression",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses caused/primed Germany to experience near 30% unemployment and political extremism during the Great Depression?",
+    "reference": "Germany depended heavily on U.S. loans, making it highly vulnerable when the U.S. economy collapsed; the financial crisis caused investor withdrawal of short-term money, banking failures, and industrial collapse, which fueled the rise of Nazi and Communist movements.",
+    "concepts": [
+      "u.s. loans",
+      "banking crisis",
+      "political extremism",
+      "unemployment"
+    ]
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "What was the peak value of the NASDAQ Composite stock market index on March 10, 2000?",
+    "reference": "The NASDAQ Composite peaked at 5,048.62 on Friday March 10, 2000.",
+    "concepts": [
+      "nasdaq",
+      "peak",
+      "5048.62",
+      "march 2000"
+    ]
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "fact",
+    "q": "How much did the UK's 3G spectrum auctions raise in April 2000?",
+    "reference": "The 3G spectrum auctions in the United Kingdom in April 2000, led by Chancellor of the Exchequer Gordon Brown, raised \u00a322.5 billion.",
+    "concepts": [
+      "3g",
+      "spectrum",
+      "\u00a322.5 billion",
+      "united kingdom"
+    ]
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "How did the 1993 release of Mosaic ultimately lead to the formation of a stock market bubble?",
+    "reference": "Mosaic gave users access to the World Wide Web -> Internet use and computer ownership surged (15% to 35% of households) -> many new startups were founded -> investors eagerly poured venture capital into dot-com companies at any valuation -> rapidly increasing stock prices and overlooking of traditional metrics like price-earnings ratios created the bubble.",
+    "concepts": [
+      "mosaic",
+      "internet",
+      "startups",
+      "bubble"
+    ]
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "multihop",
+    "q": "Trace how the Telecommunications Act of 1996 propagated into widespread telecom company bankruptcies during the dot-com crash.",
+    "reference": "The Act spurred expectations of new technologies and profits -> telecom companies invested over $500 billion (mostly debt-financed) in fiber optic cable, switches, and wireless networks -> capacity growth vastly outstripped demand -> when the bubble burst, financing became difficult to obtain -> high debt ratios led to bankruptcies, with bond investors recovering just over 20% of their investments.",
+    "concepts": [
+      "telecommunications act",
+      "debt",
+      "capacity",
+      "bankruptcies"
+    ]
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying economic and regulatory conditions caused/primed investors to abandon traditional valuation metrics like the price-earnings ratio during the dot-com bubble?",
+    "reference": "Decline in interest rates increased capital availability; Taxpayer Relief Act of 1997 lowered capital gains tax encouraging speculative investments; Alan Greenspan put a positive spin on stock valuations; Telecommunications Act of 1996 raised profit expectations; rapidly increasing Nasdaq stock prices and confidence in future profits created an environment where investors overlooked traditional metrics.",
+    "concepts": [
+      "interest rates",
+      "capital gains tax",
+      "speculative",
+      "valuation"
+    ]
+  },
+  {
+    "slug": "dotcom",
+    "domain": "finance",
+    "schema": "general",
+    "qtype": "rootcause",
+    "q": "What underlying structural and financial conditions caused/primed telecom companies to face widespread bankruptcies after the dot-com bubble burst?",
+    "reference": "Telecom companies invested over $500 billion mostly financed with debt into fiber optic cable, switches, and wireless networks; capacity growth vastly outstripped demand growth; when financing became difficult to obtain as the bubble burst, high debt ratios led to bankruptcies; bond investors recovered just over 20% of their investments.",
+    "concepts": [
+      "debt",
+      "fiber optic",
+      "capacity",
+      "financing"
+    ]
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What dataset does TIM use to estimate the causal effect of high cholesterol on diabetes?",
+    "reference": "The CDC Diabetes Health Indicators dataset, a cleaned version of the Behavioral Risk Factor Surveillance System (BRFSS), comprising 253,680 samples from 2015 with 22 covariates.",
+    "concepts": [
+      "cdc",
+      "brfss",
+      "diabetes",
+      "cholesterol"
+    ]
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What CATE value does TIM estimate for the effect of high cholesterol on diabetes?",
+    "reference": "TIM estimates a Conditional Average Treatment Effect (CATE) of 0.079, indicating a 7.9% increase in the likelihood of developing diabetes.",
+    "concepts": [
+      "cate",
+      "0.079",
+      "cholesterol",
+      "diabetes"
+    ]
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the limitation of binary distance metrics ultimately lead to TIM adopting a distribution-aware discrete distance measure that incorporates co-occurrence probabilities?",
+    "reference": "Binary distance metrics treat all mismatches as equally distant (A), ignoring the actual frequency and distribution of discrete values (B), which leads to suboptimal matches and inefficiencies in matching (C), prompting TIM to adopt a distribution-aware distance measure that considers frequency and co-occurrence patterns of discrete variables for more accurate matching (D).",
+    "concepts": [
+      "binary distance",
+      "co-occurrence",
+      "discrete",
+      "distribution"
+    ]
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how the curse of dimensionality in exact matching propagated into TIM's weighted CATE estimation approach.",
+    "reference": "High-dimensional data makes exact matching impractical due to data sparsity (A), causing many treatment units to go unmatched if exact matching is strictly enforced (B), so TIM iteratively relaxes matching by removing least important covariates and uses a mixed distance metric for unmatched variables within strata (C), ultimately computing inverse scores based on distance to weight control units closer to treatment units more heavily in CATE estimation (D).",
+    "concepts": [
+      "curse of dimensionality",
+      "inverse score",
+      "strata",
+      "distance"
+    ]
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of existing matching methods caused the authors to develop TIM's iterative variable-removal approach with a mixed distance metric?",
+    "reference": "Existing methods had two key flaws: (1) insisting on exact matches excluded many units, introducing greater bias than inexact matching; (2) binary distance metrics treated all discrete mismatches as equally distant, ignoring frequency and co-occurrence distributions of discrete variables, leading to suboptimal matches.",
+    "concepts": [
+      "exact matching",
+      "binary distance",
+      "curse of dimensionality",
+      "discrete variables"
+    ]
+  },
+  {
+    "slug": "ci_matching",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying structural weaknesses of PSM and GEN primed their failure to improve multivariate overlap (L\u221e remaining at 1) in the numerical experiments?",
+    "reference": "PSM collapses the multivariate distribution into a single propensity score scalar, losing joint covariate information; GEN evaluates balance variable-by-variable using t-tests and KS tests rather than the joint distribution. Neither method addresses the full multivariate distribution, so residual imbalances persist and L\u221e post-match equals L\u221e pre-match.",
+    "concepts": [
+      "propensity score",
+      "joint distribution",
+      "multivariate overlap",
+      "variable-by-variable"
+    ]
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What Gaussian kernel bandwidth value was used for the proposed kernel-matching estimator in the Monte Carlo simulation study?",
+    "reference": "A bandwidth of 0.01 was used with the Gaussian kernel function.",
+    "concepts": [
+      "gaussian kernel",
+      "bandwidth",
+      "0.01",
+      "proposed"
+    ]
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What was the ATT estimate produced by the proposed kernel matching estimator for the experimental control group in the National Supported Work Demonstration analysis?",
+    "reference": "The ATT estimate was US$1807.7, which was the closest to the benchmark value of US$1794 among all estimation methods considered.",
+    "concepts": [
+      "att",
+      "1807.7",
+      "experimental",
+      "kernel matching"
+    ]
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the curse of dimensionality in covariate matching ultimately lead to the adoption of kernel matching based on propensity scores as the proposed estimator?",
+    "reference": "High-dimensional covariates make exact/near-exact covariate matching ineffective (curse of dimensionality) -> propensity score reduces dimensionality to a single probability value enabling easier matching -> but parametric propensity score models risk misspecification -> kernel matching applied to propensity scores smooths over similar observations, stabilizes estimates, reduces variance and sensitivity to irrelevant covariates, yielding the proposed robust estimator.",
+    "concepts": [
+      "curse of dimensionality",
+      "propensity score",
+      "kernel matching",
+      "dimensionality reduction"
+    ]
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how misspecification of the propensity score model propagated into the motivation for kernel matching's bandwidth parameter as a solution.",
+    "reference": "Parametric propensity score models (logit/probit) are susceptible to misspecification -> misspecification causes bias and extreme weights in IPW and standard propensity score matching -> kernel matching addresses this by smoothing across similar observations using a kernel function with an adjustable bandwidth parameter -> bandwidth balances bias and variance through local smoothing, reducing dependence on stringent model assumptions and mitigating extreme bias or variance from misspecification.",
+    "concepts": [
+      "misspecification",
+      "bandwidth",
+      "smoothing",
+      "extreme weights"
+    ]
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of traditional matching methods caused the authors to develop the kernel-matching estimator as a more robust alternative?",
+    "reference": "Covariate matching suffers from the curse of dimensionality and reduced effective sample size in high-dimensional settings; propensity score matching is vulnerable to model misspecification causing bias and extreme weights; IPW is highly sensitive to propensity score misspecification; DR estimators are complex and sensitive to accuracy of both models. These collective shortcomings primed the development of the kernel-matching estimator.",
+    "concepts": [
+      "curse of dimensionality",
+      "misspecification",
+      "extreme weights",
+      "kernel matching"
+    ]
+  },
+  {
+    "slug": "ci_kernel",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying data characteristics of the CPS-3 non-experimental control group caused the covariate-based and estimated propensity score matching estimators to produce negative ATT estimates with large standard errors?",
+    "reference": "Significant mean differences existed between the treated experimental group and the CPS-3 control group in eight out of ten covariates, indicating poor balance and comparability between groups. This lack of covariate balance primed the failure of covariate-based and propensity score matching estimators, which rely on finding comparable matches, resulting in negative and unreliable ATT estimates.",
+    "concepts": [
+      "covariate balance",
+      "mean differences",
+      "control group",
+      "negative estimates"
+    ]
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What bandwidth formula does the paper propose for the network HAC estimator to adjust for estimation error in first-stage machine learners?",
+    "reference": "The proposed bandwidth rounds up to the nearest integer of a formula involving average degree and average path length, specifically where rounds up to the nearest integer, is the average degree, and is the average path length.",
+    "concepts": [
+      "bandwidth",
+      "average degree",
+      "average path length",
+      "network hac"
+    ]
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "In the Venmo empirical application, what percentage of users belong to the giant component and what is the average degree of the network?",
+    "reference": "82 percent of users belong to the giant component; the average degree is 3.74.",
+    "concepts": [
+      "giant component",
+      "average degree",
+      "venmo",
+      "82 percent"
+    ]
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the approximate neighborhood interference (ANI) assumption ultimately lead to the justification of shallow GNN architectures for estimation?",
+    "reference": "ANI assumes interference decays with network distance (A), so outcomes/treatments are primarily determined by units within a small neighborhood radius L (B), which creates a network analog of approximate sparsity where high-dimensional propensity scores can be approximated by lower-dimensional L-neighborhood functions (C), which in turn justifies using shallow L-layer GNNs whose receptive field matches that small neighborhood (D).",
+    "concepts": [
+      "approximate neighborhood interference",
+      "approximate sparsity",
+      "receptive field",
+      "shallow"
+    ]
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how peer effects in treatment selection ultimately propagated into the need for high-dimensional network controls in the doubly robust estimator.",
+    "reference": "Peer effects in treatment selection mean that a unit's treatment depends on neighbors' decisions (A), so the reduced-form treatment function depends on the entire network and all unit covariates rather than a low-dimensional summary (B), making low-dimensional network controls like degree or centrality measures insufficient to satisfy unconfoundedness (C), which forces adoption of a high-dimensional unconfoundedness condition conditioning on the full network and covariates, requiring estimation of a high-dimensional generalized propensity score in the doubly robust estimator (D).",
+    "concepts": [
+      "peer effects",
+      "selection",
+      "high-dimensional",
+      "propensity score"
+    ]
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying model assumptions and behavioral mechanisms caused the need for high-dimensional network confounding adjustment rather than low-dimensional network controls in the proposed framework?",
+    "reference": "The authors adopt approximate neighborhood interference (ANI) in both outcomes AND treatment selection, allowing peer effects in both. Because outcome functions and treatment selection functions may depend on the entirety of the network and all unit covariates, low-dimensional summaries (like degree or centrality measures) cannot adequately capture confounding. This makes the full network and all covariates sources of confounding, requiring high-dimensional unconfoundedness condition (4) rather than the low-dimensional condition (3).",
+    "concepts": [
+      "approximate neighborhood interference",
+      "peer effects",
+      "selection",
+      "high-dimensional"
+    ]
+  },
+  {
+    "slug": "ci_network_gnn",
+    "domain": "causal-inf",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying properties of graph neural network architecture primed shallow GNNs (small depth) to perform well even on wide networks with large average path lengths?",
+    "reference": "The ANI assumption causes interference to decay with network distance, meaning a unit's outcome and treatment are primarily determined by units in a relatively small neighborhood. This creates a network analog of approximate sparsity: the high-dimensional propensity score can be approximated by a function of a small local neighborhood, justifying a small receptive field. Theorem 1 formalizes this, showing the approximation error is small when depth L is of order log(n), making shallow GNNs sufficient despite wide network topology.",
+    "concepts": [
+      "approximate sparsity",
+      "interference decay",
+      "receptive field",
+      "shallow"
+    ]
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What mobility measure was used in the Covid-19 analysis, and how was it defined?",
+    "reference": "\"proportion of full-time work\" (full_time_work_prop) \u2014 the fraction of mobile devices that spent more than six hours at a location other than their home during daytime.",
+    "concepts": [
+      "full-time work",
+      "mobile devices",
+      "daytime",
+      "safegraph"
+    ]
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "In the Covid-19 observational study, how many of the 30 states showed estimating equation estimates lower than the ML estimates?",
+    "reference": "24 out of 30 states had estimating equation estimates lower than the ML estimates.",
+    "concepts": [
+      "24",
+      "states",
+      "estimating equation",
+      "maximum likelihood"
+    ]
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how the presence of phantom variables ultimately leads to falsely rejecting the null hypothesis of no causal effect in epidemic models.",
+    "reference": "Phantoms are unobserved variables that affect interventions but not outcomes directly; they create a collider structure where covariates become colliders between past interventions and latent variables; this induces spurious conditional dependence between treatment and outcome; because maximum likelihood/Bayesian methods cannot simultaneously represent dependence without causation (variation dependence), the KL projection is driven by dependence rather than causal effect; the MLE estimates a biased quantity incorporating phantom bias, yielding a non-zero estimate even when the true causal effect is zero, thus falsely rejecting the null.",
+    "concepts": [
+      "phantom",
+      "collider",
+      "variation dependence",
+      "null paradox"
+    ]
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the misspecification of augmented epidemic models as data-generating processes ultimately propagate into biased causal effect estimates in the Covid-19 mobility analysis?",
+    "reference": "Augmented epidemic models are intended as counterfactual models, but practitioners treat them as data-generating models and apply maximum likelihood estimation; phantoms (unobserved variables affecting interventions) create collider bias, inducing spurious dependence between mobility and deaths; ML estimation, driven by this dependence rather than true causal effect, produces inflated estimates; in the Covid-19 analysis, 24 of 30 states showed ML estimates higher than estimating equation estimates, consistent with phantom-induced upward bias in the causal effect of mobility on Covid-19 deaths.",
+    "concepts": [
+      "phantom bias",
+      "maximum likelihood",
+      "mobility",
+      "collider"
+    ]
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying structural properties of epidemic models caused the null paradox, where maximum likelihood estimates show non-zero treatment effects even when the true causal effect is zero?",
+    "reference": "Three underlying causes: (1) phantom variables (unobserved variables affecting interventions but not outcomes directly) that allow conditional dependence without causation; (2) variation dependence in sequentially parameterized models, where dependence and causation are tied together in the parameterization; (3) KL projection driven by dependence rather than causal effect, causing MLE to estimate a biased quantity that conflates correlation with causation.",
+    "concepts": [
+      "phantoms",
+      "variation dependence",
+      "collider",
+      "null paradox"
+    ]
+  },
+  {
+    "slug": "epi_models",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying mechanism primed covariates to act as colliders and produce spurious correlations between past interventions and latent variables in epidemic models?",
+    "reference": "The underlying mechanism is the sequential parameterization of augmented epidemic models, where observed covariates sit at the convergence of arrows from both past interventions and phantom (latent) variables in the directed graph. Because a collider variable has two arrows converging on it, conditioning on it induces dependence between the intervention and the phantom, creating spurious correlation even when no causal effect exists.",
+    "concepts": [
+      "collider",
+      "phantom",
+      "directed graph",
+      "spurious"
+    ]
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What is the basic reproduction number returned by the contact rate parameter set in the simulation?",
+    "reference": "The contact rate is set to return a basic reproduction number of R0 = 2.5 (implied by parameter choices), but per the document the contact rate is set \"to return a basic reproduction number of\" \u2014 the document states the basic reproduction number is returned by the chosen contact rate parameter.",
+    "concepts": [
+      "basic reproduction number",
+      "contact rate",
+      "simulation"
+    ]
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What method does the g-formula use to recover the expected potential outcome under a time-varying intervention?",
+    "reference": "The g-formula recovers the expected potential outcome by averaging over the intermediate values of time-varying confounders in a way that depends only on their conditional distribution given the history of the process.",
+    "concepts": [
+      "g-formula",
+      "averaging",
+      "conditional distribution",
+      "time-varying confounders"
+    ]
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did policymakers' endogenous response to observed infection outcomes ultimately lead to associational models underestimating cumulative infections under no-intervention?",
+    "reference": "Policymakers implement interventions when cumulative outcomes exceed a threshold (self-consistent rule) -> this means no-intervention cases are selectively filtered to trajectories with slower disease evolution and lower infection peaks -> the associational model conditions on this filtered history, treating the static no-intervention as if it were exogenous -> the associational quantity underestimates true cumulative infections (bias of over majority of population), making no-intervention appear far less harmful than it causally is.",
+    "concepts": [
+      "self-consistent rule",
+      "opportunistic",
+      "associational",
+      "underestimation"
+    ]
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how treatment endogeneity in epidemic settings propagated into directional bias that could cause harmful public health decisions.",
+    "reference": "Policymakers assign interventions based on observed disease outcomes (endogeneity) -> this creates a gap between lag-1 and lag-0 prospective propensity scores (adaptive propensity score ratio \u2260 1) -> associational models use an incorrect marginalizing distribution, producing negative time-varying confounding bias for opportunistic interventions -> cumulative infections under no-intervention are underestimated by as much as the majority of the population -> policymakers may under-promote effective interventions or implement inadequate measures.",
+    "concepts": [
+      "endogeneity",
+      "adaptive propensity score",
+      "confounding bias",
+      "harmful decisions"
+    ]
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying dynamic between policymakers and disease outcomes caused associational modeling to produce systematically biased (overly optimistic) estimates of cumulative infections under no-intervention scenarios?",
+    "reference": "Interventions are endogenous to the disease process\u2014policymakers implement interventions when outcomes exceed a threshold. Under no-intervention, only trajectories where disease progressed slowly enough to never trigger the threshold are retained, sequentially filtering out high-infection trajectories. This endogenous, self-consistent rule of intervention assignment creates time-varying confounding bias in the negative direction.",
+    "concepts": [
+      "endogenous",
+      "threshold",
+      "self-consistent",
+      "opportunistic"
+    ]
+  },
+  {
+    "slug": "epi_timevarying",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying structural properties of the intervention assignment rule and disease outcome process primed the time-varying confounding bias to accumulate in a strictly negative (downward) direction rather than being random or bidirectional?",
+    "reference": "Two aligned conditions created directional bias: (1) the self-consistent rule meant interventions started when cumulative outcomes exceeded a threshold, so no-intervention cases were associated with lower early infection counts (upweighted adaptations led to fewer adverse outcomes); (2) the monotonically increasing disease outcome process meant lower intermediate outcomes consistently produced lower final outcomes. This alignment defines an \"opportunistic intervention,\" and Theorem 1 proves the bias must be negative under these conditions.",
+    "concepts": [
+      "opportunistic",
+      "monotonically increasing",
+      "adaptive propensity score",
+      "directional"
+    ]
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What criterion is used to identify the total effect in a causal DAG, and what formula does it yield when satisfied?",
+    "reference": "The back-door criterion; when satisfied, the total effect is given by the adjustment formula.",
+    "concepts": [
+      "back-door criterion",
+      "adjustment formula",
+      "total effect"
+    ]
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "Which funding project supported the work presented in this paper?",
+    "reference": "The CIPHOD project (ANR-23-CPJ1-0212-01).",
+    "concepts": [
+      "ciphod",
+      "anr-23-cpj1-0212-01"
+    ]
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the introduction of difference graphs as a representation tool ultimately lead to the establishment of identifiability conditions for causal changes in observational data?",
+    "reference": "Difference graphs were introduced to represent causal variations between two SCMs/populations -> this prompted causal discovery methods to construct difference graphs directly from data -> but a gap remained in using these graphs for causal reasoning -> this paper addressed the gap by establishing sufficient and necessary conditions (back-door and single-door criteria) for identifying total and direct causal changes from observational distributions consistent with the difference graph.",
+    "concepts": [
+      "difference graphs",
+      "identifiability",
+      "back-door",
+      "causal changes"
+    ]
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how the assumption that two causal DAGs share the same topological ordering propagated into the sufficiency of the back-door criterion for total effect identification in difference graphs.",
+    "reference": "Assumption 3 (same topological ordering) implies the difference graph is also a DAG -> this rules out cycles, so no vertex in the difference graph can be both an ancestor and a descendant of X -> Lemma 3.2 then shows that for any vertex V connected to X or Y by a directed path in the difference graph, V cannot be a descendant of X in either causal DAG -> therefore the set of such vertices satisfies the back-door criterion in both underlying causal DAGs -> total effect is identifiable by a common back-door via the adjustment formula.",
+    "concepts": [
+      "topological ordering",
+      "back-door criterion",
+      "acyclic",
+      "adjustment formula"
+    ]
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying structural property of difference graphs caused the impossibility of directly applying back-door and single-door criteria to difference graphs, even when the difference graph is acyclic?",
+    "reference": "The absence of an edge in a difference graph has a different interpretation than in other graph types (e.g., CPDAGs, PAGs). A missing edge does not uniquely determine the causal relationship between variables across compatible DAG pairs, meaning a single adjustment set cannot satisfy the back-door or single-door criterion for all causal DAGs compatible with the difference graph.",
+    "concepts": [
+      "absence of an edge",
+      "compatible",
+      "difference graph",
+      "interpretation"
+    ]
+  },
+  {
+    "slug": "epi_diffgraphs",
+    "domain": "epidemiology",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying conditions in a difference graph primed the non-identifiability of the total effect when a vertex exists with no directed path to or from either endpoint of interest?",
+    "reference": "When a vertex has no directed path to or from X or Y in the difference graph, it can be either a descendant of X (requiring exclusion from any adjustment set) or a parent of X (requiring inclusion) in different compatible causal DAGs. This contradiction makes it impossible to find a single set satisfying the back-door criterion across all compatible causal DAGs, causing non-identifiability.",
+    "concepts": [
+      "descendant",
+      "parent",
+      "back-door criterion",
+      "compatible"
+    ]
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "How many data points does the Madagascar Drought attribution analysis rely on for fitting the extreme value distribution?",
+    "reference": "14 data points (bottom 20th percentile of 2-year precipitation averages from 1951\u20132020)",
+    "concepts": [
+      "madagascar",
+      "14",
+      "data points",
+      "precipitation"
+    ]
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What global mean surface temperature increase above preindustrial levels had occurred as of the year 2020, according to the IPCC?",
+    "reference": "1.26 \u00b0C above preindustrial levels",
+    "concepts": [
+      "1.26",
+      "preindustrial",
+      "gmst",
+      "temperature"
+    ]
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did ENSO's influence on regional temperatures ultimately lead to false attribution of extreme events to anthropogenic climate change in the WWAP methodology?",
+    "reference": "ENSO affects both regional extreme temperatures (e.g., Australian heat waves) and GMST simultaneously; this creates a spurious covariance between extremes and GMST; the WWAP method interprets nonzero GMST dependence (alpha) as evidence of anthropogenic climate change; but since alpha is nonzero even in preindustrial control runs with no CO2 increase, the attribution to ACC is invalid.",
+    "concepts": [
+      "enso",
+      "internal variability",
+      "gmst dependence",
+      "attribution"
+    ]
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how the short observational record for Madagascar drought propagated into an inability to make meaningful attribution conclusions using the WWAP approach.",
+    "reference": "Only 70 years of precipitation data were available; taking the bottom 20th percentile yielded only 14 data points; fitting a GPD to 14 points produces large uncertainty intervals; the deviance statistic showed no significant GMST dependence in any of 35 ensemble members; the MRL plot failed to confirm GPD validity; therefore no confident attribution to anthropogenic climate change could be made.",
+    "concepts": [
+      "madagascar",
+      "data points",
+      "gpd",
+      "uncertainty"
+    ]
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying climate mechanisms caused the WWAP attribution methodology to falsely detect anthropogenic signals in the CESM preindustrial control simulation (with no CO2 increase)?",
+    "reference": "Internal climate variability, particularly ENSO, simultaneously affects both regional extreme events (e.g., Australian heat waves, Siberian temperatures) and GMST, creating spurious covariance between the two. Since the WWAP method interprets any GMST dependence of distribution parameters as an anthropogenic signal, this natural co-variation produces false positive attribution results even without any greenhouse forcing.",
+    "concepts": [
+      "enso",
+      "internal variability",
+      "gmst",
+      "covariance"
+    ]
+  },
+  {
+    "slug": "clim_extremeval",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying factors primed the Australian Bushfire case to show an implausibly large GMST dependence parameter (alpha ~5.1\u00b0C per \u00b0C of GMST warming) in the preindustrial control simulation?",
+    "reference": "Multiple modes of internal climate variability\u2014including ENSO, the Indian Ocean Dipole, and the Southern Annular Mode\u2014strongly influence extreme temperatures over Australia while only weakly affecting GMST. This asymmetric influence creates a large apparent amplification: a 1\u00b0C ENSO-driven change in Australian heat extremes corresponds to only ~0.2\u00b0C change in GMST, inflating the estimated alpha far beyond any physically plausible anthropogenic mechanism.",
+    "concepts": [
+      "enso",
+      "internal variability",
+      "amplification",
+      "australia"
+    ]
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "Who originally proposed Granger causality as a framework to detect causality in the late 1960s?",
+    "reference": "Granger causality was proposed by economist Clive Granger in the late 1960s.",
+    "concepts": [
+      "granger causality",
+      "economist",
+      "1960s"
+    ]
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What percentage of variation in global mean surface temperature does the statistical counterfactual model explain in the example analysis?",
+    "reference": "The statistical model explains 90% (R\u00b2) of the variation in GMST.",
+    "concepts": [
+      "statistical model",
+      "variation",
+      "gmst"
+    ]
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the limitations of GCMs in simulating regional precipitation ultimately lead to stronger Granger-causal attribution conclusions for U.S. precipitation?",
+    "reference": "GCM limitations (structural uncertainty, aerosol representation) prompted a pivot to observations-based Granger causality; but Granger causality alone faced challenges (low signal-to-noise, complex aerosol relationships); so Pearl-causal methods were first applied to GCM output (DAMIP/LUMIP) to identify appropriate forcing agents and validate the statistical formula; then that vetted formula was applied to rain gauge observations via the statistical counterfactual, producing strengthened Granger-causal attribution statements that avoided typical Granger limitations.",
+    "concepts": [
+      "structural uncertainty",
+      "statistical counterfactual",
+      "damip",
+      "rain gauge"
+    ]
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how anthropogenic greenhouse gas forcing propagated into a statistically significant attribution conclusion about global mean surface temperature in the statistical counterfactual example.",
+    "reference": "GHG and aerosol radiative forcing were combined into a single covariate (ANT) to avoid collinearity; this covariate entered the linear regression model alongside volcanic and ENSO covariates; the statistical beta for ANT was estimated as positive and statistically significant (p<0.05, 95% CI excluding zero); this beta was rescaled to yield a present-day vs. pre-industrial GMST change of approximately 1\u00b0C, allowing rejection of the null hypothesis and formal attribution of GMST increase to anthropogenic forcing.",
+    "concepts": [
+      "radiative forcing",
+      "statistical betas",
+      "collinearity",
+      "null hypothesis"
+    ]
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying assumptions and characteristics of Granger causality caused/primed it to be considered a weaker form of causal inference compared to Pearl causality for climate change attribution?",
+    "reference": "GC does not involve experimental interventions; it relies on predictive relationships between variables; it is subject to confounding and mediation from unaccounted-for covariates; it cannot establish causality in the strict philosophical sense; and separability assumption may be violated in deterministic systems.",
+    "concepts": [
+      "predictive causality",
+      "confounding",
+      "intervention",
+      "counterfactual"
+    ]
+  },
+  {
+    "slug": "clim_granger",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying limitations of General Circulation Models caused/primed researchers to develop the hybrid Granger-Pearl approach for regional precipitation attribution in the continental United States?",
+    "reference": "GCMs have structural/modeling uncertainty, particularly in representing anthropogenic aerosols (prescribed vs. parameterized), uncertain precipitation response to aerosols, low signal-to-noise ratio for regional precipitation, and large internal variability, making model-based Pearl attribution largely inconclusive for sub-continental scales.",
+    "concepts": [
+      "aerosols",
+      "structural uncertainty",
+      "regional precipitation",
+      "signal-to-noise"
+    ]
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "Which French climate model and CMIP experiment are used in the precipitation analysis?",
+    "reference": "The French CNRM model from the CMIP6 experiment",
+    "concepts": [
+      "cnrm",
+      "cmip6",
+      "precipitation",
+      "french"
+    ]
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "What geographic region is used for the weekly winter maxima precipitation analysis?",
+    "reference": "The region defined by longitude and latitude corresponding to central Europe, covering January 1985 to August 2014",
+    "concepts": [
+      "central europe",
+      "longitude",
+      "latitude",
+      "winter"
+    ]
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the assumption of spatial independence in univariate EEA studies ultimately lead to underestimation of causal evidence for extreme precipitation events?",
+    "reference": "Univariate EEA ignores multivariate dependence structure -> when dependence increases between factual and counterfactual worlds, the spatial aggregation under independence assumption misrepresents the true joint tail behavior -> this causes the probability of necessary causation (PN) to be underestimated -> resulting in weaker causal evidence than actually exists, as confirmed by simulation showing multivariate estimates exceed univariate estimates as dimension increases.",
+    "concepts": [
+      "dependence",
+      "necessary causation",
+      "univariate",
+      "underestimate"
+    ]
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how the choice of equal versus optimal weights in linear projection propagated into differences in causal attribution confidence for the CNRM precipitation analysis.",
+    "reference": "Optimal weights are derived to maximize PN by contrasting factual and counterfactual worlds most effectively -> this maximization selects grid points and combinations that amplify differences between the two worlds -> leading to higher PN values under optimal weights compared to equal weights -> which in turn produced narrower bootstrap confidence intervals particularly for high PN regions like northern Italy at the fifty-year return level, strengthening the causal attribution message.",
+    "concepts": [
+      "optimal weights",
+      "probability of necessary causation",
+      "confidence intervals",
+      "return level"
+    ]
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying statistical and structural assumptions primed the multivariate GPD framework to potentially underestimate or overestimate causation probabilities when applied to spatial climate data?",
+    "reference": "The multivariate GPD assumes asymptotic dependence among grid points, requires a constant (homogeneous) shape parameter within regions, and assumes stationarity in time. If spatial dependence structure differs between factual and counterfactual worlds and these assumptions are violated, univariate analyses ignoring multivariate dependence can mis-estimate causation probabilities.",
+    "concepts": [
+      "asymptotic dependence",
+      "shape parameter",
+      "spatial dependence",
+      "stationarity"
+    ]
+  },
+  {
+    "slug": "clim_potattr",
+    "domain": "climate",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying properties of GPD-distributed variables caused the probability of necessary and sufficient causation (PNS) to remain near zero across all threshold values, making causal evidencing more difficult than in the Gaussian case?",
+    "reference": "In the GPD case, even very rare factual-world events remain possible in the counterfactual world because GPD tails are heavy and do not vanish; PN converges to a finite constant rather than one, and PNS stays small because the counterfactual probability never approaches zero for large thresholds, unlike in the Gaussian setup where counterfactual probability becomes negligible for extreme events.",
+    "concepts": [
+      "heavy tails",
+      "counterfactual probability",
+      "necessary causation",
+      "threshold"
+    ]
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "How many total graphs does CausalDynamics contain across all tiers?",
+    "reference": "5342 graphs total (585 simple, 4745 coupled, and 12 climate graphs)",
+    "concepts": [
+      "graphs",
+      "simple",
+      "coupled",
+      "climate"
+    ]
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "qtype": "fact",
+    "q": "Which benchmark enabled the development of AlphaFold, awarded the 2024 Nobel Prize in Chemistry?",
+    "reference": "CASP13, a protein structure modeling benchmark",
+    "concepts": [
+      "casp13",
+      "alphafold",
+      "protein"
+    ]
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "Trace how the absence of a standardized benchmark for nonlinear dynamical systems ultimately propagated into the inability to isolate algorithmic limitations from dataset characteristics.",
+    "reference": "No standardized benchmark existed for highly nonlinear dynamical settings -> most methods were validated on toy systems or real-world data that failed to capture continuous state-space developments, complex feedback loops, stochasticity, and regime shifts -> this made it impossible to isolate algorithmic limitations (e.g., varsortability) from dataset characteristics.",
+    "concepts": [
+      "benchmark",
+      "toy systems",
+      "varsortability",
+      "algorithmic limitations"
+    ]
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "qtype": "multihop",
+    "q": "How did the CASP13 benchmark ultimately lead to a Nobel Prize in Chemistry?",
+    "reference": "CASP13 was a protein structure modeling benchmark -> it enabled the development of AlphaFold by providing a standardized evaluation framework for protein structure prediction -> AlphaFold's breakthrough performance in protein structure modeling was awarded the 2024 Nobel Prize in Chemistry.",
+    "concepts": [
+      "casp13",
+      "alphafold",
+      "protein structure",
+      "nobel prize"
+    ]
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying gaps in existing benchmarks caused/primed the need to develop CausalDynamics as a new framework?",
+    "reference": "Existing benchmarks were built on static causal graphs or auto-regressive models, were domain-specific, low-dimensional, and weakly nonlinear, lacked continuous state-space developments, complex feedback loops, stochasticity, and regime shifts, and failed to provide a standardized benchmark for highly nonlinear dynamical settings with known ground truth.",
+    "concepts": [
+      "static causal graphs",
+      "nonlinear",
+      "ground truth",
+      "dynamical systems"
+    ]
+  },
+  {
+    "slug": "causalml_dynamics",
+    "domain": "causal-ml",
+    "schema": "research",
+    "qtype": "rootcause",
+    "q": "What underlying algorithmic properties caused/primed non-DL-based methods to outperform deep learning-based causal discovery algorithms on CausalDynamics benchmarks?",
+    "reference": "Non-DL-based methods do not require much fine tuning, making them more robust across varied settings; DL-based methods struggle particularly with high-dimensional datasets and coupled dynamical systems, and methods considering only 1-dimensional time series outperformed DL-based methods that claim spatial awareness.",
+    "concepts": [
+      "fine tuning",
+      "high-dimensional",
+      "outperformed",
+      "coupled"
+    ]
+  }
+]
