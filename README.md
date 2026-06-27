@@ -6,6 +6,13 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![LangChain](https://img.shields.io/badge/LangChain-1.x-orange)
 ![LLM](https://img.shields.io/badge/LLM-Groq%20%7C%20Gemini%20%7C%20Anthropic%20%7C%20OpenAI-purple)
+![Tests](https://img.shields.io/badge/tests-87%20passing-brightgreen)
+
+![Multi-hop](https://img.shields.io/badge/multi--hop-%2B30pp-success)
+![Root-cause](https://img.shields.io/badge/root--cause-%2B29pp-success)
+![Facts](https://img.shields.io/badge/facts-%2B14pp-success)
+![Benchmark](https://img.shields.io/badge/benchmark-23%20docs%20·%205%20fields%20·%202%20models-blue)
+![Query latency](https://img.shields.io/badge/retrieval-~300ms%20·%20no%20query--time%20LLM-blueviolet)
 
 **RAG that traverses cause→effect chains and preserves document structure, instead of returning similarity-matched chunks.**
 
@@ -13,14 +20,31 @@ Standard RAG embeds and retrieves *chunks*. When the answer requires following a
 
 ---
 
-## The problem in one example
+## The problem in one picture
 
 Document: *"The reactor overheated. The coolant valve failed. This triggered an emergency shutdown. The shutdown caused a 12-hour outage. The outage disrupted hospital operations."*
 
-| System | Query: *"What did the reactor overheating ultimately disrupt?"* |
-|--------|---------------------------------------------------------------|
-| Standard RAG | Returns the *"reactor overheated"* chunk. Consequence is in a different chunk with different vocabulary. **Structurally blind.** |
-| **Causal Graph RAG** | `reactor → valve → shutdown → outage → hospital operations` ✓ |
+Query: ***"What did the reactor overheating ultimately disrupt?"***
+
+```mermaid
+flowchart LR
+    R["🔥 reactor<br/>overheated"] -->|caused| V["coolant valve<br/>failed"]
+    V -->|triggered| S["emergency<br/>shutdown"]
+    S -->|caused| O["12-hour<br/>outage"]
+    O -->|disrupted| H["🏥 hospital<br/>operations"]
+
+    Q(["❓ Query"]) -. flat RAG stops here .-> R
+    Q == causal RAG traverses the chain ==> H
+
+    style R fill:#ffe0e0,stroke:#d00,color:#000
+    style H fill:#e0ffe0,stroke:#0a0,color:#000
+    style Q fill:#eef,stroke:#55f,color:#000
+```
+
+| System | Result |
+|--------|--------|
+| Standard RAG | Returns the *"reactor overheated"* chunk. The answer lives 4 hops away in a chunk with different vocabulary. **Structurally blind.** |
+| **Causal Graph RAG** | Walks `reactor → valve → shutdown → outage → 🏥 hospital operations` and answers correctly. ✓ |
 
 ---
 
@@ -133,16 +157,40 @@ engineering failures, finance/economics, and 10 real IMRaD scientific papers**
 questions, **both Haiku and Sonnet** as the generator, fixed Sonnet judge, paired
 Wilcoxon vs a strong dense-RAG baseline. Harness in [eval_corpus/](eval_corpus/).
 
+```text
+   correctness, Sonnet generation      ░ flat baseline    █ causal-graph RAG
+   ────────────────────────────────────────────────────────────────────────
+   fact         ░░░░░░░░░░░░░░░ 0.73
+                ██████████████████ 0.91                              ▲ +0.17
+   multi-hop    ░░░░░░░░░ 0.43
+                ███████████████ 0.74                                 ▲ +0.30
+   root-cause   ░░░░░░░░ 0.40
+                █████████████ 0.67                                   ▲ +0.28
+   ────────────────────────────────────────────────────────────────────────
+   0          0.25          0.5          0.75          1.0   (each █ ≈ 0.05)
+```
+
 | Question type | Haiku Δ (p) | Sonnet Δ (p) |
 |---|---|---|
 | Fact lookups | **+0.12** (0.009) | **+0.17** (0.005) |
 | Multi-hop reasoning | **+0.29** (0.000) | **+0.30** (0.000) |
 | Root-cause analysis | **+0.30** (0.000) | **+0.28** (0.000) |
 
-Causal-graph RAG **wins every category on both models**, all significant. The
-advantage **holds as the model scales** (Haiku→Sonnet), and is positive in **all
-five fields** (climate +0.37, finance +0.34, disaster +0.33, causal-ml +0.30,
-epidemiology +0.29, engineering +0.22, causal-inference +0.15, pooled multihop+rootcause).
+Causal-graph RAG **wins every category on both models**, all significant, and the
+advantage **holds as the model scales** (Haiku→Sonnet). It is **positive in every
+one of the five fields** (causal-minus-flat Δ on reasoning questions, pooled):
+
+```text
+   reasoning lift by field (multi-hop + root-cause)
+   climate          ██████████████████  +0.37
+   finance          █████████████████   +0.34
+   disaster         ████████████████▌   +0.33
+   causal-ML        ███████████████     +0.30
+   epidemiology     ██████████████▌     +0.29
+   engineering      ███████████         +0.22
+   causal-inference ███████▌            +0.15
+                    └─ every field positive ─────────────────
+```
 
 Two retrieval components were added via disciplined research-and-screen and are
 **on by default**: *proposition-aware rerank* (scores chains by their full source
@@ -173,6 +221,17 @@ set of **LLM-free, instant, deterministic** causal-graph tools (`rootcause`,
 `impact`, `path`, `retrieve`), so the LLM is spent only on *orchestration* while
 retrieval stays free and exact — a far cheaper agentic profile than typical
 agentic RAG.
+
+```mermaid
+flowchart LR
+    Q([Question]) --> T{{"THOUGHT<br/>(LLM plans next step)"}}
+    T -->|ACTION| TOOLS["🛠️ graph tools<br/>rootcause · impact<br/>path · retrieve<br/><b>LLM-free · ~0.6ms</b>"]
+    TOOLS -->|OBSERVATION| T
+    T -->|FINAL| A([Answer + reasoning trace])
+    style Q fill:#fff3e0,stroke:#e80,color:#000
+    style TOOLS fill:#eef,stroke:#55f,color:#000
+    style A fill:#e0ffe0,stroke:#0a0,color:#000
+```
 
 ```python
 from graph_rag import GraphRAG
@@ -372,27 +431,36 @@ pip install neo4j       # neo4j>=5.0
 
 ## Architecture
 
-```
-INGEST
-  ┌─ spaCy dep parse ─┐                    ┌─ doc-structure parser ─┐
-  │  + rule fallback   ├─► causal edges    │  headings → sections   │
-  │  + LLM extractor  │         │          │  → paragraphs → sents  │
-  └───────────────────┘         ▼          └────────────┬───────────┘
-                          VSA-encoded directed graph     │ heading-path,
-                          + BM25 / dense / path-sig       │ position, synthesis
-                          (CONTEXTUAL: heading-path folded into BM25+dense)
+```mermaid
+flowchart TB
+    subgraph INGEST["🏗️ INGEST (offline, one-time)"]
+        DOC[Document] --> EXT["Causal extraction<br/>spaCy · rules · implicit · LLM"]
+        DOC --> STR["Structure parser<br/>headings → sections → sentences"]
+        EXT --> G[("VSA-encoded<br/>causal graph")]
+        STR -. heading-path context .-> IDX["BM25 · dense · path-sig<br/>(contextual indexing)"]
+        EXT --> IDX
+    end
 
-RETRIEVE  (5-channel RRF fusion → traverse → rerank → MMR diversity)
-  name match (1.5) · VSA direction (2.0) · BM25 (1.0) · dense (1.0) · path signature (1.2)
-                                    │
-                          TRAVERSE causal graph (forward / backward BFS)
-                                    │
-                          RERANK chains (direction-aware + semantic)
-                                    │
-                          MMR select top-k (cover sections, not duplicates)
-                                    │
-                          LLM answers from chains + heading-path-annotated evidence
+    subgraph RETRIEVE["⚡ RETRIEVE (per query · ~300ms · no LLM)"]
+        Q[Query] --> FUSE["5-channel entry-node fusion<br/>name · VSA dir · BM25 · dense · path-sig<br/>(min-max calibrated)"]
+        FUSE --> BFS["BFS traverse chains<br/>forward / backward"]
+        BFS --> RR["Rerank + proposition-aware<br/>+ MMR diversity + score gate"]
+        Q --> COV["Hybrid BM25+dense<br/>coverage sentences"]
+    end
+
+    G --> FUSE
+    IDX --> COV
+    RR --> GEN["🤖 LLM answers from<br/>chains + annotated evidence"]
+    COV --> GEN
+    GEN --> ANS([Answer + supporting chains])
+
+    style G fill:#eef,stroke:#55f,color:#000
+    style ANS fill:#e0ffe0,stroke:#0a0,color:#000
+    style Q fill:#fff3e0,stroke:#e80,color:#000
 ```
+
+> Default path = **one** LLM call (generation only); retrieval is pure graph +
+> vector math. Channel weights: name 1.5 · VSA 2.0 · BM25 1.0 · dense 1.0 · path-sig 1.2.
 
 | Query intent | Traversal | Example |
 |---|---|---|
