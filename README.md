@@ -2,9 +2,7 @@
 
 ![Causal Graph RAG](banner.svg)
 
-<!-- Demo GIF: generate with `vhs demo.tape` (or record `python demo_gif.py`), then uncomment:
-![Demo](assets/demo.gif)
--->
+![Demo: causal queries traversed in well under a millisecond, no LLM](assets/demo.gif)
 
 
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
