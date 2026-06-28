@@ -55,16 +55,10 @@ Homepage = "https://github.com/linga009/causal-graph-rag"
 Repository = "https://github.com/linga009/causal-graph-rag"
 
 [project.scripts]
-causal-rag = "cli:main"
+causal-rag = "causal_graph_rag.cli:main"
 
-# Flat-layout single-package modules (no src/ dir).
 [tool.setuptools]
-py-modules = [
-    "cli", "api", "graph_rag", "graph_backend", "doc_structure",
-    "causal_extractor", "causal_graph", "neo4j_graph", "agentic_rag",
-    "langchain_integration", "llm_adapters", "vsa_core", "retrievers",
-    "parser", "pipeline",
-]
+packages = ["causal_graph_rag"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

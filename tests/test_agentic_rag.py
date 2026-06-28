@@ -10,8 +10,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from graph_rag import GraphRAG
-from agentic_rag import AgenticCausalRAG, _split_args, _ACTION_RE, _FINAL_RE
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.agentic_rag import AgenticCausalRAG, _split_args, _ACTION_RE, _FINAL_RE
 
 _TEXT = (
     "The pump failed. This caused the reactor to overheat. "

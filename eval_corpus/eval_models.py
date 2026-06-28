@@ -45,9 +45,9 @@ def _load_env(path=os.path.join(ROOT, ".env")):
 
 
 _load_env()
-from graph_rag import GraphRAG
-from llm_adapters import AnthropicLLM
-from retrievers import SentenceTransformerDense
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.llm_adapters import AnthropicLLM
+from causal_graph_rag.retrievers import SentenceTransformerDense
 
 # The two validated retrieval components (proposition-aware rerank + calibrated
 # fusion) are ON by default in GraphRAG — no per-run configuration needed.

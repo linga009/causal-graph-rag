@@ -33,7 +33,7 @@ def _load_env(path=os.path.join(ROOT, ".env")):
 
 
 _load_env()
-from llm_adapters import AnthropicLLM
+from causal_graph_rag.llm_adapters import AnthropicLLM
 
 K = 2  # questions per (doc, type) -> 23 docs x 3 types x 2 = 138 questions
 

@@ -27,10 +27,10 @@ sys.path.insert(0, os.path.dirname(__file__))
 def evaluate_extractors(domain: str):
     """Evaluate base REBEL, fine-tuned REBEL, and LLM on a domain."""
     from eval_multidomain_large import LARGE_MULTIDOMAIN_CORPORA, LARGE_MULTIDOMAIN_DATASET
-    from graph_rag import GraphRAG
-    from causal_extractor import extract_edges, LLMEdgeExtractor, REBELRelationExtractor
-    from llm_adapters import GroqLLM, AnthropicLLM
-    from pipeline import MockLLM
+    from causal_graph_rag.graph_rag import GraphRAG
+    from causal_graph_rag.causal_extractor import extract_edges, LLMEdgeExtractor, REBELRelationExtractor
+    from causal_graph_rag.llm_adapters import GroqLLM, AnthropicLLM
+    from causal_graph_rag.pipeline import MockLLM
 
     # Get LLM
     if os.environ.get("GROQ_API_KEY"):
@@ -67,7 +67,7 @@ def evaluate_extractors(domain: str):
         elif extractor_type == "rebel_base":
             try:
                 rebel = REBELRelationExtractor(device="cpu")
-                from causal_extractor import extract_edges_hybrid
+                from causal_graph_rag.causal_extractor import extract_edges_hybrid
 
                 edges = extract_edges_hybrid(corpus, rebel, mode="full")
                 n_edges = len(edges)
@@ -82,7 +82,7 @@ def evaluate_extractors(domain: str):
                 print(f"  SKIPPED: Fine-tuned model not found at {model_path}")
                 continue
             try:
-                from causal_extractor import extract_edges_hybrid
+                from causal_graph_rag.causal_extractor import extract_edges_hybrid
                 rebel_ft = REBELRelationExtractor(device="cpu", model_name=model_path)
                 edges = extract_edges_hybrid(corpus, rebel_ft, mode="full")
                 n_edges = len(edges)

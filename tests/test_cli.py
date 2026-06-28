@@ -6,7 +6,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import cli
+import causal_graph_rag.cli as cli
 
 DOC = "# Outage\n\n## Cause\nThe fire caused a power loss. The power loss disrupted the hospital.\n"
 

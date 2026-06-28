@@ -108,7 +108,7 @@ def demo_retriever(retriever) -> None:
 #  SURFACE 2 — LCEL chain  (chain.invoke)
 # --------------------------------------------------------------------------- #
 def demo_chain(retriever, lc_llm) -> None:
-    from langchain_integration import build_rag_chain
+    from causal_graph_rag.langchain_integration import build_rag_chain
 
     chain = build_rag_chain(retriever, lc_llm)
 
@@ -132,7 +132,7 @@ def demo_agent(rag, lc_llm) -> None:
         print("\n[skip] langchain agents require: pip install langchain")
         return
 
-    from langchain_integration import build_rag_tool
+    from causal_graph_rag.langchain_integration import build_rag_tool
 
     tool = build_rag_tool(rag)
 
@@ -162,8 +162,8 @@ def demo_agent(rag, lc_llm) -> None:
 #  Main
 # --------------------------------------------------------------------------- #
 def main() -> None:
-    from graph_rag import GraphRAG
-    from langchain_integration import VSAGraphRetriever, LangChainLLMAdapter
+    from causal_graph_rag.graph_rag import GraphRAG
+    from causal_graph_rag.langchain_integration import VSAGraphRetriever, LangChainLLMAdapter
 
     # Ingest the demo corpus
     print("Ingesting document...")
@@ -181,7 +181,7 @@ def main() -> None:
     # If no LangChain LLM is available, wire MockLLM through the adapter
     # for surface 1 (retriever), and show MockLLM answers for surfaces 2 & 3.
     if lc_llm is None:
-        from pipeline import MockLLM
+        from causal_graph_rag.pipeline import MockLLM
         from langchain_core.language_models import BaseLLM
         # Patch: use GraphRAG's built-in MockLLM for the chain via a simple wrapper
         class _MockChatLLM:

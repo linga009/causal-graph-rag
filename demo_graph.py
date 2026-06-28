@@ -7,8 +7,8 @@ recovering multi-hop cause->effect chains that chunking + embedding destroy.
     python demo_graph.py
 """
 
-from graph_rag import GraphRAG
-from causal_extractor import extract_edges
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.causal_extractor import extract_edges
 
 DOC = """
 The reactor overheated due to a faulty temperature sensor.

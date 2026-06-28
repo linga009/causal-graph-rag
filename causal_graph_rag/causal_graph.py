@@ -18,9 +18,9 @@ from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 
-from graph_backend import GraphBackend
-from vsa_core import Lexicon, Triple, encode_triple
-from causal_extractor import CausalEdge
+from .graph_backend import GraphBackend
+from .vsa_core import Lexicon, Triple, encode_triple
+from .causal_extractor import CausalEdge
 
 import re as _re
 _TOK = _re.compile(r"\w+", _re.UNICODE)   # unicode-aware: keeps accented words whole

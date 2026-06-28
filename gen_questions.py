@@ -30,7 +30,7 @@ def _load_env(path=".env"):
 
 
 _load_env()
-from llm_adapters import AnthropicLLM
+from causal_graph_rag.llm_adapters import AnthropicLLM
 
 K = 10  # questions per (domain, type) -> with 2 domains gives n=20/type
 

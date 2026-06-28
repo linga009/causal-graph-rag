@@ -8,9 +8,9 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
-from causal_extractor import extract_edges, REBELRelationExtractor
-from llm_adapters import GroqLLM, AnthropicLLM
-from pipeline import MockLLM
+from causal_graph_rag.causal_extractor import extract_edges, REBELRelationExtractor
+from causal_graph_rag.llm_adapters import GroqLLM, AnthropicLLM
+from causal_graph_rag.pipeline import MockLLM
 
 DEMO_TEXT = """
 The temperature sensor failed, which led to reactor overheating.
@@ -57,7 +57,7 @@ def test_extraction_methods():
         else:
             llm = MockLLM()
 
-        from causal_extractor import LLMEdgeExtractor
+        from causal_graph_rag.causal_extractor import LLMEdgeExtractor
         llm_extractor = LLMEdgeExtractor(llm, mode="full")
         llm_edges = llm_extractor.extract(DEMO_TEXT)
         print(f"    Edges: {len(llm_edges)}")

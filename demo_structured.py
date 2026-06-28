@@ -22,9 +22,9 @@ def _load_env(path=".env"):
 
 _load_env()
 
-from graph_rag import GraphRAG
-from llm_adapters import GroqLLM
-from pipeline import MockLLM
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.llm_adapters import GroqLLM
+from causal_graph_rag.pipeline import MockLLM
 
 DOC = """# Incident Report: Plant Outage
 

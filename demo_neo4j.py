@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 def demo_neo4j():
     """Demonstrate Neo4j backend with demo corpus."""
-    from graph_rag import GraphRAG
+    from causal_graph_rag.graph_rag import GraphRAG
 
     # Connection parameters (adjust for your setup)
     NEO4J_URI = os.environ.get("NEO4J_URI", "neo4j://localhost:7687")

@@ -19,8 +19,8 @@ import re
 from dataclasses import dataclass
 from typing import List, Callable, Optional, Tuple
 
-from vsa_core import Lexicon, VSAMemory, Triple
-from parser import parse_triples, backend_name
+from .vsa_core import Lexicon, VSAMemory, Triple
+from .parser import parse_triples, backend_name
 
 
 # --------------------------------------------------------------------------- #

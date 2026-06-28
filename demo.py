@@ -4,12 +4,12 @@ demo.py — runnable end-to-end demonstration of the VSA-RAG engine.
     python demo.py
 
 Uses the offline MockLLM by default. To use Groq, set GROQ_API_KEY and:
-    from llm_adapters import GroqLLM
+    from causal_graph_rag.llm_adapters import GroqLLM
     rag = VSARAG(llm=GroqLLM())
 """
 
-from pipeline import VSARAG
-from parser import backend_name
+from causal_graph_rag.pipeline import VSARAG
+from causal_graph_rag.parser import backend_name
 
 CORPUS = """
 Inflation causes unemployment.

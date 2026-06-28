@@ -305,17 +305,17 @@ def print_report(results: List[SampleResult], label: str) -> None:
 def _build_llm():
     if os.environ.get("GROQ_API_KEY"):
         try:
-            from llm_adapters import GroqLLM
+            from causal_graph_rag.llm_adapters import GroqLLM
             return GroqLLM(), "GroqLLM"
         except ImportError:
             pass
     if os.environ.get("ANTHROPIC_API_KEY"):
         try:
-            from llm_adapters import AnthropicLLM
+            from causal_graph_rag.llm_adapters import AnthropicLLM
             return AnthropicLLM(), "AnthropicLLM"
         except ImportError:
             pass
-    from pipeline import MockLLM
+    from causal_graph_rag.pipeline import MockLLM
     return MockLLM(), "MockLLM"
 
 
@@ -329,7 +329,7 @@ def _avg(results: List[SampleResult]) -> Tuple[float, float, float]:
 
 
 def _build_rag(llm, llm_extract: str | None, llm_mode: str) -> Tuple[Any, int]:
-    from graph_rag import GraphRAG
+    from causal_graph_rag.graph_rag import GraphRAG
     rag = GraphRAG(dim=10000, llm=llm)
     if llm_extract:
         n = rag.ingest(DEMO_TEXT, llm_extractor=llm, llm_mode=llm_mode)

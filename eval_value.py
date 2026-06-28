@@ -48,9 +48,9 @@ def _load_env(path=".env"):
 
 _load_env()
 
-from graph_rag import GraphRAG
-from llm_adapters import AnthropicLLM
-from retrievers import SentenceTransformerDense
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.llm_adapters import AnthropicLLM
+from causal_graph_rag.retrievers import SentenceTransformerDense
 
 GEN_MODEL = "claude-haiku-4-5"      # weak/cheap generation model
 JUDGE_MODEL = "claude-sonnet-4-6"   # stronger fixed judge

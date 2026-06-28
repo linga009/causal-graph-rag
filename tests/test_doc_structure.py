@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from doc_structure import parse, detect_schema, detect_role, SYNTHESIS_ROLES
+from causal_graph_rag.doc_structure import parse, detect_schema, detect_role, SYNTHESIS_ROLES
 
 
 RESEARCH_DOC = """# Causal Graph RAG for Clinical Narratives

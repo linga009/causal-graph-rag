@@ -30,7 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
-from graph_rag import GraphRAG
+from causal_graph_rag.graph_rag import GraphRAG
 
 QTYPES = ["fact", "multihop", "rootcause"]
 TOP_K = 6

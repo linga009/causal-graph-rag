@@ -5,8 +5,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from graph_rag import GraphRAG, ChainResult
-from causal_graph import GraphEdge
+from causal_graph_rag.graph_rag import GraphRAG, ChainResult
+from causal_graph_rag.causal_graph import GraphEdge
 import numpy as np
 
 DOC = """# Subprime Crisis

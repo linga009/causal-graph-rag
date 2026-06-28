@@ -24,12 +24,12 @@ from typing import List, Optional, Tuple, Dict
 
 import numpy as np
 
-from vsa_core import Lexicon, Triple
-from causal_extractor import extract_edges, extract_edges_hybrid
-from causal_graph import CausalGraph, GraphEdge
-from retrievers import BM25, HashingDense, make_dense, PathSignatureRetriever, rrf_fuse, tokenize
-from parser import parse_triples
-from pipeline import MockLLM
+from .vsa_core import Lexicon, Triple
+from .causal_extractor import extract_edges, extract_edges_hybrid
+from .causal_graph import CausalGraph, GraphEdge
+from .retrievers import BM25, HashingDense, make_dense, PathSignatureRetriever, rrf_fuse, tokenize
+from .parser import parse_triples
+from .pipeline import MockLLM
 
 log = logging.getLogger("causal_rag")
 
@@ -144,7 +144,7 @@ class GraphRAG:
         # Choose backend: Neo4j or in-memory
         if neo4j_uri:
             try:
-                from neo4j_graph import Neo4jCausalGraph
+                from .neo4j_graph import Neo4jCausalGraph
 
                 self.graph = Neo4jCausalGraph(
                     uri=neo4j_uri,
@@ -234,7 +234,7 @@ class GraphRAG:
                         "clinical"/"incident"/"auto" additionally tag discourse
                         roles. Structure is captured either way.
         """
-        from doc_structure import parse
+        from .doc_structure import parse
         ds = parse(text, schema=schema)
         # Extract causality from the clean BODY sentences only, so markdown
         # heading lines ("## Impact") never leak into edges or provenance.
@@ -544,7 +544,7 @@ class GraphRAG:
                                       normalize_embeddings=True)[0]
 
     def _index_document_structure(self, ds) -> None:
-        from doc_structure import _content_words
+        from .doc_structure import _content_words
         syn = ds.synthesis_scores(embed=self._embed_fn())
         for s in ds.sentences():
             sec = ds.section_of(s.block_id)
@@ -566,7 +566,7 @@ class GraphRAG:
         exact = self._sent_meta.get(_norm_sent(sentence))
         if exact is not None:
             return exact
-        from doc_structure import _content_words
+        from .doc_structure import _content_words
         q = set(_content_words(sentence))
         if not q:
             return None
@@ -590,7 +590,7 @@ class GraphRAG:
     # -- entry-node selection (three-channel fusion) ------------------------- #
     def _entry_nodes(self, question: str, top_n: int = 4,
                      direction: str = "forward") -> List[Tuple[float, str]]:
-        from retrievers import tokenize
+        from .retrievers import tokenize
         q_terms = set(tokenize(question))
 
         # Channel 0: direct node-name match via inverted index — O(|q_terms|).

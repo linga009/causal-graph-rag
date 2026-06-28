@@ -42,8 +42,8 @@ def _load_env(path=".env"):
 
 _load_env()
 
-from graph_rag import GraphRAG
-from llm_adapters import GroqLLM, GeminiLLM, AnthropicLLM
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.llm_adapters import GroqLLM, GeminiLLM, AnthropicLLM
 
 # Clean same-family capability ablation: Haiku (weak) vs Sonnet (strong).
 # Anthropic has no per-minute/day free-tier cap, so the strong row completes in

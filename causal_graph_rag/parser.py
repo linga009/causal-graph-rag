@@ -14,7 +14,7 @@ active and passive phrasings of the same proposition collapse to one triple.
 
 from __future__ import annotations
 from typing import List, Optional
-from vsa_core import Triple
+from .vsa_core import Triple
 
 try:
     import spacy

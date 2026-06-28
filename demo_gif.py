@@ -60,7 +60,7 @@ def main():
     _err = sys.stderr
     sys.stderr = io.StringIO()                 # hide any residual load warnings
     try:
-        from graph_rag import GraphRAG
+        from causal_graph_rag.graph_rag import GraphRAG
         rag = GraphRAG()
         rag.ingest(DOC, schema="incident")
     finally:

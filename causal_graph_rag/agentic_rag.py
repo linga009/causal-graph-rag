@@ -24,9 +24,8 @@ No new dependency: works with any object exposing `.generate(prompt) -> str`
 
 Quick start
 -----------
-    from graph_rag import GraphRAG
-    from llm_adapters import GroqLLM
-    from agentic_rag import AgenticCausalRAG
+    from causal_graph_rag import GraphRAG, AgenticCausalRAG
+    from causal_graph_rag.llm_adapters import GroqLLM
 
     rag = GraphRAG(llm=GroqLLM())
     rag.ingest(report_text, schema="incident")

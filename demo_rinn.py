@@ -79,7 +79,7 @@ def _load_pdf(path: str) -> str:
 def _build_llm():
     if os.environ.get("GROQ_API_KEY"):
         try:
-            from llm_adapters import GroqLLM
+            from causal_graph_rag.llm_adapters import GroqLLM
             llm = GroqLLM()
             return llm, f"GroqLLM ({llm.model})"
         except ImportError:
@@ -87,13 +87,13 @@ def _build_llm():
 
     if os.environ.get("ANTHROPIC_API_KEY"):
         try:
-            from llm_adapters import AnthropicLLM
+            from causal_graph_rag.llm_adapters import AnthropicLLM
             llm = AnthropicLLM()
             return llm, f"AnthropicLLM ({llm.model})"
         except ImportError:
             pass
 
-    from pipeline import MockLLM
+    from causal_graph_rag.pipeline import MockLLM
     return MockLLM(), "MockLLM (no API key found)"
 
 
@@ -131,8 +131,8 @@ def main():
     llm, label = _build_llm()
     print(f"LLM: {label}\n")
 
-    from graph_rag import GraphRAG
-    from causal_extractor import extract_edges
+    from causal_graph_rag.graph_rag import GraphRAG
+    from causal_graph_rag.causal_extractor import extract_edges
 
     rag = GraphRAG(dim=10000, semantic_weight=0, llm=llm)
     n = rag.ingest(doc)

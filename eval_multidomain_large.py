@@ -275,10 +275,10 @@ LARGE_MULTIDOMAIN_CORPORA = {
 def run_large_eval():
     """Run evaluation on larger corpus."""
     import argparse
-    from graph_rag import GraphRAG
+    from causal_graph_rag.graph_rag import GraphRAG
     from eval_ragas import RagasLLMJudge, SampleResult
-    from llm_adapters import GroqLLM, AnthropicLLM
-    from pipeline import MockLLM
+    from causal_graph_rag.llm_adapters import GroqLLM, AnthropicLLM
+    from causal_graph_rag.pipeline import MockLLM
 
     parser = argparse.ArgumentParser(description="Large multi-domain evaluation")
     parser.add_argument("--llm-extract", choices=["augment", "full"], default=None)

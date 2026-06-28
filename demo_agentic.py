@@ -27,7 +27,7 @@ def _load_env(path: str = ".env") -> None:
 
 
 def _build_llm():
-    from llm_adapters import build_llm
+    from causal_graph_rag.llm_adapters import build_llm
     return build_llm()
 
 
@@ -54,8 +54,8 @@ def main() -> int:
               "GEMINI_API_KEY / OPENAI_API_KEY in .env.")
         return 1
 
-    from graph_rag import GraphRAG
-    from agentic_rag import AgenticCausalRAG
+    from causal_graph_rag.graph_rag import GraphRAG
+    from causal_graph_rag.agentic_rag import AgenticCausalRAG
 
     print(f"LLM: {type(llm).__name__}\nIngesting incident report ...\n")
     rag = GraphRAG(llm=llm)

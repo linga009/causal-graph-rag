@@ -44,7 +44,7 @@ def _load_env(path: str = ".env") -> None:
 
 
 def _build_llm():
-    from llm_adapters import build_llm
+    from .llm_adapters import build_llm
     return build_llm()
 
 
@@ -54,7 +54,7 @@ def _read(path: str) -> str:
 
 
 def cmd_ingest(args) -> int:
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     llm = _build_llm()
     rag = GraphRAG(llm=llm)
     n = rag.ingest(_read(args.file), schema=args.schema,
@@ -83,13 +83,13 @@ def _answer_and_print(rag, question: str, top_k: int, show_chains: bool) -> int:
 
 
 def cmd_query(args) -> int:
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     rag = GraphRAG.load(args.graph, llm=_build_llm())
     return _answer_and_print(rag, args.question, args.top_k, args.chains)
 
 
 def cmd_ask(args) -> int:
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     llm = _build_llm()
     rag = GraphRAG(llm=llm)
     rag.ingest(_read(args.file), schema=args.schema,
@@ -102,8 +102,8 @@ def cmd_agent(args) -> int:
     """Agentic mode: an LLM controller plans a sequence of graph-tool calls
     (rootcause / impact / path / retrieve) to answer complex or multi-intent
     questions. Requires an LLM."""
-    from graph_rag import GraphRAG
-    from agentic_rag import AgenticCausalRAG
+    from .graph_rag import GraphRAG
+    from .agentic_rag import AgenticCausalRAG
     llm = _build_llm()
     if llm is None or type(llm).__name__ == "MockLLM":
         print("error: agentic mode requires an LLM. Set GROQ_API_KEY / "
@@ -122,7 +122,7 @@ def cmd_agent(args) -> int:
 
 
 def cmd_info(args) -> int:
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     rag = GraphRAG.load(args.graph)
     edges = rag.graph.edges
     print(f"Graph: {args.graph}")
@@ -150,7 +150,7 @@ def _print_chains(chains, limit=12):
 
 def cmd_rootcause(args) -> int:
     """Backward causal chains into an event — its root causes. No LLM needed."""
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     rag = GraphRAG.load(args.graph)
     node, chains = rag.root_causes(args.event, max_depth=args.depth)
     if node is None:
@@ -163,7 +163,7 @@ def cmd_rootcause(args) -> int:
 
 def cmd_impact(args) -> int:
     """Forward causal chains out of an event — its downstream impact / blast radius."""
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     rag = GraphRAG.load(args.graph)
     node, chains = rag.impact(args.event, max_depth=args.depth)
     if node is None:
@@ -176,7 +176,7 @@ def cmd_impact(args) -> int:
 
 def cmd_path(args) -> int:
     """Shortest causal path from one event to another."""
-    from graph_rag import GraphRAG
+    from .graph_rag import GraphRAG
     rag = GraphRAG.load(args.graph)
     s, d, chain = rag.connect(args.src, args.dst, max_depth=args.depth)
     if s is None or d is None:
@@ -197,7 +197,7 @@ def cmd_serve(args) -> int:
     except ImportError:
         print("uvicorn required: pip install fastapi uvicorn", file=sys.stderr)
         return 1
-    uvicorn.run("api:app", host=args.host, port=args.port, reload=args.reload)
+    uvicorn.run("causal_graph_rag.api:app", host=args.host, port=args.port, reload=args.reload)
     return 0
 
 

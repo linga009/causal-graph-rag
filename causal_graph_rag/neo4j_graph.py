@@ -8,8 +8,8 @@ Implements the same interface as CausalGraph for drop-in replacement.
 
 Usage
 -----
-    from neo4j_graph import Neo4jCausalGraph
-    from vsa_core import Lexicon
+    from .neo4j_graph import Neo4jCausalGraph
+    from .vsa_core import Lexicon
 
     lex = Lexicon(dim=10000)
     graph = Neo4jCausalGraph(
@@ -31,10 +31,10 @@ from typing import Dict, List, Optional, Set, Tuple
 import re as _re
 import numpy as np
 
-from graph_backend import GraphBackend
-from causal_extractor import CausalEdge
-from causal_graph import GraphEdge
-from vsa_core import Lexicon, Triple, encode_triple
+from .graph_backend import GraphBackend
+from .causal_extractor import CausalEdge
+from .causal_graph import GraphEdge
+from .vsa_core import Lexicon, Triple, encode_triple
 
 _TOK = _re.compile(r"\w+", _re.UNICODE)   # unicode-aware: keeps accented words whole
 

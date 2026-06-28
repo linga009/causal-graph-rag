@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from graph_rag import GraphRAG
+from causal_graph_rag.graph_rag import GraphRAG
 
 DOC = (
     "The fire caused a power loss. The power loss disrupted the hospital. "

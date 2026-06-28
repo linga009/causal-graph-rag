@@ -30,8 +30,8 @@ Five surfaces:
 Quick start
 -----------
     from langchain_groq import ChatGroq
-    from graph_rag import GraphRAG
-    from langchain_integration import (
+    from causal_graph_rag import GraphRAG
+    from causal_graph_rag.langchain_integration import (
         VSAGraphRetriever, LangChainLLMAdapter, build_rag_chain, build_graph_tools
     )
 
@@ -251,8 +251,8 @@ class LangChainLLMAdapter:
     Example
     -------
         from langchain_groq import ChatGroq
-        from graph_rag import GraphRAG
-        from langchain_integration import LangChainLLMAdapter
+        from causal_graph_rag import GraphRAG
+        from causal_graph_rag.langchain_integration import LangChainLLMAdapter
 
         lc_llm  = ChatGroq(model="llama-3.1-8b-instant")
         adapter = LangChainLLMAdapter(lc_llm)
@@ -471,7 +471,7 @@ def build_graph_tools(graph_rag: Any) -> List[Any]:
     def _fmt_paths(paths: list, label: str, node: str) -> str:
         if not paths:
             return f"No {label} chains found for '{node}'."
-        from causal_graph import CausalGraph
+        from .causal_graph import CausalGraph
         lines = [
             f"  {i}. {CausalGraph.chain_text(p)}"
             for i, p in enumerate(paths[:5], 1)
@@ -504,7 +504,7 @@ def build_graph_tools(graph_rag: Any) -> List[Any]:
             return f"No graph node found matching '{source}'."
         if tgt_node is None:
             return f"No graph node found matching '{target}'."
-        from causal_graph import CausalGraph
+        from .causal_graph import CausalGraph
         path = graph_rag.graph.path_between(src_node, tgt_node, max_depth=8)
         if path is None:
             return (

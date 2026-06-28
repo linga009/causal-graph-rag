@@ -27,8 +27,8 @@ import textwrap
 from dataclasses import dataclass
 from typing import Any, List, Optional
 
-from parser import parse_triples, _clean, _split_clauses
-from vsa_core import Triple
+from .parser import parse_triples, _clean, _split_clauses
+from .vsa_core import Triple
 
 log = logging.getLogger("causal_rag")
 

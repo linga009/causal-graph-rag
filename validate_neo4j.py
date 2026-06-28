@@ -41,10 +41,10 @@ def _ok(label, cond, detail=""):
 
 
 def main() -> int:
-    from neo4j_graph import Neo4jCausalGraph
-    from causal_extractor import CausalEdge, extract_edges
-    from vsa_core import Lexicon, Triple
-    from graph_rag import GraphRAG
+    from causal_graph_rag.neo4j_graph import Neo4jCausalGraph
+    from causal_graph_rag.causal_extractor import CausalEdge, extract_edges
+    from causal_graph_rag.vsa_core import Lexicon, Triple
+    from causal_graph_rag.graph_rag import GraphRAG
 
     lex = Lexicon(dim=10000, semantic_weight=0)
 

@@ -8,8 +8,8 @@ import pytest
 
 pytest.importorskip("langchain_core", reason="langchain-core not installed")
 
-from graph_rag import GraphRAG
-from langchain_integration import (
+from causal_graph_rag.graph_rag import GraphRAG
+from causal_graph_rag.langchain_integration import (
     VSAGraphRetriever,
     LangChainLLMAdapter,
     _find_node,

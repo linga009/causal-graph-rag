@@ -157,10 +157,10 @@ def evaluate_multidomain(llm_extract: str | None = None, llm_mode: str = ""):
     """
     Run evaluation on all domains.
     """
-    from graph_rag import GraphRAG
+    from causal_graph_rag.graph_rag import GraphRAG
     from eval_ragas import RagasLLMJudge, SampleResult
-    from llm_adapters import GroqLLM, AnthropicLLM
-    from pipeline import MockLLM
+    from causal_graph_rag.llm_adapters import GroqLLM, AnthropicLLM
+    from causal_graph_rag.pipeline import MockLLM
 
     # Pick LLM
     if os.environ.get("GROQ_API_KEY"):
@@ -275,9 +275,9 @@ if __name__ == "__main__":
 
     if args.compare_extraction:
         # Run all three extraction modes and compare
-        from llm_adapters import GroqLLM, AnthropicLLM
-        from pipeline import MockLLM
-        from graph_rag import GraphRAG
+        from causal_graph_rag.llm_adapters import GroqLLM, AnthropicLLM
+        from causal_graph_rag.pipeline import MockLLM
+        from causal_graph_rag.graph_rag import GraphRAG
         from eval_ragas import RagasLLMJudge
 
         if os.environ.get("GROQ_API_KEY"):

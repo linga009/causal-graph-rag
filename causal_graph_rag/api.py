@@ -63,8 +63,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from graph_rag import GraphRAG
-from llm_adapters import build_llm
+from .graph_rag import GraphRAG
+from .llm_adapters import build_llm
 
 # --------------------------------------------------------------------------- #
 #  App setup
@@ -280,7 +280,7 @@ def _require_llm():
 @app.get("/health", response_model=HealthResponse, tags=["system"])
 def health():
     """Health check — LLM backend, graph size, and available document-structure presets."""
-    from doc_structure import AVAILABLE_SCHEMAS
+    from .doc_structure import AVAILABLE_SCHEMAS
     with _rag_lock:
         return HealthResponse(
             status="ok",
@@ -301,7 +301,7 @@ def ingest(req: IngestRequest):
       Omit for free spaCy-only extraction.
     - **schema**: document-structure preset. See `/health` → `available_schemas`.
     """
-    from doc_structure import AVAILABLE_SCHEMAS
+    from .doc_structure import AVAILABLE_SCHEMAS
     if not req.text or not req.text.strip():
         raise HTTPException(status_code=422, detail="'text' must be non-empty.")
     if req.llm_mode and req.llm_mode not in ("augment", "full"):

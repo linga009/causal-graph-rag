@@ -5,8 +5,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from graph_rag import GraphRAG, _canon_entity, _entity_tokens
-from causal_extractor import CausalEdge
+from causal_graph_rag.graph_rag import GraphRAG, _canon_entity, _entity_tokens
+from causal_graph_rag.causal_extractor import CausalEdge
 
 
 def test_canon_strips_article_and_case():

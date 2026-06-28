@@ -14,11 +14,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import pytest
 
-from vsa_core import Lexicon, Triple, encode_triple, hamming_similarity
-from causal_graph import CausalGraph
-from causal_extractor import CausalEdge
-from retrievers import _stable_hash, HashingDense, rrf_fuse
-from graph_rag import GraphRAG
+from causal_graph_rag.vsa_core import Lexicon, Triple, encode_triple, hamming_similarity
+from causal_graph_rag.causal_graph import CausalGraph
+from causal_graph_rag.causal_extractor import CausalEdge
+from causal_graph_rag.retrievers import _stable_hash, HashingDense, rrf_fuse
+from causal_graph_rag.graph_rag import GraphRAG
 
 
 CORPUS = (
@@ -178,7 +178,7 @@ def test_neo4j_edge_ids_are_unique(monkeypatch):
     monkeypatch.setitem(sys.modules, "neo4j", fake_neo4j)
 
     import importlib
-    import neo4j_graph
+    import causal_graph_rag.neo4j_graph as neo4j_graph
     importlib.reload(neo4j_graph)
 
     g = neo4j_graph.Neo4jCausalGraph(
