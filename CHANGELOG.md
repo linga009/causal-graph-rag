@@ -21,6 +21,9 @@ query-time LLM**.
   `/retrieve` `/rootcause` `/impact` `/path`; demo GIF + headless renderer.
 
 ### Changed
+- **Relicensed under the PolyForm Noncommercial License 1.0.0** — free for personal,
+  academic, and noncommercial use; commercial use requires a separate license
+  (contact lingamraju26@gmail.com).
 - **Two retrieval components promoted to default-on**, validated by free screen +
   benchmark: proposition-aware rerank (scores chains by their source sentences) and
   min-max calibrated channel fusion.

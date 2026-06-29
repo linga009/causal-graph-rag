@@ -8,7 +8,7 @@ version = "0.3.0"
 description = "RAG that traverses cause-effect chains instead of returning similarity-matched chunks — multi-hop & root-cause retrieval with no query-time LLM."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = { text = "PolyForm-Noncommercial-1.0.0" }
 authors = [{ name = "linga009", email = "lingamraju26@gmail.com" }]
 keywords = ["rag", "retrieval", "causal", "knowledge-graph", "graphrag",
             "agentic-rag", "vsa", "llm", "langchain", "neo4j", "multi-hop"]
@@ -16,7 +16,8 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: Free for non-commercial use",
+    "License :: Other/Proprietary License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",

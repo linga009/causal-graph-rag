@@ -6,7 +6,8 @@
 
 
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
+![Commercial](https://img.shields.io/badge/commercial%20license-available-blue)
 ![LangChain](https://img.shields.io/badge/LangChain-1.x-orange)
 ![LLM](https://img.shields.io/badge/LLM-Groq%20%7C%20Gemini%20%7C%20Anthropic%20%7C%20OpenAI-purple)
 ![Tests](https://img.shields.io/badge/tests-85%20passing-brightgreen)
@@ -52,6 +53,15 @@ flowchart LR
 |--------|--------|
 | Standard RAG | Returns the *"reactor overheated"* chunk. The answer lives 4 hops away in a chunk with different vocabulary. **Structurally blind.** |
 | **Causal Graph RAG** | Walks `reactor → valve → shutdown → outage → 🏥 hospital operations` and answers correctly. ✓ |
+
+> ## 📄 Licensing & Commercial Use
+>
+> This project is licensed under the **PolyForm Noncommercial License 1.0.0** (see [LICENSE](LICENSE)).
+> It is **free** for personal, academic, research, and other **noncommercial** use.
+>
+> **Commercial use requires a separate license.** If you want to use this in proprietary
+> software, a SaaS / hosted product, or internal business workflows, please contact
+> **lingamraju26@gmail.com** to arrange commercial licensing.
 
 **Real output** from that document — graph traversal only, no LLM, no embedding search:
 
@@ -332,4 +342,5 @@ pytest tests/ -q     # 85 tests; run on the minimal install (graceful degradatio
 
 ## License
 
-MIT
+**PolyForm Noncommercial License 1.0.0** — free for noncommercial use (see [LICENSE](LICENSE)).
+**Commercial use requires a separate license** → contact **lingamraju26@gmail.com**.
