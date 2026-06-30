@@ -298,6 +298,10 @@ are stored as documents, and graph traversal uses MongoDB's native **`$graphLook
 aggregation (`graph.reachable()` for the downstream impact set / upstream root-cause
 set). The dense coverage channel pairs naturally with **Atlas Vector Search**.
 
+![Causal Graph RAG on MongoDB — $graphLookup traversal](assets/demo_mongo.gif)
+
+Try it with no server (`python demo_mongo.py` uses an in-process mock) or point it at Atlas with `MONGO_URI=...`.
+
 ```python
 rag = GraphRAG(mongo_uri="mongodb+srv://user:pass@cluster.mongodb.net")
 rag.ingest(large_corpus)
