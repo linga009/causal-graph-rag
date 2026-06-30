@@ -116,9 +116,12 @@ class GraphRAG:
         neo4j_user: str = "neo4j",
         neo4j_password: str = "password",
         neo4j_database: str = "neo4j",
+        mongo_uri: Optional[str] = None,
+        mongo_db: str = "causal_rag",
+        mongo_collection: str = "causal_edges",
     ):
         """
-        Initialize GraphRAG with in-memory or Neo4j backend.
+        Initialize GraphRAG with in-memory, Neo4j, or MongoDB backend.
 
         Parameters
         ----------
@@ -141,8 +144,18 @@ class GraphRAG:
         """
         self.lex = Lexicon(dim=dim, semantic_weight=semantic_weight)
 
-        # Choose backend: Neo4j or in-memory
-        if neo4j_uri:
+        # Choose backend: MongoDB, Neo4j, or in-memory. `using_external` marks any
+        # DB-backed graph (its persistence is the database, so save() is disabled).
+        self.using_neo4j = False
+        self.using_mongo = False
+        if mongo_uri:
+            from .mongo_graph import MongoCausalGraph
+            self.graph = MongoCausalGraph(
+                uri=mongo_uri, db_name=mongo_db, collection=mongo_collection,
+                lex=self.lex,
+            )
+            self.using_mongo = True
+        elif neo4j_uri:
             try:
                 from .neo4j_graph import Neo4jCausalGraph
 
@@ -161,7 +174,7 @@ class GraphRAG:
                 )
         else:
             self.graph = CausalGraph(self.lex)
-            self.using_neo4j = False
+        self.using_external = self.using_neo4j or self.using_mongo
 
         self.bm25 = BM25()
         self.dense = make_dense()
@@ -1119,9 +1132,9 @@ class GraphRAG:
         """Persist an in-memory graph + structure to disk so it can be reloaded
         without re-ingesting (warm startup). The sentence-transformer model is
         NOT pickled — retrieval indices are rebuilt lazily on first query after
-        load(). Not for the Neo4j backend (the database is the persistence)."""
-        if getattr(self, "using_neo4j", False):
-            raise RuntimeError("Neo4j-backed graphs persist in the database; save() is for in-memory only.")
+        load(). Not for DB backends (Neo4j/MongoDB) — the database is the persistence."""
+        if getattr(self, "using_external", False):
+            raise RuntimeError("DB-backed graphs (Neo4j/MongoDB) persist in the database; save() is for in-memory only.")
         state = {
             "version": _SAVE_VERSION,
             "dim": self.lex.dim,
@@ -1177,8 +1190,8 @@ class GraphRAG:
         return rag
 
     def close(self) -> None:
-        """Close database connections (for Neo4j backend). Idempotent."""
-        if getattr(self, "using_neo4j", False):
+        """Close database connections (Neo4j / MongoDB backends). Idempotent."""
+        if getattr(self, "using_external", False):
             graph = getattr(self, "graph", None)
             if graph is not None and hasattr(graph, "close"):
                 graph.close()

@@ -513,6 +513,6 @@ def clear_graph():
     with _rag_lock:
         old = _rag
         _rag = GraphRAG(dim=10000, llm=_llm)
-        if getattr(old, "using_neo4j", False):
+        if getattr(old, "using_external", False):
             old.close()
     return {"status": "cleared"}

@@ -288,10 +288,25 @@ The default path is **one** LLM call (generation only); all retrieval is graph +
 
 ---
 
-## Production: Neo4j for large graphs
+## Production backends (Neo4j or MongoDB)
 
-For graphs >1M nodes, swap the backend without changing any other code:
+The graph is pluggable behind a `GraphBackend` interface — swap to a database for
+large/persistent graphs without changing any other code.
 
+**MongoDB / MongoDB Atlas** (`pip install "causal-graph-rag[mongo]"`) — causal edges
+are stored as documents, and graph traversal uses MongoDB's native **`$graphLookup`**
+aggregation (`graph.reachable()` for the downstream impact set / upstream root-cause
+set). The dense coverage channel pairs naturally with **Atlas Vector Search**.
+
+```python
+rag = GraphRAG(mongo_uri="mongodb+srv://user:pass@cluster.mongodb.net")
+rag.ingest(large_corpus)
+print(rag.graph.reachable("pump failure", "forward"))   # native $graphLookup impact set
+answer, chains = rag.answer("What caused the outage?")
+rag.close()
+```
+
+**Neo4j** (`pip install "causal-graph-rag[neo4j]"`):
 ```python
 rag = GraphRAG(neo4j_uri="neo4j://localhost:7687", neo4j_user="neo4j", neo4j_password="...")
 rag.ingest(large_corpus)
@@ -299,7 +314,7 @@ answer, chains = rag.answer("What caused the outage?")
 rag.close()
 ```
 
-Performance: <100 ms in-memory on 10K nodes · 50–200 ms Neo4j on 1M+ nodes.
+Performance: <100 ms in-memory on 10K nodes · 50–200 ms on a DB backend at 1M+ nodes.
 
 ---
 

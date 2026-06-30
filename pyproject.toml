@@ -46,10 +46,12 @@ openai = ["openai"]
 api = ["fastapi", "uvicorn"]
 # LangChain integration.
 langchain = ["langchain-core>=1.0", "langchain>=1.0", "langchain-groq>=1.0"]
-# Persistent graph backend for >1M nodes.
+# Persistent graph backends for large graphs.
 neo4j = ["neo4j>=5.0"]
+mongo = ["pymongo>=4.0"]
 # Everything for development + tests.
-dev = ["pytest", "fastapi", "uvicorn", "groq", "google-genai", "neo4j>=5.0"]
+dev = ["pytest", "fastapi", "uvicorn", "groq", "google-genai", "neo4j>=5.0",
+       "pymongo>=4.0", "mongomock>=4.0"]
 
 [project.urls]
 Homepage = "https://github.com/linga009/causal-graph-rag"

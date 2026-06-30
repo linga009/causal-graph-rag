@@ -10,6 +10,11 @@ similarity-matched chunks — strong multi-hop and root-cause retrieval with **n
 query-time LLM**.
 
 ### Added
+- **MongoDB / MongoDB Atlas backend** (`MongoCausalGraph`, `pip install
+  "causal-graph-rag[mongo]"`): causal edges stored as documents, native graph
+  traversal via MongoDB's `$graphLookup` (`graph.reachable()` for impact /
+  root-cause sets). Drop-in via `GraphRAG(mongo_uri=...)`; pairs with Atlas Vector
+  Search for the dense channel.
 - **Agentic mode** (opt-in): `AgenticCausalRAG`, a ReAct controller whose action
   space is the LLM-free graph tools (`rootcause` / `impact` / `path` / `retrieve`).
   CLI `causal-rag agent`; the default `answer()` path is unchanged.
