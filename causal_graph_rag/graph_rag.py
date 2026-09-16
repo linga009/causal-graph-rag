@@ -255,9 +255,10 @@ class GraphRAG:
 
         try:
             if llm_extractor is not None:
-                edges = extract_edges_hybrid(clean_text, llm_extractor, mode=llm_mode)
+                edges = extract_edges_hybrid(clean_text, llm_extractor, mode=llm_mode,
+                                             schema=schema)
             else:
-                edges = extract_edges(clean_text)
+                edges = extract_edges(clean_text, schema=schema)
         except Exception as exc:
             log.warning("edge extraction failed, ingesting 0 edges: %s", exc)
             edges = []

@@ -120,10 +120,19 @@ def _fallback_triples(text: str) -> List[Triple]:
                 verb_idx = i
                 break
         if verb_idx is None:
+            # Guess a verb by suffix only for "-ed" -- a reliable past-tense
+            # verb inflection in English. Bare "-s"/"-es" was tried too and
+            # is NOT reliable: it's heavily overloaded with plural nouns
+            # ("eyewitnesses", "assets", "analyses"), and guessing wrong
+            # here poisons every downstream triple (e.g. it turned
+            # "...at that point was calm, according to eyewitnesses..."
+            # into agent="calm according" by mistaking "eyewitnesses" for
+            # the clause's verb -- found via a real causal_extractor.py
+            # extraction, not a synthetic case).
             for i, w in enumerate(words):
                 if w in _STOP or w in _AUX:
                     continue
-                if w.endswith(("es", "ed", "s")) and len(w) > 3:
+                if w.endswith("ed") and len(w) > 3:
                     verb_idx = i
                     break
         if verb_idx is None:

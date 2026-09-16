@@ -24,8 +24,9 @@ import json
 import logging
 import re
 import textwrap
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .parser import parse_triples, _clean, _split_clauses
 from .vsa_core import Triple
@@ -133,10 +134,24 @@ class CausalEdge:
     source_sent: str       # plaintext provenance for the LLM context
     confidence: float = 0.85     # extraction confidence in [0, 1]
     extraction_method: str = "spacy"  # "spacy" | "rule" | "llm" | "rebel" | "implicit"
+    # "stated" (asserted as fact) | "hypothesis" (hedged: "it has been
+    # speculated...") | "disputed" (>=2 edges to the same effect disagree on
+    # cause and at least one is a hypothesis). Set by _annotate_edges(), a
+    # post-process pass -- not by individual extraction methods, so it's
+    # consistent regardless of which of the four methods produced the edge.
+    epistemic_status: str = "stated"
+    attributed_to: Optional[str] = None  # named source of a claim, if detected
+    magnitude: Optional[str] = None      # nearby numeric/%/currency span, if any
 
     def text(self) -> str:
         arrow = "==>" if self.polarity > 0 else "=/=>"
-        return f"{self.cause} {arrow}[{self.relation}] {self.effect}"
+        out = f"{self.cause} {arrow}[{self.relation}] {self.effect}"
+        if self.magnitude:
+            out += f" ({self.magnitude})"
+        if self.epistemic_status != "stated":
+            out += f" [{self.epistemic_status}"
+            out += f", per {self.attributed_to}]" if self.attributed_to else "]"
+        return out
 
 
 # Words that must never be returned as an event anchor.
@@ -150,10 +165,13 @@ _SKIP_HEAD = {"the", "a", "an", "this", "that", "these", "those", "its",
               "emergency", "coolant", "power", "main", "first", "second",
               "subsequent", "resulting", "following", "entire", "whole"}
 
-# Pronoun words that must never appear as cause/effect nodes.
+# Pronoun words that must never appear as cause/effect nodes. Includes
+# relative pronouns (which/who/whom/whose) -- omitting them let edges like
+# ("faa", implicit_trigger, "who") and ("which", cause, "u.s.") through.
 _PRONOUN_NODES = frozenset(
     "it this that these those they he she we i you them him her us "
-    "its their his her our your my itself themselves ourselves".split()
+    "its their his her our your my itself themselves ourselves "
+    "which who whom whose".split()
 )
 
 # Words in an effect clause that signal the edge is suppressive (polarity -1).
@@ -175,9 +193,65 @@ TEMPORAL_CONNECTIVES = [
 ]
 
 
+_BARE_NUMERIC_RE = re.compile(r"^[\d\s.,%$€£]+$")
+
+# Function words that don't count as a "real content word" on their own.
+# Deliberately NOT using spaCy POS tagging here: tagging a 1-3 word span in
+# isolation (no sentence context) is unreliable for common noun/verb
+# homographs in this domain ("pump", "scram", "outage" all tag as VERB when
+# handed to the tagger alone) -- that isolation-reparse bug briefly broke
+# real edges like ("pump", cause, "reactor") during development. Real POS
+# filtering happens where context is available: in _intra_spacy's in-context
+# parse and _event_head's noun-chunk pass, both of which parse the whole
+# sentence, never a bare extracted string.
+_FRAGMENT_STOPWORDS = _NON_EVENTS | _SKIP_HEAD | _PRONOUN_NODES | frozenset(
+    "is are was were be been being do does did by of to in on at for with "
+    "however though meanwhile therefore moreover furthermore nonetheless "
+    "otherwise at first after before".split()
+)
+
+
+def _is_well_formed_entity(text: str) -> bool:
+    """Return True iff `text` looks like a real entity span rather than an
+    extraction artifact: a bare number/percent/currency span, a dangling
+    fragment with an unmatched parenthesis (truncation smell), or a span
+    with no real content word at all (catches stray prepositions/function
+    words/discourse markers that a raw word-scan can pick up).
+
+    This is a single chokepoint deliberately kept independent of which of
+    the four extraction methods (spacy/rule/implicit/org_rule) produced the
+    span, since all of them can independently produce malformed spans. It
+    is a coarse safety net, not a full grammaticality check -- it will not
+    catch every fragment (e.g. "however investment" passes, since
+    "investment" is a real content word), by design: see the isolation
+    caveat above for why anything stronger needs sentence context.
+    """
+    t = text.strip()
+    if not t:
+        return False
+    if _BARE_NUMERIC_RE.match(t):
+        return False
+    if _MAGNITUDE_RE.fullmatch(t):
+        # A pure magnitude expression ("$4 trillion", "124%") is not a noun
+        # phrase entity -- that information belongs in CausalEdge.magnitude
+        # (see _detect_magnitude), not as a cause/effect node.
+        return False
+    if t.count("(") != t.count(")"):
+        return False
+    words = [w.strip(".,;:!?\"'()") for w in t.split()]
+    words = [w for w in words if w]
+    if not words:
+        return False
+    if not any(w.isalpha() and len(w) > 2 and w.lower() not in _FRAGMENT_STOPWORDS
+               for w in words):
+        return False
+    return True
+
+
 def _validate_edge(e: CausalEdge) -> bool:
     """Return True iff the edge is well-formed and should enter the graph.
-    Rejects pronouns, empty strings, self-loops, and overly long entity names."""
+    Rejects pronouns, empty strings, self-loops, overly long entity names,
+    and (via _is_well_formed_entity) non-noun-phrase extraction artifacts."""
     c, eff = e.cause.strip(), e.effect.strip()
     if not c or not eff or not e.relation:
         return False
@@ -186,6 +260,8 @@ def _validate_edge(e: CausalEdge) -> bool:
     if len(c) > 80 or len(eff) > 80:
         return False
     if c == eff:
+        return False
+    if not _is_well_formed_entity(c) or not _is_well_formed_entity(eff):
         return False
     return True
 
@@ -224,7 +300,8 @@ def _compound_span(token) -> str:
     return " ".join(parts).lower().strip()
 
 
-_PRONOUNS = {"this", "that", "these", "those", "it", "they", "he", "she", "we", "i"}
+_PRONOUNS = {"this", "that", "these", "those", "it", "they", "he", "she", "we", "i",
+             "which", "who", "whom", "whose"}
 
 
 # --------------------------------------------------------------------------- #
@@ -317,7 +394,7 @@ def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
         if token.dep_ == "amod" and token.head.pos_ in ("NOUN", "PROPN"):
             effect_txt = _compound_span(token.head)
             for child in token.children:
-                if child.dep_ in ("npadvmod", "nsubj"):
+                if child.dep_ in ("npadvmod", "nsubj") and child.pos_ in ("NOUN", "PROPN"):
                     cause_txt = _compound_span(child)
                     if cause_txt and effect_txt and cause_txt != effect_txt:
                         edges.append(CausalEdge(cause_txt, rel, effect_txt, pol, sent,
@@ -325,15 +402,20 @@ def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
             continue  # don't also try patterns 1/2 for the same token
 
         # Find syntactic subject — filter pronouns that coreference resolution
-        # would need to resolve (they add noise as standalone graph nodes)
+        # would need to resolve (they add noise as standalone graph nodes),
+        # and require a NOUN/PROPN head so numbers/symbols ("%", bare years)
+        # carrying a subject/object dep label don't become graph nodes.
         subjects = [c for c in token.children
                     if c.dep_ in ("nsubj", "nsubjpass")
-                    and c.lower_ not in _PRONOUNS]
+                    and c.lower_ not in _PRONOUNS
+                    and c.pos_ in ("NOUN", "PROPN")]
         # Objects: direct object OR prepositional object ("led to X")
-        objects = [c for c in token.children if c.dep_ in ("dobj", "attr")]
+        objects = [c for c in token.children
+                   if c.dep_ in ("dobj", "attr") and c.pos_ in ("NOUN", "PROPN")]
         if not objects:
             for prep in (c for c in token.children if c.dep_ == "prep"):
-                objects += [gc for gc in prep.children if gc.dep_ == "pobj"]
+                objects += [gc for gc in prep.children
+                           if gc.dep_ == "pobj" and gc.pos_ in ("NOUN", "PROPN")]
 
         is_passive = any(c.dep_ == "nsubjpass" for c in token.children)
 
@@ -343,7 +425,8 @@ def _intra_spacy(sent: str) -> Optional[List[CausalEdge]]:
             cause_tokens = []
             for c in token.children:
                 if c.dep_ == "agent":
-                    cause_tokens += [gc for gc in c.children if gc.dep_ == "pobj"]
+                    cause_tokens += [gc for gc in c.children
+                                     if gc.dep_ == "pobj" and gc.pos_ in ("NOUN", "PROPN")]
             if cause_tokens:
                 for eff in effect_tokens:
                     for cau in cause_tokens:
@@ -403,14 +486,44 @@ def _strip_connectives(sentence: str) -> str:
 
 
 def _event_head(sentence: str) -> Optional[str]:
-    """The event/entity a clause is about: head noun of its subject."""
+    """The event/entity a clause is about: head noun of its subject.
+
+    Three tiers, tried in order:
+      1. parse_triples()'s agent/patient (cheap, already dependency-aware).
+      2. spaCy noun-chunk nearest the cutoff point (a causal verb or a
+         state-change word like "was"/"failed") -- a real NP, not just
+         "whatever words happened to precede the cutoff".
+      3. Raw word-scan (only reached when spaCy is unavailable). This tier
+         is the one that historically produced fragments like "via mbs)" or
+         "who", since it has no notion of grammatical structure at all;
+         _validate_edge's _is_well_formed_entity check is the backstop for
+         whatever it still lets through.
+    """
     cleaned = _strip_connectives(sentence)
 
     trips = parse_triples(cleaned)
     if trips:
         cand = trips[0].agent or trips[0].patient
-        if cand and cand not in _NON_EVENTS:
+        if cand and cand not in _NON_EVENTS and _is_well_formed_entity(cand):
             return cand
+
+    nlp = _get_nlp()
+    if nlp is not None:
+        doc = nlp(cleaned)
+        cutoff = len(doc)
+        for tok in doc:
+            if tok.lemma_.lower() in CAUSAL_VERBS or tok.lower_ in (
+                "failed", "happened", "occurred", "was", "were"):
+                cutoff = tok.i
+                break
+        best = None
+        for chunk in doc.noun_chunks:
+            if chunk.end <= cutoff:
+                best = chunk
+        if best is not None:
+            head = _compound_span(best.root)
+            if head and head not in _NON_EVENTS and _is_well_formed_entity(head):
+                return head
 
     words = [_clean(w) for w in cleaned.split()]
     candidates = []
@@ -423,7 +536,8 @@ def _event_head(sentence: str) -> Optional[str]:
         return None
     # Return up to two content words so compound nouns are preserved
     # (e.g. "coolant valve" instead of just "valve")
-    return " ".join(candidates[-2:]) if len(candidates) >= 2 else candidates[-1]
+    head = " ".join(candidates[-2:]) if len(candidates) >= 2 else candidates[-1]
+    return head if _is_well_formed_entity(head) else None
 
 
 def _sentences(text: str) -> List[str]:
@@ -497,28 +611,39 @@ def _implicit_edges(sents: List[str], explicit_pairs: set) -> List[CausalEdge]:
 
 # Organizational causality: captures governance and information-flow failures
 # that spaCy/rules miss ("proceeded without oversight", "failed to notify", etc.)
+# NOTE: capture groups are bounded by WORD count (\w+(?:\s+\w+){0,N}), not
+# character count. A character-count cap ([\w\s]{1,30}) slices mid-word
+# whenever a phrase's word boundaries don't happen to land on the count
+# (e.g. "...future value" -> "...future valu"); a word-count cap can't ever
+# do that, since \w+ only ever matches whole words. Groups are GREEDY (no
+# trailing lookahead) and capped generously (10-12 words): an earlier
+# non-greedy-plus-lookahead version could fail to match at all whenever a
+# real phrase ran longer than its cap with no punctuation inside it (e.g.
+# "properly assess the future value of these financial assets" -- 9 words,
+# no internal punctuation) -- greedy matching just consumes up to the cap
+# instead of requiring a nearby boundary that might not exist.
 _ORG_WITHOUT = re.compile(
-    r"([\w][\w\s]{2,35}?)\s+without\s+"
+    r"(\w+(?:\s+\w+){0,7})\s+without\s+"
     r"(?:proper\s+|required\s+|adequate\s+|formal\s+|explicit\s+|prior\s+)?"
     r"(approval|authorization|oversight|notification|clearance|consent|review|supervision|knowledge)",
     re.I,
 )
 _ORG_FAILED = re.compile(
-    r"([\w][\w\s]{1,25}?)\s+failed\s+to\s+([\w][\w\s]{1,30})",
+    r"(\w+(?:\s+\w+){0,5})\s+failed\s+to\s+(\w+(?:\s+\w+){0,11})",
     re.I,
 )
 _ORG_UNAWARE = re.compile(
-    r"([\w][\w\s]{1,25}?)\s+(?:was|were)\s+(?:not\s+)?(?:unaware|informed|notified|told)\s+"
-    r"(?:of\s+|about\s+)([\w][\w\s]{1,30})",
+    r"(\w+(?:\s+\w+){0,5})\s+(?:was|were)\s+(?:not\s+)?(?:unaware|informed|notified|told)\s+"
+    r"(?:of\s+|about\s+)(\w+(?:\s+\w+){0,11})",
     re.I,
 )
 _ORG_DESPITE = re.compile(
-    r"([\w][\w\s]{1,25}?)\s+(?:proceeded|continued|persisted|went\s+ahead|was\s+conducted|was\s+carried\s+out)\s+"
-    r"despite\s+([\w][\w\s]{1,40})",
+    r"(\w+(?:\s+\w+){0,5})\s+(?:proceeded|continued|persisted|went\s+ahead|was\s+conducted|was\s+carried\s+out)\s+"
+    r"despite\s+(\w+(?:\s+\w+){0,11})",
     re.I,
 )
 _ORG_PRESSURE = re.compile(
-    r"(?:under\s+)?(?:[\w\s]{0,15})\bpressure\b\s+to\s+([\w][\w\s]{1,30})",
+    r"(?:under\s+)?(?:\w+\s+){0,2}\bpressure\b\s+to\s+(\w+(?:\s+\w+){0,11})",
     re.I,
 )
 
@@ -591,7 +716,96 @@ def _org_edges(sents: List[str]) -> List[CausalEdge]:
     return [e for e in edges if _validate_edge(e)]
 
 
-def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEdge]:
+# --------------------------------------------------------------------------- #
+#  Epistemic status, attribution, and magnitude annotation (post-process)
+# --------------------------------------------------------------------------- #
+
+_HYPOTHESIS_CUES = (
+    "it has been speculated", "it was speculated", "it is speculated",
+    "one view was", "one view is", "one hypothesis", "another hypothesis",
+    "another view", "some believe", "some argue", "it is believed",
+    "it was believed", "has been suggested", "was suggested",
+    "is thought", "was thought", "is thought to", "was thought to",
+    "may have been", "might have been", "could have been",
+)
+
+# Named-source attribution. Kept deliberately narrow (two high-precision
+# surface patterns) rather than general NER, since a wrong attribution is
+# worse than none: it would misquote who made a claim.
+_ATTRIBUTION_PATTERNS = (
+    # (?i:...) scopes case-insensitivity to just the literal trigger phrase,
+    # so the [A-Z] name requirement (the precision guard) stays case-sensitive.
+    re.compile(r"\b(?i:according to) ((?:[A-Z][\w.\-]*\s*){1,4})"),
+    re.compile(r",\s*(?i:by)\s+((?:[A-Z][\w.\-]*\s*){1,4}),"),
+    re.compile(r"\b((?:[A-Z][\w.\-]*\s*){1,4})\s+"
+               r"(?i:hypothesi[sz]ed|argued|claimed|suggested|speculated|theorized|posited)\s+that\b"),
+)
+
+_MAGNITUDE_RE = re.compile(
+    r"(\$\s?[\d,]+(?:\.\d+)?\s?(?:trillion|billion|million|thousand)?|"
+    r"[\d,]+(?:\.\d+)?\s?%|"
+    r"[\d,]+(?:\.\d+)?\s?(?:percent|percentage\s+points?))",
+    re.I,
+)
+
+
+def _detect_epistemic_status(sentence: str) -> str:
+    low = sentence.lower()
+    return "hypothesis" if any(cue in low for cue in _HYPOTHESIS_CUES) else "stated"
+
+
+def _detect_attribution(sentence: str) -> Optional[str]:
+    for pat in _ATTRIBUTION_PATTERNS:
+        m = pat.search(sentence)
+        if m:
+            name = m.group(1).strip().rstrip(",")
+            if name:
+                return name
+    return None
+
+
+def _detect_magnitude(sentence: str) -> Optional[str]:
+    m = _MAGNITUDE_RE.search(sentence)
+    return m.group(1).strip() if m else None
+
+
+def _annotate_edges(edges: List[CausalEdge]) -> None:
+    """Mutate edges in place: epistemic_status/attributed_to/magnitude from
+    the edge's own source sentence, then mark 'disputed' any group of edges
+    that share an effect but disagree on cause where at least one is a
+    hypothesis (e.g. two competing published explanations for one event —
+    see the Chernobyl second-explosion case that motivated this)."""
+    for e in edges:
+        e.epistemic_status = _detect_epistemic_status(e.source_sent)
+        e.attributed_to = _detect_attribution(e.source_sent)
+        e.magnitude = _detect_magnitude(e.source_sent)
+
+    by_effect: Dict[str, List[CausalEdge]] = defaultdict(list)
+    for e in edges:
+        by_effect[e.effect].append(e)
+    for group in by_effect.values():
+        causes = {g.cause for g in group}
+        if len(causes) > 1 and any(g.epistemic_status == "hypothesis" for g in group):
+            for g in group:
+                g.epistemic_status = "disputed"
+
+
+# Schemas whose prose is method/definition-oriented rather than narrated
+# real-world events. The narrative-specific heuristics below (implicit
+# adjacency+state-change chaining, org-governance patterns) are tuned on
+# incident/general text and misfire on this kind of prose -- e.g. treating
+# "sentence N+1 mentions a state-change verb" as implicit causation when
+# sentence N+1 is actually describing what a statistical method does, not
+# narrating a real event. Note this does NOT fix every research-schema
+# extraction issue: intra-sentence CAUSAL_VERBS matching (_intra_edges) can
+# still misfire on definitional sentences ("Pearl's causality provides a
+# definition for...") -- that needs distinguishing generic/definitional
+# statements from narrated events, which this schema gate does not attempt.
+_NARRATIVE_HEURISTIC_SCHEMAS = frozenset({"general", "incident", "auto"})
+
+
+def extract_edges(text: str, resolve_coreferences: bool = True,
+                   schema: str = "general") -> List[CausalEdge]:
     """
     Extract causal edges from text.
 
@@ -602,10 +816,19 @@ def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEd
     resolve_coreferences : bool (default True)
         If True, resolve pronouns to antecedents before extraction.
         This prevents pronouns from becoming ghost nodes in the graph.
+    schema : str (default "general")
+        Document-structure preset, same vocabulary as GraphRAG.ingest()'s
+        `schema` param ("general"/"research"/"clinical"/"incident"/"auto").
+        For "research"/"clinical" schemas, the narrative-tuned implicit
+        adjacency+state-change chaining and org-governance heuristics are
+        skipped (see _NARRATIVE_HEURISTIC_SCHEMAS docstring above) since
+        they're tuned for incident narratives, not method/definition prose.
     """
     # Optionally resolve coreferences (pronouns -> antecedents)
     if resolve_coreferences:
         text = _resolve_coreferences(text)
+
+    use_narrative_heuristics = schema in _NARRATIVE_HEURISTIC_SCHEMAS
 
     edges: List[CausalEdge] = []
     sents = _sentences(text)
@@ -644,15 +867,16 @@ def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEd
                                             +1, sent,
                                             confidence=0.80, extraction_method="rule"))
 
-    # Implicit causation pass: adjacency + state-change + temporal heuristics
-    explicit_pairs = {(e.cause, e.effect) for e in edges}
-    edges.extend(_implicit_edges(sents, explicit_pairs))
+    if use_narrative_heuristics:
+        # Implicit causation pass: adjacency + state-change + temporal heuristics
+        explicit_pairs = {(e.cause, e.effect) for e in edges}
+        edges.extend(_implicit_edges(sents, explicit_pairs))
 
-    # Organizational causality: governance gaps, information failures, protocol
-    # overrides — patterns that dependency parsing systematically misses.
-    org = _org_edges(sents)
-    org_pairs = {(e.cause, e.effect) for e in edges}
-    edges.extend(e for e in org if (e.cause, e.effect) not in org_pairs)
+        # Organizational causality: governance gaps, information failures,
+        # protocol overrides — patterns that dependency parsing misses.
+        org = _org_edges(sents)
+        org_pairs = {(e.cause, e.effect) for e in edges}
+        edges.extend(e for e in org if (e.cause, e.effect) not in org_pairs)
 
     # Validate all edges (remove pronouns, empty strings, self-loops, >80 char names)
     edges = [e for e in edges if _validate_edge(e)]
@@ -665,6 +889,8 @@ def extract_edges(text: str, resolve_coreferences: bool = True) -> List[CausalEd
         if key not in seen:
             seen.add(key)
             uniq.append(e)
+
+    _annotate_edges(uniq)
     return uniq
 
 
@@ -912,6 +1138,7 @@ def extract_edges_hybrid(
     llm: Any,
     mode: str = "augment",
     resolve_coreferences: bool = True,
+    schema: str = "general",
 ) -> List[CausalEdge]:
     """
     Hybrid extraction: spaCy/rule extractor merged with LLM extractor.
@@ -950,7 +1177,7 @@ def extract_edges_hybrid(
             covered.add(i)
 
     # Inter-sentence edges from base extractor
-    base_edges_full = extract_edges(text)  # includes inter-sentence chaining
+    base_edges_full = extract_edges(text, schema=schema)  # includes inter-sentence chaining
     # Collect only the inter-sentence edges not already in per-sentence pass
     intra_keys = {(e.cause, e.relation, e.effect) for e in base_edges}
     for e in base_edges_full:
@@ -977,4 +1204,6 @@ def extract_edges_hybrid(
             merged.append(e)
 
     # Final validation pass (covers edges from all extraction paths)
-    return [e for e in merged if _validate_edge(e)]
+    validated = [e for e in merged if _validate_edge(e)]
+    _annotate_edges(validated)
+    return validated
