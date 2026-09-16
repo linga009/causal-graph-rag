@@ -10,7 +10,7 @@
 ![Commercial](https://img.shields.io/badge/commercial%20license-available-blue)
 ![LangChain](https://img.shields.io/badge/LangChain-1.x-orange)
 ![LLM](https://img.shields.io/badge/LLM-Groq%20%7C%20Gemini%20%7C%20Anthropic%20%7C%20OpenAI-purple)
-![Tests](https://img.shields.io/badge/tests-85%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-133%20passing-brightgreen)
 
 ![Multi-hop](https://img.shields.io/badge/multi--hop_accuracy-35%25%20→%2064%25-success)
 ![Root-cause](https://img.shields.io/badge/root--cause_accuracy-28%25%20→%2058%25-success)
@@ -356,7 +356,7 @@ Related paper: [CausalRAG (ACL 2025)](https://arxiv.org/abs/2503.19878).
 
 ```bash
 pip install -e ".[dev]"
-pytest tests/ -q     # 85 tests; run on the minimal install (graceful degradation)
+pytest tests/ -q     # 133 tests; run on the minimal install (graceful degradation)
 ```
 
 ## License

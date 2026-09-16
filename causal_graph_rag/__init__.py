@@ -6,5 +6,5 @@ Public API:
 from .graph_rag import GraphRAG, ChainResult
 from .agentic_rag import AgenticCausalRAG
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __all__ = ["GraphRAG", "ChainResult", "AgenticCausalRAG", "__version__"]
